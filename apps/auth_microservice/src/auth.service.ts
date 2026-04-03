@@ -3,10 +3,9 @@ import { ValidateTokenRequest, ValidateTokenResponse } from '@innogram/shared';
 
 @Injectable()
 export class AuthService {
- 
-
   validateToken(payload: ValidateTokenRequest): ValidateTokenResponse {
-   console.log(payload)
+    console.log(payload);
+
     return {
       isValid: true,
       user: {

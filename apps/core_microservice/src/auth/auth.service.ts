@@ -17,28 +17,7 @@ export class AuthGatewayService implements OnModuleInit {
   constructor(@Inject(CLIENT_TOKENS.authClient) private readonly client: ClientProxy) {}
 
   async onModuleInit() {
- 
     await this.client.connect();
- 
-  }
-
-  async test(): Promise<string> {
-    const headers = {
-      'x-request-id': '1',
-      'x-origin': 'core-microservice',
-      'x-entrypoint': 'API_GATEWAY',
-    };
-
-   
-    console.log("CORE AUTH SERVICE")
-
-    const response = await firstValueFrom<string>(
-
-      this.client.send(SUBJECTS.test, buildNatsRecord('TEST', headers)).pipe(timeout(5000)),
-    );
- 
-
-    return response;
   }
 
   async validateToken(payload: ValidateTokenRequest): Promise<ValidateTokenResponse> {
@@ -49,12 +28,12 @@ export class AuthGatewayService implements OnModuleInit {
       'x-entrypoint': 'API_GATEWAY',
     };
 
- 
     const response = await firstValueFrom<ValidateTokenResponse>(
-      this.client.send(SUBJECTS.validateToken, buildNatsRecord(payload, headers)).pipe(timeout(5000)),
+      this.client
+        .send(SUBJECTS.validateToken, buildNatsRecord(payload, headers))
+        .pipe(timeout(5000)),
     );
 
- 
     return response;
   }
 }

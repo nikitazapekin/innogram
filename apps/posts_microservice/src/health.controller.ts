@@ -6,8 +6,6 @@ export class HealthController {
 
   @Get()
   getHealth() {
-   
-
     return {
       service: 'posts_microservice',
       status: 'ok',

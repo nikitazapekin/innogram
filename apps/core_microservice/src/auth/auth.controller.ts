@@ -10,11 +10,6 @@ import { ValidateTokenResponseDto } from './dto/validate-token-response.dto';
 export class AuthController {
   constructor(private readonly authGatewayService: AuthGatewayService) {}
 
-  @Get('test')
-  async test() {
-    return this.authGatewayService.test();
-  }
-
   @Post('validate')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Authenticate client request through auth_microservice' })
@@ -34,5 +29,5 @@ function extractBearerToken(authorizationHeader?: string): string {
     return 'demo-access-token';
   }
 
-  return ""
+  return '';
 }
