@@ -32,7 +32,7 @@ export class PostsMessagesController {
     @Payload() payload: CreatePostRequest,
     @Ctx() context: NatsContext,
   ): CreatePostResponse {
-    const headers = normalizeHeaders(context.getHeaders());
+ 
 
     const response = this.postsService.create(payload);
 
