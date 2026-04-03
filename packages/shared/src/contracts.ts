@@ -16,22 +16,33 @@ export interface ValidateTokenRequest {
   accessToken: string;
 }
 
-export interface ValidateTokenResponse {
+export interface ValidateTokenSuccessResponse {
   isValid: boolean;
   user: UserSnapshot;
   message: string;
 }
 
+export interface ErrorResponse {
+  error: true;
+  message: string;
+}
+
+export type ServiceResponse<TSuccess> = TSuccess | ErrorResponse;
+
+export type ValidateTokenResponse = ServiceResponse<ValidateTokenSuccessResponse>;
+
 export interface FindPostsRequest {
   userId: string;
 }
 
-export interface FindPostsResponse {
+export interface FindPostsSuccessResponse {
   items: PostSnapshot[];
   total: number;
   authorizedUser: UserSnapshot;
   message: string;
 }
+
+export type FindPostsResponse = ServiceResponse<FindPostsSuccessResponse>;
 
 export interface CreatePostRequest {
   authorId: string;
@@ -39,8 +50,10 @@ export interface CreatePostRequest {
   content: string;
 }
 
-export interface CreatePostResponse {
+export interface CreatePostSuccessResponse {
   post: PostSnapshot;
   authorizedUser: UserSnapshot;
   message: string;
 }
+
+export type CreatePostResponse = ServiceResponse<CreatePostSuccessResponse>;

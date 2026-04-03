@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CreatePostResponse, FindPostsResponse } from '@innogram/shared';
 
 import { CreatePostRequestDto } from './dto/create-post-request.dto';
 import { CreatePostResponseDto } from './dto/create-post-response.dto';
@@ -17,7 +18,7 @@ export class PostsController {
     summary: 'Validate request in auth_microservice and fetch posts from posts_microservice',
   })
   @ApiOkResponse({ type: FindPostsResponseDto })
-  findAll(@Headers('authorization') authorizationHeader?: string): Promise<FindPostsResponseDto> {
+  findAll(@Headers('authorization') authorizationHeader?: string): Promise<FindPostsResponse> {
     return this.postsGatewayService.findAll({
       accessToken: extractBearerToken(authorizationHeader),
     });
@@ -32,7 +33,7 @@ export class PostsController {
   create(
     @Body() body: CreatePostRequestDto,
     @Headers('authorization') authorizationHeader?: string,
-  ): Promise<CreatePostResponseDto> {
+  ): Promise<CreatePostResponse> {
     return this.postsGatewayService.create({
       accessToken: extractBearerToken(authorizationHeader),
       title: body.title,
