@@ -12,7 +12,9 @@ export class PostsService {
   private readonly logger = new Logger(PostsService.name);
 
   findAll(payload: FindPostsRequest): FindPostsResponse {
-    this.logger.log(`Stub findAll called for userId="${payload.userId}". Replace this with DB read logic later.`);
+    this.logger.log(
+      `Stub findAll called for userId="${payload.userId}". Replace this with DB read logic later.`,
+    );
 
     return {
       items: [

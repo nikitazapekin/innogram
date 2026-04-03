@@ -33,9 +33,7 @@ export class PostsGatewayService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-   
     await this.client.connect();
- 
   }
 
   async findAll(request: AuthorizedRequest): Promise<FindPostsResponse> {
@@ -54,12 +52,10 @@ export class PostsGatewayService implements OnModuleInit {
       'x-parent-subject': SUBJECTS.validateToken,
     };
 
- 
     const response = await firstValueFrom<FindPostsResponse>(
       this.client.send(SUBJECTS.getPosts, buildNatsRecord(payload, headers)).pipe(timeout(5000)),
     );
 
- 
     return response;
   }
 
@@ -81,12 +77,10 @@ export class PostsGatewayService implements OnModuleInit {
       'x-parent-subject': SUBJECTS.validateToken,
     };
 
- 
     const response = await firstValueFrom<CreatePostResponse>(
       this.client.send(SUBJECTS.createPost, buildNatsRecord(payload, headers)).pipe(timeout(5000)),
     );
 
-  
     return response;
   }
 }

@@ -44,4 +44,3 @@ export function readHeader(value: string | string[] | undefined, fallback: strin
 
   return value ?? fallback;
 }
- 

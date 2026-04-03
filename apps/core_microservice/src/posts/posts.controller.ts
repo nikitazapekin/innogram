@@ -13,7 +13,9 @@ export class PostsController {
   constructor(private readonly postsGatewayService: PostsGatewayService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Validate request in auth_microservice and fetch posts from posts_microservice' })
+  @ApiOperation({
+    summary: 'Validate request in auth_microservice and fetch posts from posts_microservice',
+  })
   @ApiOkResponse({ type: FindPostsResponseDto })
   findAll(@Headers('authorization') authorizationHeader?: string): Promise<FindPostsResponseDto> {
     return this.postsGatewayService.findAll({
@@ -22,7 +24,9 @@ export class PostsController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Validate request in auth_microservice and create a post through posts_microservice' })
+  @ApiOperation({
+    summary: 'Validate request in auth_microservice and create a post through posts_microservice',
+  })
   @ApiBody({ type: CreatePostRequestDto })
   @ApiOkResponse({ type: CreatePostResponseDto })
   create(
@@ -42,5 +46,5 @@ function extractBearerToken(authorizationHeader?: string): string {
     return 'demo-access-token';
   }
 
-  return ""
+  return '';
 }
