@@ -28,10 +28,9 @@ export class PostsMessagesController {
   }
 
   @MessagePattern(SUBJECTS.createPost)
-  handleCreatePost(
-    @Payload() payload: CreatePostRequest,
-    @Ctx() context: NatsContext,
-  ): CreatePostResponse {
+  handleCreatePost(@Payload() payload: CreatePostRequest, @Ctx() context: NatsContext): CreatePostResponse {
+    const headers = normalizeHeaders(context.getHeaders());
+
  
 
     const response = this.postsService.create(payload);
