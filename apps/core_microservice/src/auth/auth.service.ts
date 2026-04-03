@@ -12,9 +12,10 @@ import { firstValueFrom, timeout } from 'rxjs';
 
 @Injectable()
 export class AuthGatewayService implements OnModuleInit {
-  
-
-  constructor(@Inject(CLIENT_TOKENS.authClient) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(CLIENT_TOKENS.authClient)
+    private readonly client: ClientProxy,
+  ) {}
 
   async onModuleInit() {
     await this.client.connect();
