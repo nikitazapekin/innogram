@@ -1,11 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { Ctx, MessagePattern, NatsContext, Payload } from '@nestjs/microservices';
-import {
-  normalizeHeaders,
-  SUBJECTS,
-  ValidateTokenRequest,
-  ValidateTokenResponse,
-} from '@innogram/shared';
+import { SUBJECTS, ValidateTokenRequest, ValidateTokenResponse } from '@innogram/shared';
 
 import { AuthService } from './auth.service';
 
@@ -18,7 +13,7 @@ export class AuthMessagesController {
     @Payload() payload: ValidateTokenRequest,
     @Ctx() context: NatsContext,
   ): ValidateTokenResponse {
-    const response = this.authService.validateToken(payload)
+    const response = this.authService.validateToken(payload);
 
     return response;
   }

@@ -13,7 +13,7 @@ import { PostsService } from './posts.service';
 
 @Controller()
 export class PostsMessagesController {
-  private readonly logger = new Logger(PostsMessagesController.name);
+   logger = new Logger(PostsMessagesController.name);
 
   constructor(private readonly postsService: PostsService) {}
 

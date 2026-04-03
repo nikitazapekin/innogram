@@ -41,6 +41,10 @@ export class PostsGatewayService implements OnModuleInit {
       accessToken: request.accessToken,
     });
 
+    if ('error' in authResult) {
+      return authResult;
+    }
+
     const requestId = randomUUID();
     const payload: FindPostsRequest = {
       userId: authResult.user.id,
@@ -63,6 +67,10 @@ export class PostsGatewayService implements OnModuleInit {
     const authResult = await this.authGatewayService.validateToken({
       accessToken: request.accessToken,
     });
+
+    if ('error' in authResult) {
+      return authResult;
+    }
 
     const requestId = randomUUID();
     const payload: CreatePostRequest = {

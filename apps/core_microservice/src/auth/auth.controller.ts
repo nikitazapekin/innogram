@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ValidateTokenResponse } from '@innogram/shared';
 
 import { AuthGatewayService } from './auth.service';
 import { ValidateTokenRequestDto } from './dto/validate-token-request.dto';
@@ -18,7 +19,7 @@ export class AuthController {
   validateToken(
     @Body() body: ValidateTokenRequestDto,
     @Headers('authorization') authorizationHeader?: string,
-  ): Promise<ValidateTokenResponseDto> {
+  ): Promise<ValidateTokenResponse> {
     const accessToken = body.accessToken || extractBearerToken(authorizationHeader);
 
     return this.authGatewayService.validateToken({ accessToken });
