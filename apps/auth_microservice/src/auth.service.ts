@@ -6,7 +6,7 @@ export class AuthService {
  
 
   validateToken(payload: ValidateTokenRequest): ValidateTokenResponse {
-   
+   console.log(payload)
     return {
       isValid: true,
       user: {
