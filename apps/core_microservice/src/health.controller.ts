@@ -9,8 +9,6 @@ export class HealthController {
   @Get()
   @ApiOperation({ summary: 'Check API Gateway status' })
   getHealth() {
-   
-
     return {
       service: 'core_microservice',
       status: 'ok',
