@@ -9,7 +9,7 @@ export interface User {
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
+ logger = new Logger(AuthService.name);
 
   validateToken(payload: ValidateTokenRequest): ValidateTokenResponse {
     try {
