@@ -1,9 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-
+import {  IsString,  } from 'class-validator';
 export class ValidateTokenRequestDto {
-  @ApiProperty({
-    example: 'demo-access-token',
-    description: 'Bearer token to be sent to auth_microservice',
-  })
+  @IsString()
   accessToken: string;
 }

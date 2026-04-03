@@ -1,14 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
-
 import { UserEntity } from '../../common/entities/user.entity';
+import { IsBoolean, IsString, IsOptional, ValidateNested, IsNotEmpty } from 'class-validator';
 
 export class ValidateTokenResponseDto {
-  @ApiProperty({ example: true })
+  @IsBoolean()
+  @IsNotEmpty()
   isValid: boolean;
 
-  @ApiProperty({ type: () => UserEntity })
+  @ValidateNested()
   user: UserEntity;
 
-  @ApiProperty({ example: 'Stub auth validation completed through NATS.' })
-  message: string;
+  @IsString()
+  @IsOptional()
+  message?: string;
 }
