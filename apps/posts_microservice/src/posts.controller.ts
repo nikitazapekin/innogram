@@ -5,7 +5,6 @@ import {
   CreatePostResponse,
   FindPostsRequest,
   FindPostsResponse,
- 
   normalizeHeaders,
   SUBJECTS,
 } from '@innogram/shared';
@@ -19,23 +18,24 @@ export class PostsMessagesController {
   constructor(private readonly postsService: PostsService) {}
 
   @MessagePattern(SUBJECTS.getPosts)
-  handleGetPosts(@Payload() payload: FindPostsRequest, @Ctx() context: NatsContext): FindPostsResponse {
-
+  handleGetPosts(
+    @Payload() payload: FindPostsRequest,
+    @Ctx() context: NatsContext,
+  ): FindPostsResponse {
     const response = this.postsService.findAll(payload);
- 
 
     return response;
   }
 
   @MessagePattern(SUBJECTS.createPost)
-  handleCreatePost(@Payload() payload: CreatePostRequest, @Ctx() context: NatsContext): CreatePostResponse {
+  handleCreatePost(
+    @Payload() payload: CreatePostRequest,
+    @Ctx() context: NatsContext,
+  ): CreatePostResponse {
     const headers = normalizeHeaders(context.getHeaders());
-
- 
 
     const response = this.postsService.create(payload);
 
-    
     return response;
   }
 }
