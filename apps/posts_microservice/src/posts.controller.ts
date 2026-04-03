@@ -13,7 +13,7 @@ import { PostsService } from './posts.service';
 
 @Controller()
 export class PostsMessagesController {
-   logger = new Logger(PostsMessagesController.name);
+  logger = new Logger(PostsMessagesController.name);
 
   constructor(private readonly postsService: PostsService) {}
 
@@ -28,10 +28,11 @@ export class PostsMessagesController {
   }
 
   @MessagePattern(SUBJECTS.createPost)
-  handleCreatePost(@Payload() payload: CreatePostRequest, @Ctx() context: NatsContext): CreatePostResponse {
+  handleCreatePost(
+    @Payload() payload: CreatePostRequest,
+    @Ctx() context: NatsContext,
+  ): CreatePostResponse {
     const headers = normalizeHeaders(context.getHeaders());
-
- 
 
     const response = this.postsService.create(payload);
 

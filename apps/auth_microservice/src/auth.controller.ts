@@ -5,7 +5,7 @@ import { SUBJECTS, ValidateTokenRequest, ValidateTokenResponse } from '@innogram
 import { AuthService } from './auth.service';
 
 @Controller()
-export class AuthMessagesController {
+export class AuthMessagesController { //AuthController   + гайт на аудентификаци. и авторизацию 
   constructor(private readonly authService: AuthService) {}
 
   @MessagePattern(SUBJECTS.validateToken)
