@@ -8,10 +8,8 @@ type ValidateTokenServiceResponse = ServiceResponse<{ user: User }>;
 export class AuthService {
   logger = new Logger(AuthService.name);
 
-  async validateToken(payload: ValidateTokenRequest): Promise<ValidateTokenServiceResponse> {  
+  async validateToken(payload: ValidateTokenRequest): Promise<ValidateTokenServiceResponse> {
     try {
-     
-
       const user: User = {
         id: 'user-001',
         email: 'demo@innogram.local',
@@ -20,17 +18,11 @@ export class AuthService {
 
       return { user };
     } catch (error) {
-     if( error instanceof Error ) {
-
-        return  {message:  error.message  }
+      if (error instanceof Error) {
+        return { message: error.message };
       }
-      
-      return {message: 'Unknown health check error'};  
-      
-    
+
+      return { message: 'Unknown health check error' };
     }
   }
- 
-  
 }
- 

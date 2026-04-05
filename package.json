@@ -14,6 +14,7 @@
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix",
     "lint:packages": "turbo run lint --filter=./packages/*",
+    "prepare": "node scripts/prepare-husky.cjs",
     "clean": "turbo run clean",
     "format": "prettier --write \"apps/**/*.ts\" \"packages/**/*.ts\"",
     "format:check": "prettier --check \"apps/**/*.ts\" \"packages/**/*.ts\"",
@@ -29,13 +30,24 @@
     "start:auth:prod": "node apps/auth_microservice/dist/main.js",
     "start:posts:prod": "node apps/posts_microservice/dist/main.js"
   },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,cjs,mjs}": "prettier --write"
+  },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
     "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "tsx": "^4.19.3",
     "turbo": "^2.5.0",

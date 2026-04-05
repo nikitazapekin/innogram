@@ -7,10 +7,7 @@ import { PostsController } from './posts.controller';
 import { PostsGatewayService } from './posts.service';
 
 @Module({
-  imports: [
-    AuthModule,
-    createNatsClientModule(CLIENT_TOKENS.postsClient),
-  ],
+  imports: [AuthModule, createNatsClientModule(CLIENT_TOKENS.postsClient)],
   controllers: [PostsController],
   providers: [PostsGatewayService],
 })
