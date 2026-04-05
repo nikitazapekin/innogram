@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 
-import { AuthMessagesController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { HealthController } from './health.controller';
+import { AuthController } from './auth/auth.controller';
+import { AuthService } from './auth/auth.service';
+import { HealthController } from './health/health.controller';
+import { HealthService } from './health/health.service';
 
 @Module({
-  controllers: [HealthController, AuthMessagesController],
-  providers: [AuthService],  //AuthMessagesService и хелз 
+  controllers: [HealthController, AuthController],
+  providers: [AuthService, HealthService],  //AuthMessagesService и хелз 
 })
 export class AppModule {}

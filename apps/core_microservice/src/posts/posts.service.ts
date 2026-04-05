@@ -41,7 +41,7 @@ export class PostsGatewayService implements OnModuleInit {
       accessToken: request.accessToken,
     });
 
-    if ('error' in authResult) {
+    if (!('user' in authResult)) {
       return authResult;
     }
 
@@ -68,7 +68,7 @@ export class PostsGatewayService implements OnModuleInit {
       accessToken: request.accessToken,
     });
 
-    if ('error' in authResult) {
+    if (!('user' in authResult)) {
       return authResult;
     }
 

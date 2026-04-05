@@ -3,21 +3,14 @@ import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@n
 import { CreatePostResponse, FindPostsResponse } from '@innogram/shared';
 
 import { CreatePostRequestDto } from './dto/create-post-request.dto';
-import { CreatePostResponseDto } from './dto/create-post-response.dto';
-import { FindPostsResponseDto } from './dto/find-posts-response.dto';
 import { PostsGatewayService } from './posts.service';
 
-@ApiTags('Posts')
 @ApiBearerAuth()
 @Controller('api/posts')
 export class PostsController {
   constructor(private readonly postsGatewayService: PostsGatewayService) {}
 
   @Get()
-  @ApiOperation({
-    summary: 'Validate request in auth_microservice and fetch posts from posts_microservice',
-  })
-  @ApiOkResponse({ type: FindPostsResponseDto })
   findAll(@Headers('authorization') authorizationHeader?: string): Promise<FindPostsResponse> {
     return this.postsGatewayService.findAll({
       accessToken: extractBearerToken(authorizationHeader),
@@ -25,11 +18,6 @@ export class PostsController {
   }
 
   @Post()
-  @ApiOperation({
-    summary: 'Validate request in auth_microservice and create a post through posts_microservice',
-  })
-  @ApiBody({ type: CreatePostRequestDto })
-  @ApiOkResponse({ type: CreatePostResponseDto })
   create(
     @Body() body: CreatePostRequestDto,
     @Headers('authorization') authorizationHeader?: string,

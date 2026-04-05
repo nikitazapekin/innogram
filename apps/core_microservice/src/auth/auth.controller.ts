@@ -15,13 +15,6 @@ export class AuthController {
   ): Promise<ValidateTokenResponse> {
     const accessToken = body?.accessToken;
 
-    if (!accessToken) {
-      return {
-        error: true,
-        message: 'accessToken is required',
-      };
-    }
-
     return this.authGatewayService.validateToken({ accessToken });
   }
 }
