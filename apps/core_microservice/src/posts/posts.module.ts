@@ -1,23 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CLIENT_TOKENS, getNatsServers } from '@innogram/shared';
+import { CLIENT_TOKENS } from '@innogram/shared';
 
 import { AuthModule } from '../auth/auth.module';
+import { createNatsClientModule } from '../common/create-nats-client.module';
 import { PostsController } from './posts.controller';
 import { PostsGatewayService } from './posts.service';
 
 @Module({
   imports: [
     AuthModule,
-    ClientsModule.register([
-      {
-        name: CLIENT_TOKENS.postsClient,
-        transport: Transport.NATS,
-        options: {
-          servers: getNatsServers(),
-        },
-      },
-    ]),
+    createNatsClientModule(CLIENT_TOKENS.postsClient),
   ],
   controllers: [PostsController],
   providers: [PostsGatewayService],

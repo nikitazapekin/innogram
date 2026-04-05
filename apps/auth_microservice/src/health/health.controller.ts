@@ -1,16 +1,16 @@
 import { Controller, Get, Logger } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { HealthService } from './health.service';
 
 @Controller('health')
 export class HealthController {
   logger = new Logger(HealthController.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly healthService: HealthService) {}
 
   @Get()
   getHealth() {
     this.logger.log('HTTP health-check received by auth_microservice');
-    const serviceStatus = this.authService.getHealthStatus();
+    const serviceStatus = this.healthService.getHealthStatus();
 
     return {
       service: 'auth_microservice',
