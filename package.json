@@ -17,6 +17,7 @@
     "clean": "turbo run clean",
     "format": "prettier --write \"apps/**/*.ts\" \"packages/**/*.ts\"",
     "format:check": "prettier --check \"apps/**/*.ts\" \"packages/**/*.ts\"",
+    "prepare": "husky",
     "start:core": "npm --prefix apps/core_microservice run start:dev",
     "start:auth": "npm --prefix apps/auth_microservice run start:dev",
     "start:posts": "npm --prefix apps/posts_microservice run start:dev",
@@ -36,10 +37,15 @@
     "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "tsx": "^4.19.3",
     "turbo": "^2.5.0",
     "typescript": "^5.8.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": "prettier --write"
   },
   "dependencies": {
     "@nestjs/typeorm": "^11.0.1",

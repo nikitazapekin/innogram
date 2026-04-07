@@ -17,13 +17,10 @@ export interface ValidateTokenRequest {
 }
 
 export interface ValidateTokenSuccessResponse {
- 
   user: UserSnapshot;
-
 }
 
 export interface ErrorResponse {
- 
   message: string;
 }
 
