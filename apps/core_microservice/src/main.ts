@@ -16,6 +16,7 @@ function setProjectRootAsCurrentWorkingDirectory(): void {
 
     if (existsSync(packageJsonPath) && existsSync(envPath)) {
       process.chdir(currentPath);
+
       return;
     }
 
@@ -29,6 +30,7 @@ function setProjectRootAsCurrentWorkingDirectory(): void {
 
 async function bootstrap() {
   setProjectRootAsCurrentWorkingDirectory();
+
   const { AppModule } = await import('./app.module');
 
   const app = await NestFactory.create(AppModule);
