@@ -62,6 +62,14 @@ module.exports = [
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       'prettier/prettier': 'error',
       'padding-line-between-statements': ['error', ...logicalBlockSpacingRules],
     },

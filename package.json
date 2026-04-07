@@ -19,16 +19,10 @@
     "format:check": "prettier --check \"apps/**/*.ts\" \"packages/**/*.ts\"",
     "prepare": "husky",
     "start:core": "npm --prefix apps/core_microservice run start:dev",
-    "start:auth": "npm --prefix apps/auth_microservice run start:dev",
-    "start:posts": "npm --prefix apps/posts_microservice run start:dev",
-    "start:all": "turbo run start:dev --parallel --filter=@innogram/core-microservice --filter=@innogram/auth-microservice --filter=@innogram/posts-microservice",
+    "start:all": "turbo run start:dev --parallel --filter=@innogram/core-microservice",
     "build:shared": "npm --prefix packages/shared run build",
     "build:core": "npm --prefix apps/core_microservice run build",
-    "build:auth": "npm --prefix apps/auth_microservice run build",
-    "build:posts": "npm --prefix apps/posts_microservice run build",
-    "start:core:prod": "node apps/core_microservice/dist/main.js",
-    "start:auth:prod": "node apps/auth_microservice/dist/main.js",
-    "start:posts:prod": "node apps/posts_microservice/dist/main.js"
+    "start:core:prod": "node apps/core_microservice/dist/main.js"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
