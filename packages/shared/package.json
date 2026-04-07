@@ -1,0 +1,20 @@
+{
+  "name": "@innogram/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings=0",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix --max-warnings=0",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.17",
+    "@nestjs/microservices": "^10.4.17",
+    "nats": "^2.29.2"
+  }
+}
