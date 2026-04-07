@@ -1,24 +1,40 @@
-import 'reflect-metadata';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { Injectable } from '@nestjs/common';
+import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { ConfigService } from './config.service';
 
-const databaseConfig: PostgresConnectionOptions = {
-  type: 'postgres',
-  host: process.env.POSTGRES_HOST ?? 'localhost',
-  port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
-  username: process.env.POSTGRES_USER ?? 'postgres',
-  password: process.env.POSTGRES_PASSWORD ?? 'postgres',
-  database: process.env.POSTGRES_DATABASE ?? 'innogram',
-};
+@Injectable()
+export class DatabaseConfigService implements TypeOrmOptionsFactory {
+  constructor(private readonly configService: ConfigService) {}
 
-export const typeOrmConfig: TypeOrmModuleOptions = {
-  ...databaseConfig,
-  autoLoadEntities: true,
-  synchronize: false,
-};
+  private createDatabaseConfig(): PostgresConnectionOptions {
+    return {
+      type: 'postgres',
+      host: this.configService.getOrThrow('POSTGRES_HOST'),
+      port: Number(this.configService.getOrThrow('POSTGRES_PORT')),
+      username: this.configService.getOrThrow('POSTGRES_USER'),
+      password: this.configService.getOrThrow('POSTGRES_PASSWORD'),
+      database: this.configService.getOrThrow('POSTGRES_DATABASE'),
+    };
+  }
 
-export default new DataSource({
-  ...databaseConfig,
-  migrations: ['src/database/migrations/*.ts'],
-});
+  createTypeOrmOptions(): TypeOrmModuleOptions {
+    return {
+      ...this.createDatabaseConfig(),
+      autoLoadEntities: true,
+      synchronize: false,
+    };
+  }
+
+  createDataSourceOptions(): PostgresConnectionOptions & { migrations: string[] } {
+    return {
+      ...this.createDatabaseConfig(),
+      migrations: ['src/database/migrations/*.ts'],
+    };
+  }
+}
+
+const databaseConfigService = new DatabaseConfigService(new ConfigService());
+
+export default new DataSource(databaseConfigService.createDataSourceOptions());
