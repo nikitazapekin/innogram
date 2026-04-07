@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { resolve } from 'node:path';
-import { loadEnvFile } from 'node:process';
+import * as dotenv from 'dotenv';
 
-loadEnvFile(resolve(__dirname, '../../../.env'));
+dotenv.config();
 
 @Injectable()
 export class ConfigService {
