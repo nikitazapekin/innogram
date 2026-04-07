@@ -101,3 +101,11 @@ packages/shared/dist/
 packages/shared/build/
 packages/types/dist/
 packages/types/build/
+
+.codex
+
+.prettierignore
+
+packages/.prettierignore
+
+
