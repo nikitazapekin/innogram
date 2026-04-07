@@ -8,9 +8,8 @@
     "start": "node dist/main.js",
     "start:dev": "npm run build && node dist/main.js",
     "start:watch": "npm run build:shared && tsx watch src/main.ts",
-    "migration:generate": "tsx ./node_modules/typeorm/cli.js -d src/database/data-source.ts migration:generate src/database/migrations/GeneratedMigration",
-    "migration:run": "tsx ./node_modules/typeorm/cli.js -d src/database/data-source.ts migration:run",
-    "migration:revert": "tsx ./node_modules/typeorm/cli.js -d src/database/data-source.ts migration:revert",
+    "migration:generate": "tsx ../../node_modules/typeorm/cli.js -d src/database.config.ts migration:generate src/database/migrations/GeneratedMigration",
+    "migration:run": "tsx ../../node_modules/typeorm/cli.js -d src/database.config.ts migration:run",
     "lint": "eslint \"src/**/*.ts\"",
     "clean": "rm -rf dist"
   },
