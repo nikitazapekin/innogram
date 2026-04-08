@@ -1,37 +1,5 @@
 services:
-  nats:
-    image: nats:2.11-alpine
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-    command:
-      - "-m"
-      - "8222"
-
-  auth_microservice:
-    build:
-      context: .
-      dockerfile: apps/auth_microservice/Dockerfile
-    depends_on:
-      - nats
-    environment:
-      AUTH_HTTP_PORT: 3002
-      NATS_URL: nats://nats:4222
-    ports:
-      - "3002:3002"
-
-  posts_microservice:
-    build:
-      context: .
-      dockerfile: apps/posts_microservice/Dockerfile
-    depends_on:
-      - nats
-    environment:
-      POSTS_HTTP_PORT: 3003
-      NATS_URL: nats://nats:4222
-    ports:
-      - "3003:3003"
-
+ 
   core_microservice:
     build:
       context: .
