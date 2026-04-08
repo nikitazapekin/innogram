@@ -4,13 +4,8 @@ services:
     build:
       context: .
       dockerfile: apps/core_microservice/Dockerfile
-    depends_on:
-      - nats
-      - auth_microservice
-      - posts_microservice
     environment:
       CORE_HTTP_PORT: 3001
-      NATS_URL: nats://nats:4222
       SWAGGER_PATH: api/docs
     ports:
       - "3001:3001"
