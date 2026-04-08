@@ -68,18 +68,4 @@ curl -X POST http://localhost:3001/api/auth/validate -H 'Content-Type: applicati
 curl http://localhost:3001/api/posts -H 'Authorization: Bearer demo-access-token'
 curl -X POST http://localhost:3001/api/posts -H 'Content-Type: application/json' -H 'Authorization: Bearer demo-access-token' -d '{"title":"Stub post","content":"Checking NATS flow"}'
 ```
-
-Each service logs NATS ingress/egress steps so you can verify broker routing without any business logic or database wiring yet.
-
-## Docker
-
-```bash
-docker compose up --build
-```
-
-## CI / Utility Commands
-
-```bash
-npm run lint
-npm run build
-```
+ 
