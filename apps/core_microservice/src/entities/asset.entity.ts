@@ -18,7 +18,6 @@ export class Asset extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
   @Column({ name: 'owner_profile_id', type: 'uuid', nullable: true })
   ownerProfileId!: string;
 
