@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { join } from 'node:path';
 
 @Injectable()
 export class DatabaseConfigService implements TypeOrmOptionsFactory {
@@ -16,8 +15,7 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
       password: this.configService.getOrThrow('POSTGRES_PASSWORD'),
       database: this.configService.getOrThrow('POSTGRES_DATABASE'),
       autoLoadEntities: true,
-      entities: [join(__dirname, 'entities', '*.entity.{ts,js}')],
-      synchronize: true,
+      synchronize: false,
     };
   }
 }

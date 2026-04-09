@@ -17,11 +17,8 @@ export class Notification extends TimestampedEntity {
   @Column({ type: 'jsonb', nullable: true })
   payload: Record<string, unknown> | null;
 
-  @Column({ name: 'is_read', type: 'boolean', default: false })
-  isRead: boolean;
-
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
-  readAt: Date;
+  readAt: Date | null;
 
   @ManyToOne(() => Profile, (profile) => profile.notifications, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'recipient_profile_id' })
