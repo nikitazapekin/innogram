@@ -26,6 +26,5 @@ import { UsersModule } from './users/users.module';
     ChatsModule,
     NotificationsModule,
   ],
-  providers: [DatabaseConfigService],
 })
 export class AppModule {}
