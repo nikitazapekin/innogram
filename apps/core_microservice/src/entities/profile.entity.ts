@@ -24,7 +24,6 @@ export class Profile extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index({ unique: true })
   @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 

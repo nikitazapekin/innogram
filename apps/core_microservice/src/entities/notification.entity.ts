@@ -8,7 +8,6 @@ export class Notification extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
   @Column({ name: 'recipient_profile_id', type: 'uuid' })
   recipientProfileId: string;
 

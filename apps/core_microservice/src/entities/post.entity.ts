@@ -20,7 +20,6 @@ export class Post extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Index()
   @Column({ name: 'author_profile_id', type: 'uuid' })
   authorProfileId: string;
 

@@ -9,7 +9,6 @@ export class User extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
   @Column({ type: 'varchar', length: 320 })
   email: string;
 

@@ -18,11 +18,9 @@ export class Comment extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
   @Column({ name: 'post_id', type: 'uuid' })
   postId: string;
 
-  @Index()
   @Column({ name: 'author_profile_id', type: 'uuid' })
   authorProfileId: string;
 

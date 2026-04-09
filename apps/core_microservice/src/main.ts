@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { CORE_HTTP_PORT, SWAGGER_PATH } from '@innogram/shared';
+
+const CORE_HTTP_PORT = Number(process.env.CORE_HTTP_PORT ?? 3001);
+const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
 
 async function bootstrap() {
   const { AppModule } = await import('./app.module');
