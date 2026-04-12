@@ -36,7 +36,7 @@ export class Profile extends TimestampedEntity {
   @Column({ name: 'avatar_asset_id', type: 'uuid', nullable: true })
   avatarAssetId: string | null;
 
-  @ManyToOne(() => User, (user) => user.profiles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.profiles)
   @JoinColumn({ name: 'user_id' })
   user: User;
 

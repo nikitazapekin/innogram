@@ -17,7 +17,7 @@ export class Account extends TimestampedEntity {
   @Column({ name: 'provider_account_id', type: 'varchar', length: 255 })
   providerAccountId: string;
 
-  @ManyToOne(() => User, (user) => user.accounts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.accounts)
   @JoinColumn({ name: 'user_id' })
   user: User;
 }

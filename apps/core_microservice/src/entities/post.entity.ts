@@ -29,7 +29,7 @@ export class Post extends TimestampedEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @ManyToOne(() => Profile, (profile) => profile.posts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Profile, (profile) => profile.posts)
   @JoinColumn({ name: 'author_profile_id' })
   authorProfile!: Profile;
 

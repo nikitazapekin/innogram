@@ -27,11 +27,11 @@ export class Comment extends TimestampedEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @ManyToOne(() => Post, (post) => post.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Post, (post) => post.comments)
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @ManyToOne(() => Profile, (profile) => profile.comments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Profile, (profile) => profile.comments)
   @JoinColumn({ name: 'author_profile_id' })
   authorProfile: Profile;
 

@@ -28,11 +28,11 @@ export class Message extends TimestampedEntity {
   @Column({ type: 'text', nullable: true })
   content: string | null;
 
-  @ManyToOne(() => Chat, (chat) => chat.messages, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Chat, (chat) => chat.messages)
   @JoinColumn({ name: 'chat_id' })
   chat: Chat;
 
-  @ManyToOne(() => Profile, (profile) => profile.messages, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Profile, (profile) => profile.messages)
   @JoinColumn({ name: 'author_profile_id' })
   authorProfile: Profile;
 
