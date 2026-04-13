@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "build": "npm run clean && npm run build:shared && tsc -p tsconfig.build.json",
+    "build:shared": "npm --prefix ../../packages/shared run build",
+    "clean": "rm -rf dist",
     "start": "node dist/main.js",
     "start:dev": "npm run build && node dist/main.js",
     "start:watch": "npm run build:shared && tsx watch src/main.ts",
