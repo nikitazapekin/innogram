@@ -19,12 +19,6 @@ export class Asset extends TimestampedEntity {
   @Column({ name: 'mime_type', type: 'varchar', length: 255 })
   mimeType: string;
 
-  @Column({ name: 'storage_key', type: 'varchar', length: 512 })
-  storageKey: string;
-
-  @Column({ name: 'size_bytes', type: 'bigint' })
-  sizeBytes: string;
-
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: 'owner_profile_id' })
   ownerProfile: Profile;
