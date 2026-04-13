@@ -3,18 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build": "npm run clean && npm run build:shared && tsc -p tsconfig.build.json",
     "build:shared": "npm --prefix ../../packages/shared run build",
-    "build": "npm run build:shared && tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
     "start": "node dist/main.js",
     "start:dev": "npm run build && node dist/main.js",
     "start:watch": "npm run build:shared && tsx watch src/main.ts",
-    "migration:generate": "typeorm-ts-node-commonjs -d src/database.config.ts migration:generate src/database/migrations/GeneratedMigration",
-    "migration:run": "typeorm-ts-node-commonjs -d src/database.config.ts migration:run",
-    "lint": "eslint \"src/**/*.ts\"",
-    "clean": "rm -rf dist"
+    "migration:generate": "typeorm-ts-node-commonjs -d src/data-source.ts migration:generate src/database/migrations/GeneratedMigration",
+    "migration:run": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run",
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
-    "@innogram/shared": "file:../../packages/shared",
     "@nestjs/common": "^10.4.17",
     "@nestjs/core": "^10.4.17",
     "@nestjs/microservices": "^10.4.17",

@@ -1,36 +1,10 @@
-import 'reflect-metadata';
-
-import { existsSync } from 'node:fs';
-import { dirname, join, parse } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { CORE_HTTP_PORT, SWAGGER_PATH } from '@innogram/shared';
 
-function setProjectRootAsCurrentWorkingDirectory(): void {
-  let currentPath = __dirname;
-  const { root } = parse(currentPath);
-
-  while (true) {
-    const packageJsonPath = join(currentPath, 'package.json');
-    const envPath = join(currentPath, '.env');
-
-    if (existsSync(packageJsonPath) && existsSync(envPath)) {
-      process.chdir(currentPath);
-
-      return;
-    }
-
-    if (currentPath === root) {
-      return;
-    }
-
-    currentPath = dirname(currentPath);
-  }
-}
+const CORE_HTTP_PORT = Number(process.env.CORE_HTTP_PORT ?? 3001);
+const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
 
 async function bootstrap() {
-  setProjectRootAsCurrentWorkingDirectory();
-
   const { AppModule } = await import('./app.module');
 
   const app = await NestFactory.create(AppModule);
