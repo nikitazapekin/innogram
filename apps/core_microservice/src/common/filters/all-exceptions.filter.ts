@@ -6,16 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-
-type RequestLike = {
-  method: string;
-  url: string;
-};
-
-type ResponseLike = {
-  status: (statusCode: number) => ResponseLike;
-  json: (body: unknown) => void;
-};
+import { ResponseLike, RequestLike, ExceptionResponseBody } from '../types';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -30,23 +21,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const exceptionResponse = exception instanceof HttpException ? exception.getResponse() : null;
-
-    const message =
-      typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : Array.isArray((exceptionResponse as { message?: string[] } | null)?.message)
-          ? (exceptionResponse as { message: string[] }).message
-          : ((exceptionResponse as { message?: string } | null)?.message ??
-            'Internal server error');
-
-    const error =
-      typeof exceptionResponse === 'object' &&
-      exceptionResponse !== null &&
-      'error' in exceptionResponse
-        ? String(exceptionResponse.error)
-        : exception instanceof HttpException
-          ? exception.name
-          : 'InternalServerError';
+    const exceptionBody = this.getExceptionResponseBody(exceptionResponse);
+    const message = this.getMessage(exceptionResponse, exceptionBody);
+    const error = this.getError(exception, exceptionBody);
 
     const logMessage = `${request.method} ${request.url} ${status}`;
 
@@ -58,10 +35,49 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     response.status(status).json({
       statusCode: status,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       path: request.url,
       error,
       message,
     });
+  }
+
+  private getExceptionResponseBody(response: unknown): ExceptionResponseBody | null {
+    if (typeof response !== 'object' || response === null) {
+      return null;
+    }
+
+    return response as ExceptionResponseBody;
+  }
+
+  private getMessage(
+    response: unknown,
+    exceptionBody: ExceptionResponseBody | null,
+  ): string | string[] {
+    if (typeof response === 'string') {
+      return response;
+    }
+
+    if (Array.isArray(exceptionBody?.message)) {
+      return exceptionBody.message;
+    }
+
+    if (typeof exceptionBody?.message === 'string') {
+      return exceptionBody.message;
+    }
+
+    return 'Internal server error';
+  }
+
+  private getError(exception: unknown, exceptionBody: ExceptionResponseBody | null): string {
+    if (exceptionBody?.error !== undefined) {
+      return String(exceptionBody.error);
+    }
+
+    if (exception instanceof HttpException) {
+      return exception.name;
+    }
+
+    return 'InternalServerError';
   }
 }
