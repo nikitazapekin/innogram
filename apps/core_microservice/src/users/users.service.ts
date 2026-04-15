@@ -20,8 +20,6 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    await this.ensureEmailIsAvailable(createUserDto.email);
-
     const user = this.usersRepository.create({
       email: createUserDto.email.toLowerCase(),
       passwordHash: await this.hashPassword(createUserDto.password),
@@ -64,15 +62,6 @@ export class UsersService {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
-    if (updateUserDto.email && updateUserDto.email.toLowerCase() !== user.email) {
-      await this.ensureEmailIsAvailable(updateUserDto.email, id);
-      user.email = updateUserDto.email.toLowerCase();
-    }
-
-    if (updateUserDto.password) {
-      user.passwordHash = await this.hashPassword(updateUserDto.password);
-    }
-
     const updatedUser = await this.usersRepository.save(user);
 
     this.logger.log(`User updated: ${updatedUser.id}`);
@@ -81,24 +70,8 @@ export class UsersService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.usersRepository.delete(id);
-
-    if (!result.affected) {
-      throw new NotFoundException(`User with id "${id}" not found`);
-    }
-
+    await this.usersRepository.delete(id);
     this.logger.log(`User deleted: ${id}`);
-  }
-
-  private async ensureEmailIsAvailable(email: string, excludeUserId?: string): Promise<void> {
-    const normalizedEmail = email.toLowerCase();
-    const existingUser = await this.usersRepository.findOne({
-      where: { email: normalizedEmail },
-    });
-
-    if (existingUser && existingUser.id !== excludeUserId) {
-      throw new ConflictException(`User with email "${normalizedEmail}" already exists`);
-    }
   }
 
   private async hashPassword(password: string): Promise<string> {

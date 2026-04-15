@@ -1,10 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Account } from './account.entity';
 import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'user', schema: 'auth' })
+@Index('IDX_auth_user_created_at', ['createdAt'])
 export class User extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

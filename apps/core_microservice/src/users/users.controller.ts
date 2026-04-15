@@ -13,7 +13,6 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
-  ApiConflictResponse,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -89,7 +88,6 @@ export class UsersController {
   })
   @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  @ApiConflictResponse({ description: 'A user with this email already exists.' })
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateUserDto: UpdateUserDto,
