@@ -14,7 +14,7 @@ import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'comment', schema: 'main' })
 export class Comment extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid') // какие есть уникальные идентификаторы uuid?  нормально ли его добавлять везде. Почему uuid ломает индексы в постгресе
   id: string;
 
   @Column({ name: 'post_id', type: 'uuid' })

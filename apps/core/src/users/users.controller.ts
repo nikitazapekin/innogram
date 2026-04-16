@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
-  ApiBody,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -33,7 +32,6 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Create a user' })
-  @ApiBody({ type: CreateUserDto })
   @ApiCreatedResponse({
     description: 'User has been created successfully.',
     type: UserResponseDto,
@@ -81,7 +79,6 @@ export class UsersController {
     type: 'string',
     format: 'uuid',
   })
-  @ApiBody({ type: UpdateUserDto })
   @ApiOkResponse({
     description: 'User has been updated successfully.',
     type: UserResponseDto,

@@ -13,6 +13,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
+    // отправить в ии на улучгение
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<ResponseLike>();
     const request = ctx.getRequest<RequestLike>();
@@ -81,3 +82,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return 'InternalServerError';
   }
 }
+
+/*
+Улучшения для сеньора:
+1. Нет обработки не-HTTP ошибок — доменные ошибки (например, business logic exceptions) не имеют HTTP-статуса, но могут быть ценными для клиента
+2. Утечка данных — exception.stack может содержать sensitive data (connection strings, etc.)
+3. Нет requestId/traceId — невозможно связать лог с конкретным запросом в distributed системе
+4. Устаревший формат ответа — лучше возвращать { success: false, error: { code, message, details } } (RFC 7807 Problem Details)
+5. Hardcoded текст — 'Internal server error' и 'InternalServerError' должны быть в enum/constants
+6. Нет rate-limit интеграции — 429 ошибки теряют headers в response
+7. timestamp как Date объект — лучше ISO string: new Date().toISOString()
+8. Нет игнорирования noise errors —某些 частые ошибки (например, client abort) засоряют логи
+9. Всегда JSON ответ — если клиент запросил HTML (например, Browser), лучше вернуть HTML error page
+10. Можно добавить guard для критических ошибок — отправка в Sentry/DataDog только для реальных багов
+*/

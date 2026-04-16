@@ -3,6 +3,7 @@ import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
+    //лишний
     example: 'user@example.com',
   })
   @IsEmail()
@@ -10,6 +11,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     example: 'strong-password',
+    // символы уникальные, maxLength
     minLength: 8,
   })
   @IsString()
