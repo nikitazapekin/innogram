@@ -12,7 +12,6 @@ export class Chat extends TimestampedEntity {
 
   @ManyToMany(() => Profile, (profile) => profile.chats)
   @JoinTable({
-    //  минсус - менее управляем и замедляет зпросы. + лучше использовать квери без декораторов
     name: 'chat_participant',
     joinColumn: { name: 'chat_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
