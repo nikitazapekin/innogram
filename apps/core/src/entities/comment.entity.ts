@@ -1,27 +1,28 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
   ManyToOne,
   ManyToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { Post } from './post.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'comment', schema: 'main' })
-export class Comment extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid') // какие есть уникальные идентификаторы uuid?  нормально ли его добавлять везде. Почему uuid ломает индексы в постгресе
-  id: string;
+export class Comment {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'post_id', type: 'uuid' })
-  postId: string;
+  @Column({ name: 'post_id', type: 'int' })
+  postId: number;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'int' })
+  authorProfileId: number;
 
   @Column({ type: 'text' })
   content: string;
@@ -41,4 +42,10 @@ export class Comment extends TimestampedEntity {
     inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
   })
   likes: Profile[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

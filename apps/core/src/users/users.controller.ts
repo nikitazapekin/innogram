@@ -6,7 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
+  ParseIntPipe,
   Patch,
   Post,
 } from '@nestjs/common';
@@ -57,17 +57,17 @@ export class UsersController {
   @ApiOperation({ summary: 'Get a user by id' })
   @ApiParam({
     name: 'id',
-    description: 'User identifier in UUID format.',
-    type: 'string',
-    format: 'uuid',
+    description: 'Numeric user identifier.',
+    type: Number,
+    example: 1,
   })
   @ApiOkResponse({
     description: 'User has been retrieved successfully.',
     type: UserResponseDto,
   })
-  @ApiBadRequestResponse({ description: 'The provided user id is not a valid UUID.' })
+  @ApiBadRequestResponse({ description: 'The provided user id is not a valid integer.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<UserResponseDto> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
     return this.usersService.findOne(id);
   }
 
@@ -75,9 +75,9 @@ export class UsersController {
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({
     name: 'id',
-    description: 'User identifier in UUID format.',
-    type: 'string',
-    format: 'uuid',
+    description: 'Numeric user identifier.',
+    type: Number,
+    example: 1,
   })
   @ApiOkResponse({
     description: 'User has been updated successfully.',
@@ -86,7 +86,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   update(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     return this.usersService.update(id, updateUserDto);
@@ -97,14 +97,14 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({
     name: 'id',
-    description: 'User identifier in UUID format.',
-    type: 'string',
-    format: 'uuid',
+    description: 'Numeric user identifier.',
+    type: Number,
+    example: 1,
   })
   @ApiNoContentResponse({ description: 'User has been deleted successfully.' })
-  @ApiBadRequestResponse({ description: 'The provided user id is not a valid UUID.' })
+  @ApiBadRequestResponse({ description: 'The provided user id is not a valid integer.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.usersService.remove(id);
   }
 }

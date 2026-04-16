@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsEmail, IsUUID } from 'class-validator';
+import { IsDate, IsEmail, IsInt } from 'class-validator';
 
 export class UserResponseDto {
   @ApiProperty({
-    format: 'uuid',
+    example: 1,
+    type: Number,
   })
-  @IsUUID()
-  id: string;
+  @IsInt()
+  id: number;
 
   @IsEmail()
   email: string;

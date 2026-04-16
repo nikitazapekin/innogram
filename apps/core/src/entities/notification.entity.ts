@@ -1,15 +1,22 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'notification', schema: 'notification' })
-export class Notification extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class Notification {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'recipient_profile_id', type: 'uuid' })
-  recipientProfileId: string;
+  @Column({ name: 'recipient_profile_id', type: 'int' })
+  recipientProfileId: number;
 
   @Column({ type: 'varchar', length: 100 })
   type: string;
@@ -23,4 +30,10 @@ export class Notification extends TimestampedEntity {
   @ManyToOne(() => Profile, (profile) => profile.notifications)
   @JoinColumn({ name: 'recipient_profile_id' })
   recipientProfile: Profile;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

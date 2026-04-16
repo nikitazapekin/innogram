@@ -1,17 +1,25 @@
-import { Column, Entity, JoinColumn, ManyToOne, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 import { Message } from './message.entity';
 import { Post } from './post.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'asset', schema: 'main' })
-export class Asset extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class Asset {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'owner_profile_id', type: 'uuid', nullable: true })
-  ownerProfileId!: string;
+  @Column({ name: 'owner_profile_id', type: 'int', nullable: true })
+  ownerProfileId: number | null;
 
   @Column({ name: 'file_name', type: 'varchar', length: 255 })
   fileName: string;
@@ -21,11 +29,17 @@ export class Asset extends TimestampedEntity {
 
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: 'owner_profile_id' })
-  ownerProfile: Profile;
+  ownerProfile: Profile | null;
 
   @ManyToMany(() => Post, (post) => post.assets)
   posts: Post[];
 
   @ManyToMany(() => Message, (message) => message.assets)
   messages: Message[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

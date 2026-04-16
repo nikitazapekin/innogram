@@ -1,28 +1,29 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
   ManyToOne,
   ManyToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { Chat } from './chat.entity';
 import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'message', schema: 'main' })
-export class Message extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class Message {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'chat_id', type: 'uuid' })
-  chatId: string;
+  @Column({ name: 'chat_id', type: 'int' })
+  chatId: number;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'int' })
+  authorProfileId: number;
 
   @Column({ type: 'text', nullable: true })
   content: string | null;
@@ -42,4 +43,10 @@ export class Message extends TimestampedEntity {
     inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
   })
   assets: Asset[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

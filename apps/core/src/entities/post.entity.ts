@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -7,20 +8,20 @@ import {
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { Comment } from './comment.entity';
 import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'post', schema: 'main' })
-export class Post extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'int' })
+  authorProfileId: number;
 
   @Column({ type: 'varchar', length: 255 })
   title: string;
@@ -30,7 +31,7 @@ export class Post extends TimestampedEntity {
 
   @ManyToOne(() => Profile, (profile) => profile.posts)
   @JoinColumn({ name: 'author_profile_id' })
-  authorProfile!: Profile;
+  authorProfile: Profile;
 
   @ManyToMany(() => Asset, (asset) => asset.posts)
   @JoinTable({
@@ -50,4 +51,10 @@ export class Post extends TimestampedEntity {
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }
