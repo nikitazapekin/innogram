@@ -7,18 +7,20 @@ export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(LoggingInterceptor.name);
 
   intercept(context: ExecutionContext, next: CallHandler) {
+    if (context.getType() !== 'http') {
+      return next.handle();
+    }
+
     const startedAt = Date.now();
     const http = context.switchToHttp();
-    const request = http.getRequest<RequestLike>(); // проверить нужно ли
+    const { method, url } = http.getRequest<RequestLike>();
     const response = http.getResponse<ResponseLike>();
 
     return next.handle().pipe(
       tap(() => {
         const duration = Date.now() - startedAt;
 
-        this.logger.log(
-          `HTTP log: ${request.method} ${request.url} ${response.statusCode} ${duration}ms`,
-        );
+        this.logger.log(`HTTP log: ${method} ${url} ${response.statusCode} ${duration}ms`);
       }),
     );
   }

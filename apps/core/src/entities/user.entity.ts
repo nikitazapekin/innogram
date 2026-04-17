@@ -18,7 +18,7 @@ export class User {
   @Column({ type: 'varchar', length: 320 })
   email: string;
 
-  @Column({ name: 'password_hash', type: 'varchar', length: 255 })
+  @Column({ name: 'password_hash', type: 'text' })
   passwordHash: string;
 
   @OneToMany(() => Account, (account) => account.user)
