@@ -1,39 +1,16 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DATABASE:?POSTGRES_DATABASE is required}
-      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-    ports:
-      - '${POSTGRES_PORT:-5432}:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DATABASE:?POSTGRES_DATABASE is required}
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   app:
     build:
       context: .
-      dockerfile: apps/core/Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
+      dockerfile: apps/core_microservice/Dockerfile
     environment:
-      CORE_HTTP_PORT: ${CORE_HTTP_PORT:-3001}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
+      CORE_HTTP_PORT: ${CORE_HTTP_PORT:-5000}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:?POSTGRES_DATABASE is required}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
       SWAGGER_PATH: ${SWAGGER_PATH:-api/docs}
     ports:
-      - '${CORE_HTTP_PORT:-3001}:${CORE_HTTP_PORT:-3001}'
-
-volumes:
-  postgres_data:
+      - '${CORE_HTTP_PORT:-5000}:${CORE_HTTP_PORT:-5000}'
