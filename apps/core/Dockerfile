@@ -28,4 +28,4 @@ RUN npm --prefix apps/core install --omit=dev --offline && npm cache clean --for
 COPY --from=builder /workspace/apps/core/dist ./apps/core/dist
 
 EXPOSE 3001
-CMD ["npm", "--prefix", "apps/core", "run", "start"]
+CMD ["node", "apps/core/dist/docker-start.js"]
