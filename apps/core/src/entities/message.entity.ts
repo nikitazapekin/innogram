@@ -1,6 +1,8 @@
 import {
   Column,
   Entity,
+  CreateDateColumn,
+  UpdateDateColumn,
   JoinColumn,
   JoinTable,
   ManyToOne,
@@ -11,10 +13,9 @@ import {
 import { Chat } from './chat.entity';
 import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'message', schema: 'main' })
-export class Message extends TimestampedEntity {
+export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -42,4 +43,10 @@ export class Message extends TimestampedEntity {
     inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
   })
   assets: Asset[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

@@ -4,6 +4,8 @@ import {
   JoinColumn,
   JoinTable,
   ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -12,10 +14,9 @@ import {
 import { Comment } from './comment.entity';
 import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'post', schema: 'main' })
-export class Post extends TimestampedEntity {
+export class Post {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -50,4 +51,10 @@ export class Post extends TimestampedEntity {
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

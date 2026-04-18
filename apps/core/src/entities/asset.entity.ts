@@ -1,12 +1,20 @@
-import { Column, Entity, JoinColumn, ManyToOne, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+  ManyToOne,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { Message } from './message.entity';
 import { Post } from './post.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'asset', schema: 'main' })
-export class Asset extends TimestampedEntity {
+export class Asset {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -28,4 +36,10 @@ export class Asset extends TimestampedEntity {
 
   @ManyToMany(() => Message, (message) => message.assets)
   messages: Message[];
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }
