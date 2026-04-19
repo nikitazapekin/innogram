@@ -4,12 +4,12 @@ export type RequestLike = {
 };
 
 export type ResponseLike = {
-  status: (statusCode: number) => ResponseLike; // проверить статус и json
+  status: (statusCode: number) => ResponseLike;
   json: (body: unknown) => void;
   statusCode?: number;
 };
 
 export type ExceptionResponseBody = {
-  message?: string | string[]; // проверить юнион и ?
+  message?: string | string[];
   error?: unknown;
 };

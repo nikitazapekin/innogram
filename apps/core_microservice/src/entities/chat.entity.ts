@@ -6,7 +6,6 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'chat', schema: 'main' })
 export class Chat extends TimestampedEntity {
-  // поудалять везде
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

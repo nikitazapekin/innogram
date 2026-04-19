@@ -9,7 +9,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {
     const startedAt = Date.now();
     const http = context.switchToHttp();
-    const request = http.getRequest<RequestLike>(); // проверить нужно ли
+    const request = http.getRequest<RequestLike>();
     const response = http.getResponse<ResponseLike>();
 
     return next.handle().pipe(
