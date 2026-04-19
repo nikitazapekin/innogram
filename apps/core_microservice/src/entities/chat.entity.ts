@@ -1,20 +1,13 @@
-import {
-  CreateDateColumn,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Message } from './message.entity';
+import { TimestampedEntity } from './base.entity';
 import { Profile } from './profile.entity';
 
 @Entity({ name: 'chat', schema: 'main' })
-export class Chat {
-  @PrimaryGeneratedColumn()
-  id: number;
+export class Chat extends TimestampedEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ManyToMany(() => Profile, (profile) => profile.chats)
   @JoinTable({
@@ -26,10 +19,4 @@ export class Chat {
 
   @OneToMany(() => Message, (message) => message.chat)
   messages: Message[];
-
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt: Date;
 }

@@ -6,12 +6,13 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -32,6 +33,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Create a user' })
+  @ApiBody({ type: CreateUserDto })
   @ApiCreatedResponse({
     description: 'User has been created successfully.',
     type: UserResponseDto,
@@ -57,17 +59,17 @@ export class UsersController {
   @ApiOperation({ summary: 'Get a user by id' })
   @ApiParam({
     name: 'id',
-    description: 'Numeric user identifier.',
-    type: Number,
-    example: 1,
+    description: 'User identifier in UUID format.',
+    type: 'string',
+    format: 'uuid',
   })
   @ApiOkResponse({
     description: 'User has been retrieved successfully.',
     type: UserResponseDto,
   })
-  @ApiBadRequestResponse({ description: 'The provided user id is not a valid integer.' })
+  @ApiBadRequestResponse({ description: 'The provided user id is not a valid UUID.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<UserResponseDto> {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<UserResponseDto> {
     return this.usersService.findOne(id);
   }
 
@@ -75,10 +77,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({
     name: 'id',
-    description: 'Numeric user identifier.',
-    type: Number,
-    example: 1,
+    description: 'User identifier in UUID format.',
+    type: 'string',
+    format: 'uuid',
   })
+  @ApiBody({ type: UpdateUserDto })
   @ApiOkResponse({
     description: 'User has been updated successfully.',
     type: UserResponseDto,
@@ -86,7 +89,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     return this.usersService.update(id, updateUserDto);
@@ -97,14 +100,14 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({
     name: 'id',
-    description: 'Numeric user identifier.',
-    type: Number,
-    example: 1,
+    description: 'User identifier in UUID format.',
+    type: 'string',
+    format: 'uuid',
   })
   @ApiNoContentResponse({ description: 'User has been deleted successfully.' })
-  @ApiBadRequestResponse({ description: 'The provided user id is not a valid integer.' })
+  @ApiBadRequestResponse({ description: 'The provided user id is not a valid UUID.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.usersService.remove(id);
   }
 }

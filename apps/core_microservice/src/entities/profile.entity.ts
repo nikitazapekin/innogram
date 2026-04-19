@@ -1,6 +1,5 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -8,24 +7,24 @@ import {
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 import { Comment } from './comment.entity';
 import { Message } from './message.entity';
 import { Notification } from './notification.entity';
 import { Post } from './post.entity';
+import { TimestampedEntity } from './base.entity';
 import { User } from './user.entity';
 import { Asset } from './asset.entity';
 import { Chat } from './chat.entity';
 
 @Entity({ name: 'profile', schema: 'main' })
-export class Profile {
-  @PrimaryGeneratedColumn()
-  id: number;
+export class Profile extends TimestampedEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ name: 'user_id', type: 'int' })
-  userId: number;
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
   @Column({ name: 'display_name', type: 'varchar', length: 120 })
   displayName: string;
@@ -33,8 +32,8 @@ export class Profile {
   @Column({ type: 'text', nullable: true })
   bio: string | null;
 
-  @Column({ name: 'avatar_asset_id', type: 'int', nullable: true })
-  avatarAssetId: number | null;
+  @Column({ name: 'avatar_asset_id', type: 'uuid', nullable: true })
+  avatarAssetId: string | null;
 
   @ManyToOne(() => User, (user) => user.profiles)
   @JoinColumn({ name: 'user_id' })
@@ -86,10 +85,4 @@ export class Profile {
 
   @OneToMany(() => Notification, (notification) => notification.recipientProfile)
   notifications: Notification[];
-
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt: Date;
 }

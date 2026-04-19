@@ -1,51 +1,22 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToOne,
-  ManyToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Post } from './post.entity';
+import { Message } from './message.entity';
+import { TimestampedEntity } from './base.entity';
 import { Profile } from './profile.entity';
 
-@Entity({ name: 'comment', schema: 'main' })
-export class Comment {
-  @PrimaryGeneratedColumn()
-  id: number;
+@Entity({ name: 'chat', schema: 'main' })
+export class Chat extends TimestampedEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ name: 'post_id', type: 'int' })
-  postId: number;
-
-  @Column({ name: 'author_profile_id', type: 'int' })
-  authorProfileId: number;
-
-  @Column({ type: 'text' })
-  content: string;
-
-  @ManyToOne(() => Post, (post) => post.comments)
-  @JoinColumn({ name: 'post_id' })
-  post: Post;
-
-  @ManyToOne(() => Profile, (profile) => profile.comments)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile: Profile;
-
-  @ManyToMany(() => Profile, (profile) => profile.likedComments)
+  @ManyToMany(() => Profile, (profile) => profile.chats)
   @JoinTable({
-    name: 'comment_like',
-    joinColumn: { name: 'comment_id', referencedColumnName: 'id' },
+    name: 'chat_participant',
+    joinColumn: { name: 'chat_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
   })
-  likes: Profile[];
+  participants: Profile[];
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt: Date;
+  @OneToMany(() => Message, (message) => message.chat)
+  messages: Message[];
 }

@@ -1,60 +1,26 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToOne,
-  ManyToMany,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Comment } from './comment.entity';
-import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
+import { TimestampedEntity } from './base.entity';
 
-@Entity({ name: 'post', schema: 'main' })
-export class Post {
-  @PrimaryGeneratedColumn()
-  id: number;
+@Entity({ name: 'notification', schema: 'notification' })
+export class Notification extends TimestampedEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ name: 'author_profile_id', type: 'int' })
-  authorProfileId: number;
+  @Column({ name: 'recipient_profile_id', type: 'uuid' })
+  recipientProfileId: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  title: string;
+  @Column({ type: 'varchar', length: 100 })
+  type: string;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'jsonb', nullable: true })
+  payload: Record<string, unknown> | null;
 
-  @ManyToOne(() => Profile, (profile) => profile.posts)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile: Profile;
+  @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
+  readAt: Date | null;
 
-  @ManyToMany(() => Asset, (asset) => asset.posts)
-  @JoinTable({
-    name: 'post_asset',
-    joinColumn: { name: 'post_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
-  })
-  assets: Asset[];
-
-  @ManyToMany(() => Profile, (profile) => profile.likedPosts)
-  @JoinTable({
-    name: 'post_like',
-    joinColumn: { name: 'post_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
-  })
-  likes: Profile[];
-
-  @OneToMany(() => Comment, (comment) => comment.post)
-  comments: Comment[];
-
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
-  updatedAt: Date;
+  @ManyToOne(() => Profile, (profile) => profile.notifications)
+  @JoinColumn({ name: 'recipient_profile_id' })
+  recipientProfile: Profile;
 }
