@@ -54,13 +54,21 @@ export class UsersService {
     return UserResponseDto.fromEntity(user);
   }
 
-  async update(id: number): Promise<UserResponseDto> {
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id },
     });
 
     if (!user) {
       throw new NotFoundException(`User with id "${id}" not found`);
+    }
+
+    if (updateUserDto.email !== undefined) {
+      user.email = updateUserDto.email.toLowerCase();
+    }
+
+    if (updateUserDto.password !== undefined) {
+      user.passwordHash = await this.hashPassword(updateUserDto.password);
     }
 
     const updatedUser = await this.usersRepository.save(user);
