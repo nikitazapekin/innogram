@@ -12,11 +12,11 @@ import { User } from './user.entity';
 
 @Entity({ name: 'account', schema: 'auth' })
 export class Account {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId: string;
+  @Column({ name: 'user_id', type: 'integer' })
+  userId: number;
 
   @ManyToOne(() => User, (user) => user.accounts)
   @JoinColumn({ name: 'user_id' })

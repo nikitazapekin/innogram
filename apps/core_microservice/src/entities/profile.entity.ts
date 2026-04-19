@@ -22,11 +22,11 @@ import { Chat } from './chat.entity';
 
 @Entity({ name: 'profile', schema: 'main' })
 export class Profile {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId: string;
+  @Column({ name: 'user_id', type: 'integer' })
+  userId: number;
 
   @Column({ name: 'display_name', type: 'varchar', length: 120 })
   displayName: string;
@@ -34,8 +34,8 @@ export class Profile {
   @Column({ type: 'text', nullable: true })
   bio: string | null;
 
-  @Column({ name: 'avatar_asset_id', type: 'uuid', nullable: true })
-  avatarAssetId: string | null;
+  @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
+  avatarAssetId: number | null;
 
   @ManyToOne(() => User, (user) => user.profiles)
   @JoinColumn({ name: 'user_id' })

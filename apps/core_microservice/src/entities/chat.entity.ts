@@ -14,8 +14,8 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'chat', schema: 'main' })
 export class Chat {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @ManyToMany(() => Profile, (profile) => profile.chats)
   @JoinTable({

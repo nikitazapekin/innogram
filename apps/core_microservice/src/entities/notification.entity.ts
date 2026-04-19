@@ -12,11 +12,11 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'notification', schema: 'notification' })
 export class Notification {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'recipient_profile_id', type: 'uuid' })
-  recipientProfileId: string;
+  @Column({ name: 'recipient_profile_id', type: 'integer' })
+  recipientProfileId: number;
 
   @Column({ type: 'varchar', length: 100 })
   type: string;

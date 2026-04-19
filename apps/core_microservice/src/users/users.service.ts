@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { PutUserDto } from './dto/put-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 
@@ -41,7 +42,7 @@ export class UsersService {
     return users.map(UserResponseDto.fromEntity);
   }
 
-  async findOne(id: string): Promise<UserResponseDto> {
+  async findOne(id: number): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id },
     });
@@ -53,7 +54,7 @@ export class UsersService {
     return UserResponseDto.fromEntity(user);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id },
     });
@@ -69,9 +70,28 @@ export class UsersService {
     return UserResponseDto.fromEntity(updatedUser);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     await this.usersRepository.delete(id);
     this.logger.log(`User deleted: ${id}`);
+  }
+
+  async put(id: number, putUserDto: PutUserDto): Promise<UserResponseDto> {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id "${id}" not found`);
+    }
+
+    user.email = putUserDto.email.toLowerCase();
+    user.passwordHash = await this.hashPassword(putUserDto.password);
+
+    const updatedUser = await this.usersRepository.save(user);
+
+    this.logger.log(`User fully updated: ${updatedUser.id}`);
+
+    return UserResponseDto.fromEntity(updatedUser);
   }
 
   private async hashPassword(password: string): Promise<string> {

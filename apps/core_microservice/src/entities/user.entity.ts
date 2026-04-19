@@ -12,8 +12,8 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'user', schema: 'auth' })
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ type: 'varchar', length: 320 })
   email: string;

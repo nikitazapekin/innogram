@@ -6,9 +6,9 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -23,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CreateUserDto } from './dto/create-user.dto';
+import { PutUserDto } from './dto/put-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UsersService } from './users.service';
@@ -59,17 +60,16 @@ export class UsersController {
   @ApiOperation({ summary: 'Get a user by id' })
   @ApiParam({
     name: 'id',
-    description: 'User identifier in UUID format.',
-    type: 'string',
-    format: 'uuid',
+    description: 'User identifier.',
+    type: 'integer',
   })
   @ApiOkResponse({
     description: 'User has been retrieved successfully.',
     type: UserResponseDto,
   })
-  @ApiBadRequestResponse({ description: 'The provided user id is not a valid UUID.' })
+  @ApiBadRequestResponse({ description: 'The provided user id is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<UserResponseDto> {
+  findOne(@Param('id') id: number): Promise<UserResponseDto> {
     return this.usersService.findOne(id);
   }
 
@@ -77,22 +77,36 @@ export class UsersController {
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({
     name: 'id',
-    description: 'User identifier in UUID format.',
-    type: 'string',
-    format: 'uuid',
+    description: 'User identifier.',
+    type: 'integer',
   })
-  @ApiBody({ type: UpdateUserDto })
+  @ApiBody({ type: PutUserDto })
   @ApiOkResponse({
     description: 'User has been updated successfully.',
     type: UserResponseDto,
   })
   @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  update(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<UserResponseDto> {
+  update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
     return this.usersService.update(id, updateUserDto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Fully update a user' })
+  @ApiBody({ type: PutUserDto })
+  @ApiParam({
+    name: 'id',
+    description: 'User identifier.',
+    type: 'integer',
+  })
+  @ApiOkResponse({
+    description: 'User has been updated successfully.',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
+  @ApiNotFoundResponse({ description: 'User was not found.' })
+  put(@Param('id') id: number, @Body() putUserDto: PutUserDto): Promise<UserResponseDto> {
+    return this.usersService.put(id, putUserDto);
   }
 
   @Delete(':id')
@@ -100,14 +114,13 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({
     name: 'id',
-    description: 'User identifier in UUID format.',
-    type: 'string',
-    format: 'uuid',
+    description: 'User identifier.',
+    type: 'integer',
   })
   @ApiNoContentResponse({ description: 'User has been deleted successfully.' })
-  @ApiBadRequestResponse({ description: 'The provided user id is not a valid UUID.' })
+  @ApiBadRequestResponse({ description: 'The provided user id is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
+  remove(@Param('id') id: number): Promise<void> {
     return this.usersService.remove(id);
   }
 }

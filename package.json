@@ -41,6 +41,7 @@
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": "prettier --write"
   },
   "dependencies": {
-    "@nestjs/config": "^4.0.3"
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/swagger": "^11.3.0"
   }
 }

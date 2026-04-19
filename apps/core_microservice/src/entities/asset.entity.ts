@@ -15,11 +15,11 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'asset', schema: 'main' })
 export class Asset {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'owner_profile_id', type: 'uuid', nullable: true })
-  ownerProfileId!: string;
+  @Column({ name: 'owner_profile_id', type: 'integer', nullable: true })
+  ownerProfileId!: number;
 
   @Column({ name: 'file_name', type: 'varchar', length: 255 })
   fileName: string;

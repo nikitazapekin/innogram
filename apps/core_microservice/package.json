@@ -11,6 +11,7 @@
     "start:watch": "npm run build:shared && tsx watch src/main.ts",
     "migration:generate": "typeorm-ts-node-commonjs -d src/data-source.ts migration:generate src/database/migrations/GeneratedMigration",
     "migration:run": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs -d src/data-source.ts migration:revert",
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
