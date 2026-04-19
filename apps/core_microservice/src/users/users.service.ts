@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes, scrypt as scryptCallback } from 'crypto';
 import { promisify } from 'util';
@@ -54,7 +54,7 @@ export class UsersService {
     return UserResponseDto.fromEntity(user);
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(id: number): Promise<UserResponseDto> {
     const user = await this.usersRepository.findOne({
       where: { id },
     });
