@@ -1,34 +1,34 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomBytes, scrypt as scryptCallback } from 'crypto';
+import { promisify } from 'util';
 import { Repository } from 'typeorm';
 
-import { PasswordService } from '../auth/password.service';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import { toUserResponse } from './mappers/user-response.mapper';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
+  private readonly scrypt = promisify(scryptCallback);
 
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-    private readonly passwordService: PasswordService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const user = this.usersRepository.create({
       email: createUserDto.email.toLowerCase(),
-      passwordHash: await this.passwordService.hashPassword(createUserDto.password),
+      passwordHash: await this.hashPassword(createUserDto.password),
     });
     const savedUser = await this.usersRepository.save(user);
 
     this.logger.log(`User created: ${savedUser.id}`);
 
-    return toUserResponse(savedUser);
+    return UserResponseDto.fromEntity(savedUser);
   }
 
   async findAll(): Promise<UserResponseDto[]> {
@@ -38,7 +38,7 @@ export class UsersService {
       },
     });
 
-    return users.map(toUserResponse);
+    return users.map(UserResponseDto.fromEntity);
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
@@ -50,7 +50,7 @@ export class UsersService {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
-    return toUserResponse(user);
+    return UserResponseDto.fromEntity(user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
@@ -62,23 +62,22 @@ export class UsersService {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
-    if (updateUserDto.email) {
-      user.email = updateUserDto.email.toLowerCase();
-    }
-
-    if (updateUserDto.password) {
-      user.passwordHash = await this.passwordService.hashPassword(updateUserDto.password);
-    }
-
     const updatedUser = await this.usersRepository.save(user);
 
     this.logger.log(`User updated: ${updatedUser.id}`);
 
-    return toUserResponse(updatedUser);
+    return UserResponseDto.fromEntity(updatedUser);
   }
 
   async remove(id: string): Promise<void> {
     await this.usersRepository.delete(id);
     this.logger.log(`User deleted: ${id}`);
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt = randomBytes(16).toString('hex');
+    const derivedKey = (await this.scrypt(password, salt, 64)) as Buffer;
+
+    return `${salt}:${derivedKey.toString('hex')}`;
   }
 }
