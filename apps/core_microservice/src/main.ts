@@ -2,7 +2,6 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
@@ -15,6 +14,7 @@ type SecurityHeadersResponse = {
 };
 
 async function bootstrap() {
+  const { AppModule } = await import('./app.module');
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create(AppModule);
