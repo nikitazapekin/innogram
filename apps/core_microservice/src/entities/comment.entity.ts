@@ -1,22 +1,18 @@
-import { Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 
-import { Message } from './message.entity';
-import { TimestampedEntity } from './base.entity';
-import { Profile } from './profile.entity';
-
-@Entity({ name: 'chat', schema: 'main' })
-export class Chat extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @ManyToMany(() => Profile, (profile) => profile.chats)
-  @JoinTable({
-    name: 'chat_participant',
-    joinColumn: { name: 'chat_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
+export class CreateUserDto {
+  @ApiProperty({
+    example: 'user@example.com',
   })
-  participants: Profile[];
+  @IsEmail()
+  email: string;
 
-  @OneToMany(() => Message, (message) => message.chat)
-  messages: Message[];
+  @ApiProperty({
+    example: 'strong-password',
+    minLength: 8,
+  })
+  @IsString()
+  @MinLength(8)
+  password: string;
 }

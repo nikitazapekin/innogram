@@ -8,37 +8,38 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Post } from './post.entity';
+import { Chat } from './chat.entity';
+import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
-@Entity({ name: 'comment', schema: 'main' })
-export class Comment extends TimestampedEntity {
+@Entity({ name: 'message', schema: 'main' })
+export class Message extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'post_id', type: 'uuid' })
-  postId: string;
+  @Column({ name: 'chat_id', type: 'uuid' })
+  chatId: string;
 
   @Column({ name: 'author_profile_id', type: 'uuid' })
   authorProfileId: string;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'text', nullable: true })
+  content: string | null;
 
-  @ManyToOne(() => Post, (post) => post.comments)
-  @JoinColumn({ name: 'post_id' })
-  post: Post;
+  @ManyToOne(() => Chat, (chat) => chat.messages)
+  @JoinColumn({ name: 'chat_id' })
+  chat: Chat;
 
-  @ManyToOne(() => Profile, (profile) => profile.comments)
+  @ManyToOne(() => Profile, (profile) => profile.messages)
   @JoinColumn({ name: 'author_profile_id' })
   authorProfile: Profile;
 
-  @ManyToMany(() => Profile, (profile) => profile.likedComments)
+  @ManyToMany(() => Asset, (asset) => asset.messages)
   @JoinTable({
-    name: 'comment_like',
-    joinColumn: { name: 'comment_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
+    name: 'message_asset',
+    joinColumn: { name: 'message_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
   })
-  likes: Profile[];
+  assets: Asset[];
 }

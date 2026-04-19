@@ -1,45 +1,26 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToOne,
-  ManyToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Chat } from './chat.entity';
-import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
-@Entity({ name: 'message', schema: 'main' })
-export class Message extends TimestampedEntity {
+@Entity({ name: 'notification', schema: 'notification' })
+export class Notification extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'chat_id', type: 'uuid' })
-  chatId: string;
+  @Column({ name: 'recipient_profile_id', type: 'uuid' })
+  recipientProfileId: string;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ type: 'varchar', length: 100 })
+  type: string;
 
-  @Column({ type: 'text', nullable: true })
-  content: string | null;
+  @Column({ type: 'jsonb', nullable: true })
+  payload: Record<string, unknown> | null;
 
-  @ManyToOne(() => Chat, (chat) => chat.messages)
-  @JoinColumn({ name: 'chat_id' })
-  chat: Chat;
+  @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
+  readAt: Date | null;
 
-  @ManyToOne(() => Profile, (profile) => profile.messages)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile: Profile;
-
-  @ManyToMany(() => Asset, (asset) => asset.messages)
-  @JoinTable({
-    name: 'message_asset',
-    joinColumn: { name: 'message_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
-  })
-  assets: Asset[];
+  @ManyToOne(() => Profile, (profile) => profile.notifications)
+  @JoinColumn({ name: 'recipient_profile_id' })
+  recipientProfile: Profile;
 }
