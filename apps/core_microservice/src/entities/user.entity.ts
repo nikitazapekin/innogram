@@ -7,8 +7,8 @@ import { TimestampedEntity } from './base.entity';
 @Entity({ name: 'user', schema: 'auth' })
 @Index('IDX_auth_user_created_at', ['createdAt'])
 export class User extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ type: 'varchar', length: 320 })
   email: string;

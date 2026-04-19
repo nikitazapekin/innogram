@@ -1,16 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsEmail, IsUUID } from 'class-validator';
+import { IsDate, IsEmail, IsNumber } from 'class-validator';
 
 import { User } from '../../entities/user.entity';
 
 export class UserResponseDto {
   @ApiProperty({
     description: 'User identifier.',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-    format: 'uuid',
+    example: 1,
   })
-  @IsUUID()
-  id: string;
+  @IsNumber()
+  id: number;
 
   @ApiProperty({
     description: 'User email address.',
