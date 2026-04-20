@@ -14,7 +14,7 @@ import { Message } from './message.entity';
 import { Notification } from './notification.entity';
 import { Post } from './post.entity';
 import { TimestampedEntity } from './base.entity';
-import { User } from './user.entity';
+import { UserEntity } from './user.entity';
 import { Asset } from './asset.entity';
 import { Chat } from './chat.entity';
 
@@ -23,8 +23,8 @@ export class Profile extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', type: 'uuid' })
-  userId: string;
+  @Column({ name: 'user_id', type: 'integer' })
+  userId: number;
 
   @Column({ name: 'display_name', type: 'varchar', length: 120 })
   displayName: string;
@@ -35,9 +35,9 @@ export class Profile extends TimestampedEntity {
   @Column({ name: 'avatar_asset_id', type: 'uuid', nullable: true })
   avatarAssetId: string | null;
 
-  @ManyToOne(() => User, (user) => user.profiles)
+  @ManyToOne(() => UserEntity, (user) => user.profiles)
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: UserEntity;
 
   @ManyToOne(() => Asset, { nullable: true })
   @JoinColumn({ name: 'avatar_asset_id' })

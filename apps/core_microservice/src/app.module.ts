@@ -14,7 +14,7 @@ import { Message } from './entities/message.entity';
 import { Notification } from './entities/notification.entity';
 import { Post } from './entities/post.entity';
 import { Profile } from './entities/profile.entity';
-import { User } from './entities/user.entity';
+import { UserEntity } from './entities/user.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
@@ -37,7 +37,7 @@ import { UsersModule } from './users/users.module';
       Notification,
       Post,
       Profile,
-      User,
+      UserEntity,
     ]),
     AuthModule,
     UsersModule,

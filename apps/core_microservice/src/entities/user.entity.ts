@@ -5,8 +5,7 @@ import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'user', schema: 'auth' })
-@Index('IDX_auth_user_created_at', ['createdAt'])
-export class User extends TimestampedEntity {
+export class UserEntity extends TimestampedEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 

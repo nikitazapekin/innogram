@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { PasswordService } from './password.service';
-import { User } from '../entities/user.entity';
+import { UserEntity } from '../entities/user.entity';
 import { UserDto } from './dto/user.dto';
 
 @Injectable()
@@ -11,8 +11,8 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   constructor(
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
     private readonly passwordService: PasswordService,
   ) {}
 
@@ -37,21 +37,19 @@ export class UsersService {
       },
     });
 
-    return users.map((user) => this.toUserDto(user));
+    const mappedUsers = users.map((user) => this.toUserDto(user));
+
+    return mappedUsers;
   }
 
   async findOne(id: number): Promise<UserDto> {
-    const user = (await this.usersRepository.findOne({
-      where: { id },
-    }))!;
+    const user = await this.findUserById(id);
 
     return this.toUserDto(user);
   }
 
   async update(id: number, userDto: UserDto): Promise<UserDto> {
-    const user = (await this.usersRepository.findOne({
-      where: { id },
-    }))!;
+    const user = await this.findUserById(id);
 
     if (userDto.email) {
       user.email = userDto.email.toLowerCase();
@@ -69,16 +67,15 @@ export class UsersService {
   }
 
   async remove(id: number): Promise<void> {
+    await this.findUserById(id);
     await this.usersRepository.delete(id);
     this.logger.log(`User deleted: ${id}`);
   }
 
   async put(id: number, userDto: UserDto): Promise<UserDto> {
-    const user = (await this.usersRepository.findOne({
-      where: { id },
-    }))!;
+    const user = await this.findUserById(id);
 
-    user.email = userDto.email!.toLowerCase();
+    user.email = userDto.email!;
     user.passwordHash = await this.passwordService.hashPassword(userDto.password!);
 
     const updatedUser = await this.usersRepository.save(user);
@@ -94,7 +91,17 @@ export class UsersService {
     }
   }
 
-  private toUserDto(user: User): UserDto {
+  private async findUserById(id: number): Promise<UserEntity> {
+    const user = await this.usersRepository.findOneBy({ id });
+
+    if (!user) {
+      throw new NotFoundException('User was not found.');
+    }
+
+    return user;
+  }
+
+  private toUserDto(user: UserEntity): UserDto {
     return {
       id: user.id,
       email: user.email,
