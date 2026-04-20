@@ -1,14 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PasswordService } from '../auth/password.service';
+import { PasswordService } from './password.service';
 import { User } from '../entities/user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { PutUserDto } from './dto/put-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
-import { toUserResponse } from './mappers/user-response.mapper';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
@@ -20,54 +16,56 @@ export class UsersService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
+  async create(userDto: UserDto): Promise<UserDto> {
+    this.ensureRequiredFields(userDto);
+
     const user = this.usersRepository.create({
-      email: createUserDto.email.toLowerCase(),
-      passwordHash: await this.passwordService.hashPassword(createUserDto.password),
+      email: userDto.email!.toLowerCase(),
+      passwordHash: await this.passwordService.hashPassword(userDto.password!),
     });
     const savedUser = await this.usersRepository.save(user);
 
     this.logger.log(`User created: ${savedUser.id}`);
 
-    return toUserResponse(savedUser);
+    return this.toUserDto(savedUser);
   }
 
-  async findAll(): Promise<UserResponseDto[]> {
+  async findAll(): Promise<UserDto[]> {
     const users = await this.usersRepository.find({
       order: {
         createdAt: 'DESC',
       },
     });
 
-    return users.map(toUserResponse);
+    return users.map((user) => this.toUserDto(user));
   }
 
-  async findOne(id: number): Promise<UserResponseDto> {
+  async findOne(id: number): Promise<UserDto> {
     const user = (await this.usersRepository.findOne({
       where: { id },
     }))!;
 
-    return toUserResponse(user);
+    return this.toUserDto(user);
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(id: number, userDto: UserDto): Promise<UserDto> {
     const user = (await this.usersRepository.findOne({
       where: { id },
     }))!;
 
-    if (updateUserDto.email) {
-      user.email = updateUserDto.email.toLowerCase();
+    if (userDto.email) {
+      user.email = userDto.email.toLowerCase();
     }
 
-    if (updateUserDto.password) {
-      user.passwordHash = await this.passwordService.hashPassword(updateUserDto.password);
+    if (userDto.password) {
+      user.passwordHash = await this.passwordService.hashPassword(userDto.password);
     }
 
     const updatedUser = await this.usersRepository.save(user);
 
     this.logger.log(`User updated: ${updatedUser.id}`);
 
-    return toUserResponse(updatedUser);
+    return this.toUserDto(updatedUser);
   }
 
   async remove(id: number): Promise<void> {
@@ -75,18 +73,33 @@ export class UsersService {
     this.logger.log(`User deleted: ${id}`);
   }
 
-  async put(id: number, putUserDto: PutUserDto): Promise<UserResponseDto> {
+  async put(id: number, userDto: UserDto): Promise<UserDto> {
     const user = (await this.usersRepository.findOne({
       where: { id },
     }))!;
 
-    user.email = putUserDto.email.toLowerCase();
-    user.passwordHash = await this.passwordService.hashPassword(putUserDto.password);
+    user.email = userDto.email!.toLowerCase();
+    user.passwordHash = await this.passwordService.hashPassword(userDto.password!);
 
     const updatedUser = await this.usersRepository.save(user);
 
     this.logger.log(`User fully updated: ${updatedUser.id}`);
 
-    return toUserResponse(updatedUser);
+    return this.toUserDto(updatedUser);
+  }
+
+  private ensureRequiredFields(userDto: UserDto): void {
+    if (!userDto.email || !userDto.password) {
+      throw new BadRequestException('email and password are required.');
+    }
+  }
+
+  private toUserDto(user: User): UserDto {
+    return {
+      id: user.id,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
   }
 }

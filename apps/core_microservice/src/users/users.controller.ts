@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -21,10 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { PutUserDto } from './dto/put-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
+import { UserDto } from './dto/user.dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
@@ -35,88 +33,68 @@ export class UsersController {
   @ApiOperation({ summary: 'Create a user' })
   @ApiCreatedResponse({
     description: 'User has been created successfully.',
-    type: UserResponseDto,
+    type: UserDto,
   })
   @ApiBadRequestResponse({ description: 'Request body validation failed.' })
   @Post()
-  create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    return this.usersService.create(createUserDto);
+  create(@Body() userDto: UserDto): Promise<UserDto> {
+    return this.usersService.create(userDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   @ApiOkResponse({
     description: 'Users have been retrieved successfully.',
-    type: UserResponseDto,
+    type: UserDto,
     isArray: true,
   })
-  findAll(): Promise<UserResponseDto[]> {
+  findAll(): Promise<UserDto[]> {
     return this.usersService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by id' })
-  @ApiParam({
-    name: 'id',
-    description: 'User identifier.',
-    type: 'integer',
-  })
   @ApiOkResponse({
     description: 'User has been retrieved successfully.',
-    type: UserResponseDto,
+    type: UserDto,
   })
   @ApiBadRequestResponse({ description: 'The provided user id is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  findOne(@Param('id') id: number): Promise<UserResponseDto> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<UserDto> {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user' })
-  @ApiParam({
-    name: 'id',
-    description: 'User identifier.',
-    type: 'integer',
-  })
   @ApiOkResponse({
     description: 'User has been updated successfully.',
-    type: UserResponseDto,
+    type: UserDto,
   })
   @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
-    return this.usersService.update(id, updateUserDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() userDto: UserDto): Promise<UserDto> {
+    return this.usersService.update(id, userDto);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Fully update a user' })
-  @ApiParam({
-    name: 'id',
-    description: 'User identifier.',
-    type: 'integer',
-  })
   @ApiOkResponse({
     description: 'User has been updated successfully.',
-    type: UserResponseDto,
+    type: UserDto,
   })
   @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  put(@Param('id') id: number, @Body() putUserDto: PutUserDto): Promise<UserResponseDto> {
-    return this.usersService.put(id, putUserDto);
+  put(@Param('id', ParseIntPipe) id: number, @Body() userDto: UserDto): Promise<UserDto> {
+    return this.usersService.put(id, userDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a user' })
-  @ApiParam({
-    name: 'id',
-    description: 'User identifier.',
-    type: 'integer',
-  })
   @ApiNoContentResponse({ description: 'User has been deleted successfully.' })
   @ApiBadRequestResponse({ description: 'The provided user id is invalid.' })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  remove(@Param('id') id: number): Promise<void> {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.usersService.remove(id);
   }
 }
