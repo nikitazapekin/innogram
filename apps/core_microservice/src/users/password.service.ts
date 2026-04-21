@@ -12,6 +12,7 @@ export class PasswordService {
       scryptCallback(password, salt, keyLength, (error, derivedKey) => {
         if (error) {
           reject(error);
+
           return;
         }
 
