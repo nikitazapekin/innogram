@@ -15,7 +15,6 @@ import { Notification } from './notification.entity';
 import { Post } from './post.entity';
 import { TimestampedEntity } from './base.entity';
 import { UserEntity } from './user.entity';
-import { Asset } from './asset.entity';
 import { Chat } from './chat.entity';
 
 @Entity({ name: 'profile', schema: 'main' })
@@ -32,16 +31,12 @@ export class Profile extends TimestampedEntity {
   @Column({ type: 'text', nullable: true })
   bio: string | null;
 
-  @Column({ name: 'avatar_asset_id', type: 'uuid', nullable: true })
-  avatarAssetId: string | null;
+  @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
+  avatarAssetId: number | null;
 
   @ManyToOne(() => UserEntity, (user) => user.profiles)
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
-
-  @ManyToOne(() => Asset, { nullable: true })
-  @JoinColumn({ name: 'avatar_asset_id' })
-  avatarAsset: Asset | null;
 
   @OneToMany(() => Post, (post) => post.authorProfile)
   posts: Post[];
