@@ -37,8 +37,8 @@ export class UsersService {
     const savedUser = await this.usersRepository.save(user);
 
     this.logger.log(`${USER_LOG_MESSAGES.CREATED}: ${savedUser.id}`);
-
-    return this.toUserDto(savedUser);
+    const savedDtoUser = this.toUserDto(savedUser);
+    return savedDtoUser;
   }
 
   async findAll(): Promise<UserDto[]> {
@@ -50,8 +50,8 @@ export class UsersService {
   async findOne(id: number): Promise<UserDto> {
     const user = await this.findUserById(id);
     const profile = await this.findProfileByUserId(user.id);
-
-    return this.userToUserDtoWithProfile(user, profile);
+    const foundUser = this.userToUserDtoWithProfile(user, profile);
+    return foundUser;
   }
 
   async update(id: number, userDto: UserDto): Promise<UserDto> {
@@ -62,8 +62,8 @@ export class UsersService {
     await this.profilesRepository.save(profile);
 
     this.logger.log(`${USER_LOG_MESSAGES.UPDATED}: ${user.id}`);
-
-    return this.userToUserDtoWithProfile(user, profile);
+    const updatedUser = this.userToUserDtoWithProfile(user, profile);
+    return updatedUser;
   }
 
   async remove(id: number): Promise<void> {
@@ -81,8 +81,8 @@ export class UsersService {
     await this.profilesRepository.save(profile);
 
     this.logger.log(`${USER_LOG_MESSAGES.FULLY_UPDATED}: ${user.id}`);
-
-    return this.userToUserDtoWithProfile(user, profile);
+    const updatedUser = this.userToUserDtoWithProfile(user, profile);
+    return updatedUser;
   }
 
   private ensureRequiredFields(userDto: UserDto): void {
