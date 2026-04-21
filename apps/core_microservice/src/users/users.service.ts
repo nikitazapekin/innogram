@@ -37,7 +37,9 @@ export class UsersService {
     const savedUser = await this.usersRepository.save(user);
 
     this.logger.log(`${USER_LOG_MESSAGES.CREATED}: ${savedUser.id}`);
+
     const savedDtoUser = this.toUserDto(savedUser);
+
     return savedDtoUser;
   }
 
@@ -50,7 +52,9 @@ export class UsersService {
   async findOne(id: number): Promise<UserDto> {
     const user = await this.findUserById(id);
     const profile = await this.findProfileByUserId(user.id);
+
     const foundUser = this.userToUserDtoWithProfile(user, profile);
+
     return foundUser;
   }
 
@@ -62,7 +66,9 @@ export class UsersService {
     await this.profilesRepository.save(profile);
 
     this.logger.log(`${USER_LOG_MESSAGES.UPDATED}: ${user.id}`);
+
     const updatedUser = this.userToUserDtoWithProfile(user, profile);
+
     return updatedUser;
   }
 
@@ -81,7 +87,9 @@ export class UsersService {
     await this.profilesRepository.save(profile);
 
     this.logger.log(`${USER_LOG_MESSAGES.FULLY_UPDATED}: ${user.id}`);
+
     const updatedUser = this.userToUserDtoWithProfile(user, profile);
+
     return updatedUser;
   }
 
