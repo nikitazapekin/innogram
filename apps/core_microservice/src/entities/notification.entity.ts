@@ -15,10 +15,10 @@ export class Notification extends TimestampedEntity {
   type: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  payload: Record<string, unknown> | null;
+  payload: Record<string, unknown>;
 
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
-  readAt: Date | null;
+  readAt: Date;
 
   @ManyToOne(() => Profile, (profile) => profile.notifications)
   @JoinColumn({ name: 'recipient_profile_id' })

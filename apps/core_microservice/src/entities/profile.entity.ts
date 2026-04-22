@@ -22,8 +22,8 @@ export class Profile extends TimestampedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', type: 'integer' })
-  userId: number;
+  @Column({ name: 'user_id', type: 'integer', nullable: true })
+  userId: number | null;
 
   @Column({ name: 'display_name', type: 'varchar', length: 120 })
   displayName: string;
@@ -34,9 +34,9 @@ export class Profile extends TimestampedEntity {
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
   avatarAssetId: number | null;
 
-  @ManyToOne(() => UserEntity, (user) => user.profiles)
+  @ManyToOne(() => UserEntity, (user) => user.profiles, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user?: UserEntity | null;
 
   @OneToMany(() => Post, (post) => post.authorProfile)
   posts: Post[];

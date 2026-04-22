@@ -1,171 +1,127 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PasswordService } from './password.service';
 import { Profile } from '../entities/profile.entity';
-import { UserEntity } from '../entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
-import {
-  DEFAULT_AVATAR_ASSET_ID,
-  DEFAULT_BIO,
-  DEFAULT_DISPLAY_NAME,
-  USER_ERROR_MESSAGES,
-  USER_LOG_MESSAGES,
-  USERS_FIND_OPTIONS,
-} from '../common/constants';
+
+const DEFAULT_DISPLAY_NAME = '';
+const DEFAULT_BIO = null;
+const DEFAULT_AVATAR_ASSET_ID = null;
+const USER_ERROR_MESSAGES = {
+  PROFILE_NOT_FOUND: 'User profile was not found.',
+} as const;
+const USER_LOG_MESSAGES = {
+  CREATED: 'User profile created',
+  UPDATED: 'User profile updated',
+  FULLY_UPDATED: 'User profile fully updated',
+  DELETED: 'User profile deleted',
+} as const;
+const PROFILES_FIND_OPTIONS = {
+  order: { createdAt: 'DESC' },
+} as const;
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
-    private readonly passwordService: PasswordService,
   ) {}
 
   async create(userDto: UserDto): Promise<UserDto> {
-    this.ensureRequiredFields(userDto);
-
-    const user = this.usersRepository.create({
-      email: userDto.email!.toLowerCase(),
-      passwordHash: await this.passwordService.hashPassword(userDto.password!),
+    const profile = this.profilesRepository.create({
+      displayName: userDto.displayName ?? DEFAULT_DISPLAY_NAME,
+      bio: userDto.bio ?? DEFAULT_BIO,
+      avatarAssetId: userDto.avatarAssetId ?? DEFAULT_AVATAR_ASSET_ID,
     });
-    const savedUser = await this.usersRepository.save(user);
+    const savedProfile = await this.profilesRepository.save(profile);
 
-    this.logger.log(`${USER_LOG_MESSAGES.CREATED}: ${savedUser.id}`);
+    this.logger.log(`${USER_LOG_MESSAGES.CREATED}: ${savedProfile.id}`);
 
-    const savedDtoUser = this.toUserDto(savedUser);
-
-    return savedDtoUser;
+    return this.toUserDto(savedProfile);
   }
 
   async findAll(): Promise<UserDto[]> {
-    const users = await this.usersRepository.find(USERS_FIND_OPTIONS);
+    const profiles = await this.profilesRepository.find(PROFILES_FIND_OPTIONS);
 
-    return users.map((user) => this.toUserDto(user));
+    return profiles.map((profile) => this.toUserDto(profile));
   }
 
-  async findOne(id: number): Promise<UserDto> {
-    const user = await this.findUserById(id);
-    const profile = await this.findProfileByUserId(user.id);
+  async findOne(id: string): Promise<UserDto> {
+    const profile = await this.findProfileById(id);
 
-    const foundUser = this.userToUserDtoWithProfile(user, profile);
-
-    return foundUser;
+    return this.toUserDto(profile);
   }
 
-  async update(id: number, userDto: UserDto): Promise<UserDto> {
-    const user = await this.findUserById(id);
-    const profile = await this.findProfileByUserId(user.id);
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const profile = await this.findProfileById(id);
 
-    this.updateProfileFieldsPartial(profile, userDto);
-    await this.profilesRepository.save(profile);
+    this.updateProfileFieldsPartial(profile, updateUserDto);
+    const savedProfile = await this.profilesRepository.save(profile);
 
-    this.logger.log(`${USER_LOG_MESSAGES.UPDATED}: ${user.id}`);
+    this.logger.log(`${USER_LOG_MESSAGES.UPDATED}: ${savedProfile.id}`);
 
-    const updatedUser = this.userToUserDtoWithProfile(user, profile);
-
-    return updatedUser;
+    return this.toUserDto(savedProfile);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.findUserById(id);
-    await this.profilesRepository.delete({ userId: id });
-    await this.usersRepository.delete(id);
+  async remove(id: string): Promise<void> {
+    await this.findProfileById(id);
+    await this.profilesRepository.delete(id);
     this.logger.log(`${USER_LOG_MESSAGES.DELETED}: ${id}`);
   }
 
-  async put(id: number, userDto: UserDto): Promise<UserDto> {
-    const user = await this.findUserById(id);
-    const profile = await this.findProfileByUserId(user.id);
+  async put(id: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const profile = await this.findProfileById(id);
 
-    this.updateProfileFieldsFull(profile, userDto);
-    await this.profilesRepository.save(profile);
+    this.updateProfileFieldsFull(profile, updateUserDto);
+    const savedProfile = await this.profilesRepository.save(profile);
 
-    this.logger.log(`${USER_LOG_MESSAGES.FULLY_UPDATED}: ${user.id}`);
+    this.logger.log(`${USER_LOG_MESSAGES.FULLY_UPDATED}: ${savedProfile.id}`);
 
-    const updatedUser = this.userToUserDtoWithProfile(user, profile);
-
-    return updatedUser;
+    return this.toUserDto(savedProfile);
   }
 
-  private ensureRequiredFields(userDto: UserDto): void {
-    if (!userDto.email || !userDto.password) {
-      throw new BadRequestException(USER_ERROR_MESSAGES.REQUIRED_FIELDS);
-    }
-  }
-
-  private async findUserById(id: number): Promise<UserEntity> {
-    const user = await this.usersRepository.findOneBy({ id });
-
-    if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
-    }
-
-    return user;
-  }
-
-  private async findProfileByUserId(userId: number): Promise<Profile> {
-    let profile = await this.profilesRepository.findOneBy({ userId });
+  private async findProfileById(id: string): Promise<Profile> {
+    const profile = await this.profilesRepository.findOneBy({ id });
 
     if (!profile) {
-      profile = this.profilesRepository.create({
-        userId,
-        displayName: DEFAULT_DISPLAY_NAME,
-      });
-      profile = await this.profilesRepository.save(profile);
+      throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
     }
 
     return profile;
   }
 
-  private updateProfileFieldsPartial(profile: Profile, userDto: UserDto): void {
-    if (userDto.displayName !== undefined) {
-      profile.displayName = userDto.displayName;
+  private updateProfileFieldsPartial(profile: Profile, updateUserDto: UpdateUserDto): void {
+    if (updateUserDto.displayName !== undefined) {
+      profile.displayName = updateUserDto.displayName;
     }
 
-    if (userDto.bio !== undefined) {
-      profile.bio = userDto.bio;
+    if (updateUserDto.bio !== undefined) {
+      profile.bio = updateUserDto.bio;
     }
 
-    if (userDto.avatarAssetId !== undefined) {
-      profile.avatarAssetId = userDto.avatarAssetId;
+    if (updateUserDto.avatarAssetId !== undefined) {
+      profile.avatarAssetId = updateUserDto.avatarAssetId;
     }
   }
 
-  private updateProfileFieldsFull(profile: Profile, userDto: UserDto): void {
-    profile.displayName = userDto.displayName ?? DEFAULT_DISPLAY_NAME;
-    profile.bio = userDto.bio ?? DEFAULT_BIO;
-    profile.avatarAssetId = userDto.avatarAssetId ?? DEFAULT_AVATAR_ASSET_ID;
+  private updateProfileFieldsFull(profile: Profile, updateUserDto: UpdateUserDto): void {
+    profile.displayName = updateUserDto.displayName ?? DEFAULT_DISPLAY_NAME;
+    profile.bio = updateUserDto.bio ?? DEFAULT_BIO;
+    profile.avatarAssetId = updateUserDto.avatarAssetId ?? DEFAULT_AVATAR_ASSET_ID;
   }
 
-  private toUserDto(user: UserEntity): UserDto {
-    const profile = user.profiles?.[0];
-
+  private toUserDto(profile: Profile): UserDto {
     return {
-      id: user.id,
-      email: user.email,
-      displayName: profile?.displayName ?? DEFAULT_DISPLAY_NAME,
-      bio: profile?.bio ?? DEFAULT_BIO,
-      avatarAssetId: profile?.avatarAssetId ?? DEFAULT_AVATAR_ASSET_ID,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-  }
-
-  private userToUserDtoWithProfile(user: UserEntity, profile: Profile): UserDto {
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: profile?.displayName ?? DEFAULT_DISPLAY_NAME,
-      bio: profile?.bio ?? DEFAULT_BIO,
-      avatarAssetId: profile?.avatarAssetId ?? DEFAULT_AVATAR_ASSET_ID,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      id: profile.id,
+      displayName: profile.displayName ?? DEFAULT_DISPLAY_NAME,
+      bio: profile.bio ?? DEFAULT_BIO,
+      avatarAssetId: profile.avatarAssetId ?? DEFAULT_AVATAR_ASSET_ID,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
     };
   }
 }

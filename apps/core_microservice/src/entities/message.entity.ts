@@ -25,7 +25,7 @@ export class Message extends TimestampedEntity {
   authorProfileId: string;
 
   @Column({ type: 'text', nullable: true })
-  content: string | null;
+  content: string;
 
   @ManyToOne(() => Chat, (chat) => chat.messages)
   @JoinColumn({ name: 'chat_id' })
