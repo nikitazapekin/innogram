@@ -10,7 +10,6 @@ import {
 
 import { Chat } from './chat.entity';
 import { Asset } from './asset.entity';
-import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'message', schema: 'main' })

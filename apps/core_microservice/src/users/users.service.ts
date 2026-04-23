@@ -30,6 +30,7 @@ export class UsersService {
 
     this.logger.log(`${CREATED_MESSAGE}: ${savedProfile.id}`);
     const savedProfileResponse = this.toUserDto(savedProfile);
+
     return savedProfileResponse;
   }
 
@@ -40,28 +41,33 @@ export class UsersService {
 
     const profiles = await this.profilesRepository.find(profilesFindOptions);
     const profilesResponse = profiles.map((profile) => this.toUserDto(profile));
+
     return profilesResponse;
   }
 
   async findOne(id: number): Promise<UserDto> {
     const profile = await this.findProfileById(id);
     const profilesResponse = this.toUserDto(profile);
+
     return profilesResponse;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const profile = await this.findProfileById(id);
     const UPDATED_MESSAGE = 'Profile updated';
+
     this.updateProfileFieldsPartial(profile, updateUserDto);
     const savedProfile = await this.profilesRepository.save(profile);
 
     this.logger.log(`${UPDATED_MESSAGE}: ${savedProfile.id}`);
     const savedProfileResponse = this.toUserDto(savedProfile);
+
     return savedProfileResponse;
   }
 
   async remove(id: number): Promise<void> {
     const DELETED_MESSAGE = 'Profile deleted';
+
     await this.findProfileById(id);
     await this.profilesRepository.delete(id);
     this.logger.log(`${DELETED_MESSAGE}: ${id}`);
@@ -70,11 +76,13 @@ export class UsersService {
   async put(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const profile = await this.findProfileById(id);
     const UPDATED_MESSAGE = 'Profile fully updated';
+
     this.updateProfileFieldsFull(profile, updateUserDto);
     const savedProfile = await this.profilesRepository.save(profile);
 
     this.logger.log(`${UPDATED_MESSAGE}: ${savedProfile.id}`);
     const savedProfileResponse = this.toUserDto(savedProfile);
+
     return savedProfileResponse;
   }
 
