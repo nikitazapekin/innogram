@@ -28,10 +28,6 @@ export class Post extends TimestampedEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @ManyToOne(() => Profile, (profile) => profile.posts)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile!: Profile;
-
   @ManyToMany(() => Asset, (asset) => asset.posts)
   @JoinTable({
     name: 'post_asset',

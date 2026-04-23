@@ -31,10 +31,6 @@ export class Message extends TimestampedEntity {
   @JoinColumn({ name: 'chat_id' })
   chat: Chat;
 
-  @ManyToOne(() => Profile, (profile) => profile.messages)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile: Profile;
-
   @ManyToMany(() => Asset, (asset) => asset.messages)
   @JoinTable({
     name: 'message_asset',

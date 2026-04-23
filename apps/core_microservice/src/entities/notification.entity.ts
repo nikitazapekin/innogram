@@ -19,8 +19,4 @@ export class Notification extends TimestampedEntity {
 
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
   readAt: Date;
-
-  @ManyToOne(() => Profile, (profile) => profile.notifications)
-  @JoinColumn({ name: 'recipient_profile_id' })
-  recipientProfile: Profile;
 }

@@ -30,10 +30,6 @@ export class Comment extends TimestampedEntity {
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @ManyToOne(() => Profile, (profile) => profile.comments)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile: Profile;
-
   @ManyToMany(() => Profile, (profile) => profile.likedComments)
   @JoinTable({
     name: 'comment_like',

@@ -17,7 +17,4 @@ export class UserEntity extends TimestampedEntity {
 
   @OneToMany(() => Account, (account) => account.user)
   accounts: Account[];
-
-  @OneToMany(() => Profile, (profile) => profile.user)
-  profiles: Profile[];
 }
