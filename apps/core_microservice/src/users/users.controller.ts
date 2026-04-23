@@ -3,10 +3,8 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
-  ParseUUIDPipe,
+  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -30,21 +28,21 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiOperation({ summary: 'Create a user profile' })
+  @ApiOperation({ summary: 'Create a profile' })
   @ApiCreatedResponse({
-    description: 'User profile has been created successfully.',
+    description: 'Profile has been created successfully.',
     type: UserDto,
   })
   @ApiBadRequestResponse({ description: 'Request body validation failed.' })
   @Post()
-  create(@Body() userDto: UserDto): Promise<UserDto> {
+  create(@Body() userDto: UpdateUserDto): Promise<UserDto> {
     return this.usersService.create(userDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all user profiles' })
+  @ApiOperation({ summary: 'Get all profiles' })
   @ApiOkResponse({
-    description: 'User profiles have been retrieved successfully.',
+    description: 'Profiles have been retrieved successfully.',
     type: UserDto,
     isArray: true,
   })
@@ -53,53 +51,53 @@ export class UsersController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a user profile by id' })
+  @ApiOperation({ summary: 'Get a profile by id' })
   @ApiOkResponse({
-    description: 'User profile has been retrieved successfully.',
+    description: 'Profile has been retrieved successfully.',
     type: UserDto,
   })
-  @ApiBadRequestResponse({ description: 'The provided user id is invalid.' })
-  @ApiNotFoundResponse({ description: 'User profile was not found.' })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserDto> {
+  @ApiBadRequestResponse({ description: 'The provided profile id is invalid.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<UserDto> {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a user profile' })
+  @ApiOperation({ summary: 'Update a profile' })
   @ApiOkResponse({
-    description: 'User profile has been updated successfully.',
+    description: 'Profile has been updated successfully.',
     type: UserDto,
   })
-  @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
-  @ApiNotFoundResponse({ description: 'User profile was not found.' })
+  @ApiBadRequestResponse({ description: 'The provided profile id or request body is invalid.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserDto> {
     return this.usersService.update(id, updateUserDto);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Fully update a user profile' })
+  @ApiOperation({ summary: 'Fully update a profile' })
   @ApiOkResponse({
-    description: 'User profile has been updated successfully.',
+    description: 'Profile has been updated successfully.',
     type: UserDto,
   })
-  @ApiBadRequestResponse({ description: 'The provided user id or request body is invalid.' })
-  @ApiNotFoundResponse({ description: 'User profile was not found.' })
+  @ApiBadRequestResponse({ description: 'The provided profile id or request body is invalid.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
   put(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserDto> {
     return this.usersService.put(id, updateUserDto);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a user profile' })
-  @ApiNoContentResponse({ description: 'User profile has been deleted successfully.' })
-  @ApiBadRequestResponse({ description: 'The provided user id is invalid.' })
-  @ApiNotFoundResponse({ description: 'User profile was not found.' })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+  @ApiOperation({ summary: 'Delete a profile' })
+  @ApiNoContentResponse({ description: 'Profile has been deleted successfully.' })
+  @ApiBadRequestResponse({ description: 'The provided profile id is invalid.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.usersService.remove(id);
   }
 }

@@ -1,5 +1,5 @@
-import { IsDate, IsEmail, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UserDto {
   @IsOptional()
@@ -8,21 +8,12 @@ export class UserDto {
   id?: number;
 
   @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(8)
-  password?: string;
-
-  @IsOptional()
   @IsString()
   displayName?: string;
 
   @IsOptional()
   @IsString()
-  bio?: string | null;
+  bio?: string;
 
   @IsOptional()
   @IsNumber()

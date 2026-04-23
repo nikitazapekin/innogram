@@ -8,10 +8,10 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  bio?: string | null;
+  bio?: string;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  avatarAssetId?: number | null;
+  avatarAssetId?: number;
 }

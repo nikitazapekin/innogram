@@ -19,8 +19,8 @@ import { Chat } from './chat.entity';
 
 @Entity({ name: 'profile', schema: 'main' })
 export class Profile extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ name: 'user_id', type: 'integer', nullable: true })
   userId: number | null;
