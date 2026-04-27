@@ -1,12 +1,19 @@
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-import { TimestampedEntity } from './base.entity';
 import { Chat } from './chat.entity';
 import { Comment } from './comment.entity';
 import { Post } from './post.entity';
 
 @Entity({ name: 'profile', schema: 'main' })
-export class Profile extends TimestampedEntity {
+export class Profile {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -18,6 +25,12 @@ export class Profile extends TimestampedEntity {
 
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
   avatarAssetId: number | null;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
   @ManyToMany(() => Chat, (chat) => chat.participants)
   chats: Chat[];
