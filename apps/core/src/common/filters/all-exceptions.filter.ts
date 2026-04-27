@@ -6,78 +6,223 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ResponseLike, RequestLike, ExceptionResponseBody } from '../types';
+
+import { RequestLike, ResponseLike, ExceptionResponseBody, NormalizedException } from '../types';
+
+const INTERNAL_ERROR_MESSAGE = 'Internal server error';
+const INTERNAL_ERROR_CODE = 'internal_server_error';
+const REQUEST_ID_HEADERS = ['x-request-id', 'x-correlation-id'] as const;
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<ResponseLike>();
-    const request = ctx.getRequest<RequestLike>();
+    const http = host.switchToHttp();
+    const response = http.getResponse<ResponseLike>();
+    const request = http.getRequest<RequestLike>();
+    const normalized = this.normalizeException(exception);
+    const path = request.originalUrl ?? request.url;
+    const requestId = this.findRequestId(request);
 
-    const status =
-      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-
-    const exceptionResponse = exception instanceof HttpException ? exception.getResponse() : null;
-    const exceptionBody = this.getExceptionResponseBody(exceptionResponse);
-    const message = this.getMessage(exceptionResponse, exceptionBody);
-    const error = this.getError(exception, exceptionBody);
-
-    const logMessage = `${request.method} ${request.url} ${status}`;
-
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(logMessage, exception instanceof Error ? exception.stack : undefined);
-    } else {
-      this.logger.warn(logMessage);
-    }
-
-    response.status(status).json({
-      statusCode: status,
-      timestamp: new Date(),
-      path: request.url,
-      error,
-      message,
-    });
+    this.log(normalized, request.method, path, requestId);
+    this.sendResponse(response, normalized, path, requestId);
   }
 
-  private getExceptionResponseBody(response: unknown): ExceptionResponseBody | null {
-    if (typeof response !== 'object' || response === null) {
-      return null;
+  private normalizeException(exception: unknown): NormalizedException {
+    let raw: unknown = exception;
+    if (exception instanceof HttpException) {
+      raw = exception.getResponse();
     }
 
-    return response as ExceptionResponseBody;
+    const body = this.extractBody(raw);
+
+    return {
+      status: this.resolveStatus(exception, body),
+      code: this.resolveCode(exception, body),
+      message: this.resolveMessage(raw, body),
+      details: body?.details,
+    };
   }
 
-  private getMessage(
-    response: unknown,
-    exceptionBody: ExceptionResponseBody | null,
-  ): string | string[] {
+  private extractBody(response: unknown): ExceptionResponseBody | null {
+    if (this.isExceptionResponseBody(response)) {
+      return response;
+    }
+    return null;
+  }
+
+  private resolveStatus(exception: unknown, body: ExceptionResponseBody | null): number {
+    if (exception instanceof HttpException) {
+      return exception.getStatus();
+    }
+
+    if (body !== null) {
+      const statusCode = body.statusCode;
+      if (this.isHttpStatus(statusCode)) {
+        return statusCode;
+      }
+
+      const status = body.status;
+      if (this.isHttpStatus(status)) {
+        return status;
+      }
+    }
+
+    return HttpStatus.INTERNAL_SERVER_ERROR;
+  }
+
+  private resolveMessage(response: unknown, body: ExceptionResponseBody | null): string | string[] {
     if (typeof response === 'string') {
       return response;
     }
 
-    if (Array.isArray(exceptionBody?.message)) {
-      return exceptionBody.message;
+    if (Array.isArray(body?.message)) {
+      return body.message;
     }
 
-    if (typeof exceptionBody?.message === 'string') {
-      return exceptionBody.message;
+    if (this.isValidMessage(body)) {
+      return body.message;
     }
 
-    return 'Internal server error';
+    return INTERNAL_ERROR_MESSAGE;
   }
 
-  private getError(exception: unknown, exceptionBody: ExceptionResponseBody | null): string {
-    if (exceptionBody?.error !== undefined) {
-      return String(exceptionBody.error);
+  private resolveCode(exception: unknown, body: ExceptionResponseBody | null): string {
+    if (body !== null && this.isNonEmptyString(body.code)) {
+      return body.code;
     }
 
     if (exception instanceof HttpException) {
       return exception.name;
     }
 
-    return 'InternalServerError';
+    const isNamedError = exception instanceof Error && exception.name !== 'Error';
+    if (isNamedError) {
+      return exception.name;
+    }
+
+    if (this.hasCodeProperty(exception)) {
+      const code = exception['code'];
+      if (this.isNonEmptyString(code)) {
+        return code;
+      }
+    }
+
+    if (body !== null && this.isNonEmptyString(body.error)) {
+      return body.error;
+    }
+
+    return INTERNAL_ERROR_CODE;
+  }
+
+  private isNonEmptyString(value: unknown): value is string {
+    return typeof value === 'string' && value.trim().length > 0;
+  }
+
+  private findRequestId(request: RequestLike): string | undefined {
+    const id = request.requestId || request.id || request.correlationId;
+
+    if (id) {
+      return id;
+    }
+
+    return this.findHeader(request.headers, REQUEST_ID_HEADERS);
+  }
+
+  private findHeader(
+    headers: RequestLike['headers'],
+    names: readonly string[],
+  ): string | undefined {
+    for (const name of names) {
+      const value = headers[name];
+
+      const isValidString = typeof value === 'string' && value.trim().length > 0;
+      if (isValidString) {
+        return value;
+      }
+
+      if (Array.isArray(value)) {
+        const found = value.find((item) => this.isNonEmptyString(item));
+
+        if (found) {
+          return found;
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  private log(
+    { status, code, message }: NormalizedException,
+    method: string,
+    path: string,
+    requestId?: string,
+  ): void {
+    const meta: Record<string, unknown> = { method, path, status, code, message };
+
+    if (requestId) {
+      meta.requestId = requestId;
+    }
+
+    const log = JSON.stringify(meta);
+
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      this.logger.error(log);
+    } else {
+      this.logger.warn(log);
+    }
+  }
+
+  private sendResponse(
+    response: ResponseLike,
+    { status, code, message, details }: NormalizedException,
+    path: string,
+    requestId?: string,
+  ): void {
+    const error: Record<string, unknown> = { code, message };
+
+    if (details) {
+      error.details = details;
+    }
+
+    const body: Record<string, unknown> = {
+      success: false,
+      timestamp: new Date(),
+      path,
+      error,
+    };
+
+    if (requestId) {
+      body.requestId = requestId;
+    }
+
+    response.status(status).json(body);
+  }
+
+  private isHttpStatus(value: unknown): value is number {
+    return typeof value === 'number' && value >= 400 && value <= 599;
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+  }
+
+  private isExceptionResponseBody(value: unknown): value is ExceptionResponseBody {
+    if (!this.isRecord(value)) {
+      return false;
+    }
+    return 'statusCode' in value || 'message' in value || 'error' in value;
+  }
+
+  private hasCodeProperty(value: unknown): value is { code: unknown } {
+    return value !== null && typeof value === 'object' && 'code' in value;
+  }
+
+  private isValidMessage(
+    body: ExceptionResponseBody | null,
+  ): body is ExceptionResponseBody & { message: string } {
+    return body !== null && typeof body.message === 'string' && body.message.trim().length > 0;
   }
 }
