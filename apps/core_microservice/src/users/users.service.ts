@@ -6,10 +6,6 @@ import { Profile } from '../entities/profile.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 
-const DEFAULT_DISPLAY_NAME = 'User';
-const DEFAULT_BIO = 'No bio';
-const DEFAULT_AVATAR_ASSET_ID = null;
-
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -21,14 +17,14 @@ export class UsersService {
 
   async create(userDto: UpdateUserDto): Promise<UserDto> {
     const profile = this.profilesRepository.create({
-      displayName: userDto.displayName || DEFAULT_DISPLAY_NAME,
-      bio: userDto.bio || DEFAULT_BIO,
-      avatarAssetId: userDto.avatarAssetId || DEFAULT_AVATAR_ASSET_ID,
+      displayName: userDto.displayName,
+      bio: userDto.bio,
+      avatarAssetId: userDto.avatarAssetId,
     });
-    const CREATED_MESSAGE = 'Profile created';
+
     const savedProfile = await this.profilesRepository.save(profile);
 
-    this.logger.log(`${CREATED_MESSAGE}: ${savedProfile.id}`);
+    this.logger.log(`Profile created: ${savedProfile.id}`);
     const savedProfileResponse = this.toUserDto(savedProfile);
 
     return savedProfileResponse;
@@ -54,44 +50,39 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const profile = await this.findProfileById(id);
-    const UPDATED_MESSAGE = 'Profile updated';
 
     this.updateProfileFieldsPartial(profile, updateUserDto);
     const savedProfile = await this.profilesRepository.save(profile);
 
-    this.logger.log(`${UPDATED_MESSAGE}: ${savedProfile.id}`);
+    this.logger.log(`Profile updated: ${savedProfile.id}`);
     const savedProfileResponse = this.toUserDto(savedProfile);
 
     return savedProfileResponse;
   }
 
   async remove(id: number): Promise<void> {
-    const DELETED_MESSAGE = 'Profile deleted';
-
     await this.findProfileById(id);
     await this.profilesRepository.delete(id);
-    this.logger.log(`${DELETED_MESSAGE}: ${id}`);
+    this.logger.log(`Profile deleted: ${id}`);
   }
 
   async put(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const profile = await this.findProfileById(id);
-    const UPDATED_MESSAGE = 'Profile fully updated';
 
     this.updateProfileFieldsFull(profile, updateUserDto);
     const savedProfile = await this.profilesRepository.save(profile);
 
-    this.logger.log(`${UPDATED_MESSAGE}: ${savedProfile.id}`);
+    this.logger.log(`Profile fully updated: ${savedProfile.id}`);
     const savedProfileResponse = this.toUserDto(savedProfile);
 
     return savedProfileResponse;
   }
 
   private async findProfileById(id: number): Promise<Profile> {
-    const profileNotFoundMessage = 'Profile was not found.';
     const profile = await this.profilesRepository.findOneBy({ id });
 
     if (!profile) {
-      throw new NotFoundException(profileNotFoundMessage);
+      throw new NotFoundException('Profile was not found.');
     }
 
     return profile;
@@ -104,23 +95,23 @@ export class UsersService {
       return;
     }
 
-    profile.displayName = displayName || profile.displayName;
-    profile.bio = bio || profile.bio;
-    profile.avatarAssetId = avatarAssetId || profile.avatarAssetId;
+    profile.displayName = displayName ?? profile.displayName;
+    profile.bio = bio ?? profile.bio;
+    profile.avatarAssetId = avatarAssetId ?? profile.avatarAssetId;
   }
 
   private updateProfileFieldsFull(profile: Profile, updateUserDto: UpdateUserDto): void {
-    profile.displayName = updateUserDto.displayName || DEFAULT_DISPLAY_NAME;
-    profile.bio = updateUserDto.bio || DEFAULT_BIO;
-    profile.avatarAssetId = updateUserDto.avatarAssetId || DEFAULT_AVATAR_ASSET_ID;
+    profile.displayName = updateUserDto.displayName;
+    profile.bio = updateUserDto.bio ?? null;
+    profile.avatarAssetId = updateUserDto.avatarAssetId ?? null;
   }
 
   private toUserDto(profile: Profile): UserDto {
     return {
       id: profile.id,
-      displayName: profile.displayName || DEFAULT_DISPLAY_NAME,
-      bio: profile.bio || DEFAULT_BIO,
-      avatarAssetId: profile.avatarAssetId || DEFAULT_AVATAR_ASSET_ID,
+      displayName: profile.displayName,
+      bio: profile.bio ?? undefined,
+      avatarAssetId: profile.avatarAssetId,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
