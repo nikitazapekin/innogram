@@ -1,14 +1,12 @@
-import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Account } from './account.entity';
-import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'user', schema: 'auth' })
-@Index('IDX_auth_user_created_at', ['createdAt'])
-export class User extends TimestampedEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class UserEntity extends TimestampedEntity {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @Column({ type: 'varchar', length: 320 })
   email: string;
@@ -18,7 +16,4 @@ export class User extends TimestampedEntity {
 
   @OneToMany(() => Account, (account) => account.user)
   accounts: Account[];
-
-  @OneToMany(() => Profile, (profile) => profile.user)
-  profiles: Profile[];
 }

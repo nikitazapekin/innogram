@@ -1,13 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToOne,
-  ManyToMany,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Comment } from './comment.entity';
 import { Asset } from './asset.entity';
@@ -27,10 +18,6 @@ export class Post extends TimestampedEntity {
 
   @Column({ type: 'text' })
   content: string;
-
-  @ManyToOne(() => Profile, (profile) => profile.posts)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile!: Profile;
 
   @ManyToMany(() => Asset, (asset) => asset.posts)
   @JoinTable({

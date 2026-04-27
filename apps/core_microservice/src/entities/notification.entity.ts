@@ -1,6 +1,5 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'notification', schema: 'notification' })
@@ -15,12 +14,8 @@ export class Notification extends TimestampedEntity {
   type: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  payload: Record<string, unknown> | null;
+  payload: Record<string, unknown>;
 
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
-  readAt: Date | null;
-
-  @ManyToOne(() => Profile, (profile) => profile.notifications)
-  @JoinColumn({ name: 'recipient_profile_id' })
-  recipientProfile: Profile;
+  readAt: Date;
 }

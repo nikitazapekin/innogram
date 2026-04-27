@@ -10,7 +10,6 @@ import {
 
 import { Chat } from './chat.entity';
 import { Asset } from './asset.entity';
-import { Profile } from './profile.entity';
 import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'message', schema: 'main' })
@@ -25,15 +24,11 @@ export class Message extends TimestampedEntity {
   authorProfileId: string;
 
   @Column({ type: 'text', nullable: true })
-  content: string | null;
+  content: string;
 
   @ManyToOne(() => Chat, (chat) => chat.messages)
   @JoinColumn({ name: 'chat_id' })
   chat: Chat;
-
-  @ManyToOne(() => Profile, (profile) => profile.messages)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile: Profile;
 
   @ManyToMany(() => Asset, (asset) => asset.messages)
   @JoinTable({

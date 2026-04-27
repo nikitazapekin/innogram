@@ -1,83 +1,119 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomBytes, scrypt as scryptCallback } from 'crypto';
-import { promisify } from 'util';
 import { Repository } from 'typeorm';
 
-import { User } from '../entities/user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Profile } from '../entities/profile.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
+import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  private readonly scrypt = promisify(scryptCallback);
 
   constructor(
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    @InjectRepository(Profile)
+    private readonly profilesRepository: Repository<Profile>,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const user = this.usersRepository.create({
-      email: createUserDto.email.toLowerCase(),
-      passwordHash: await this.hashPassword(createUserDto.password),
+  async create(userDto: UpdateUserDto): Promise<UserDto> {
+    const profile = this.profilesRepository.create({
+      displayName: userDto.displayName,
+      bio: userDto.bio,
+      avatarAssetId: userDto.avatarAssetId,
     });
-    const savedUser = await this.usersRepository.save(user);
 
-    this.logger.log(`User created: ${savedUser.id}`);
+    const savedProfile = await this.profilesRepository.save(profile);
 
-    return UserResponseDto.fromEntity(savedUser);
+    this.logger.log(`Profile created: ${savedProfile.id}`);
+    const savedProfileResponse = this.toUserDto(savedProfile);
+
+    return savedProfileResponse;
   }
 
-  async findAll(): Promise<UserResponseDto[]> {
-    const users = await this.usersRepository.find({
-      order: {
-        createdAt: 'DESC',
-      },
-    });
+  async findAll(): Promise<UserDto[]> {
+    const profilesFindOptions = {
+      order: { createdAt: 'DESC' },
+    } as const;
 
-    return users.map(UserResponseDto.fromEntity);
+    const profiles = await this.profilesRepository.find(profilesFindOptions);
+    const profilesResponse = profiles.map((profile) => this.toUserDto(profile));
+
+    return profilesResponse;
   }
 
-  async findOne(id: string): Promise<UserResponseDto> {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-    });
+  async findOne(id: number): Promise<UserDto> {
+    const profile = await this.findProfileById(id);
+    const profilesResponse = this.toUserDto(profile);
 
-    if (!user) {
-      throw new NotFoundException(`User with id "${id}" not found`);
+    return profilesResponse;
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const profile = await this.findProfileById(id);
+
+    this.updateProfileFieldsPartial(profile, updateUserDto);
+    const savedProfile = await this.profilesRepository.save(profile);
+
+    this.logger.log(`Profile updated: ${savedProfile.id}`);
+    const savedProfileResponse = this.toUserDto(savedProfile);
+
+    return savedProfileResponse;
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.findProfileById(id);
+    await this.profilesRepository.delete(id);
+    this.logger.log(`Profile deleted: ${id}`);
+  }
+
+  async put(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const profile = await this.findProfileById(id);
+
+    this.updateProfileFieldsFull(profile, updateUserDto);
+    const savedProfile = await this.profilesRepository.save(profile);
+
+    this.logger.log(`Profile fully updated: ${savedProfile.id}`);
+    const savedProfileResponse = this.toUserDto(savedProfile);
+
+    return savedProfileResponse;
+  }
+
+  private async findProfileById(id: number): Promise<Profile> {
+    const profile = await this.profilesRepository.findOneBy({ id });
+
+    if (!profile) {
+      throw new NotFoundException('Profile was not found.');
     }
 
-    return UserResponseDto.fromEntity(user);
+    return profile;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-    });
+  private updateProfileFieldsPartial(profile: Profile, updateUserDto: UpdateUserDto): void {
+    const { displayName, bio, avatarAssetId } = updateUserDto;
 
-    if (!user) {
-      throw new NotFoundException(`User with id "${id}" not found`);
+    if (!displayName && !bio && !avatarAssetId) {
+      return;
     }
 
-    const updatedUser = await this.usersRepository.save(user);
-
-    this.logger.log(`User updated: ${updatedUser.id}`);
-
-    return UserResponseDto.fromEntity(updatedUser);
+    profile.displayName = displayName ?? profile.displayName;
+    profile.bio = bio ?? profile.bio;
+    profile.avatarAssetId = avatarAssetId ?? profile.avatarAssetId;
   }
 
-  async remove(id: string): Promise<void> {
-    await this.usersRepository.delete(id);
-    this.logger.log(`User deleted: ${id}`);
+  private updateProfileFieldsFull(profile: Profile, updateUserDto: UpdateUserDto): void {
+    profile.displayName = updateUserDto.displayName;
+    profile.bio = updateUserDto.bio ?? null;
+    profile.avatarAssetId = updateUserDto.avatarAssetId ?? null;
   }
 
-  private async hashPassword(password: string): Promise<string> {
-    const salt = randomBytes(16).toString('hex');
-    const derivedKey = (await this.scrypt(password, salt, 64)) as Buffer;
-
-    return `${salt}:${derivedKey.toString('hex')}`;
+  private toUserDto(profile: Profile): UserDto {
+    return {
+      id: profile.id,
+      displayName: profile.displayName,
+      bio: profile.bio ?? undefined,
+      avatarAssetId: profile.avatarAssetId,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+    };
   }
 }
