@@ -1,21 +1,20 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
-  JoinColumn,
   JoinTable,
-  ManyToOne,
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { Comment } from './comment.entity';
 import { Asset } from './asset.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'post', schema: 'main' })
-export class Post extends TimestampedEntity {
+export class Post {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -28,9 +27,11 @@ export class Post extends TimestampedEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @ManyToOne(() => Profile, (profile) => profile.posts)
-  @JoinColumn({ name: 'author_profile_id' })
-  authorProfile!: Profile;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
   @ManyToMany(() => Asset, (asset) => asset.posts)
   @JoinTable({
