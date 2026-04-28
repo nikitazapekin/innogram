@@ -1,10 +1,16 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 import { Account } from './account.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'user', schema: 'auth' })
-export class UserEntity extends TimestampedEntity {
+export class UserEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -13,6 +19,12 @@ export class UserEntity extends TimestampedEntity {
 
   @Column({ name: 'password_hash', type: 'varchar', length: 255 })
   passwordHash: string;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
   @OneToMany(() => Account, (account) => account.user)
   accounts: Account[];

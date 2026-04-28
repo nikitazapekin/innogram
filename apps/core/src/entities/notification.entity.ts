@@ -1,9 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-
-import { TimestampedEntity } from './base.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity({ name: 'notification', schema: 'notification' })
-export class Notification extends TimestampedEntity {
+export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -15,6 +19,12 @@ export class Notification extends TimestampedEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   payload: Record<string, unknown>;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
   readAt: Date;

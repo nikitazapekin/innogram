@@ -1,12 +1,20 @@
-import { Column, Entity, JoinColumn, ManyToOne, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 import { Message } from './message.entity';
 import { Post } from './post.entity';
 import { Profile } from './profile.entity';
-import { TimestampedEntity } from './base.entity';
 
 @Entity({ name: 'asset', schema: 'main' })
-export class Asset extends TimestampedEntity {
+export class Asset {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -18,6 +26,12 @@ export class Asset extends TimestampedEntity {
 
   @Column({ name: 'mime_type', type: 'varchar', length: 255 })
   mimeType: string;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: 'owner_profile_id' })
