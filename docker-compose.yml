@@ -1,11 +1,32 @@
 services:
- 
-  core_microservice:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DATABASE:-innogram}
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
     build:
       context: .
-      dockerfile: apps/core_microservice/Dockerfile
+      dockerfile: apps/core/Dockerfile
     environment:
-      CORE_HTTP_PORT: 3001
-      SWAGGER_PATH: api/docs
+      CORE_HTTP_PORT: ${CORE_HTTP_PORT:-3001}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:?POSTGRES_DATABASE is required}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      SWAGGER_PATH: ${SWAGGER_PATH:-api/docs}
     ports:
-      - "3001:3001"
+      - '${CORE_HTTP_PORT:-3001}:${CORE_HTTP_PORT:-3001}'
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
