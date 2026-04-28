@@ -11,7 +11,7 @@ import { RequestLike, ResponseLike, ExceptionResponseBody, NormalizedException }
 
 const INTERNAL_ERROR_MESSAGE = 'Internal server error';
 const INTERNAL_ERROR_CODE = 'internal_server_error';
-const REQUEST_ID_HEADERS = ['x-request-id', 'x-correlation-id'] as const;
+const REQUEST_ID_HEADERS = ['x-request-id', 'x-correlation-id'];
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -19,8 +19,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
-    const response = http.getResponse<ResponseLike>();
-    const request = http.getRequest<RequestLike>();
+    const response = this.getResponse(http.getResponse());
+    const request = this.getRequest(http.getRequest());
     const normalized = this.normalizeException(exception);
     const path = request.originalUrl ?? request.url;
     const requestId = this.findRequestId(request);
@@ -31,6 +31,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   private normalizeException(exception: unknown): NormalizedException {
     let raw: unknown = exception;
+
     if (exception instanceof HttpException) {
       raw = exception.getResponse();
     }
@@ -49,6 +50,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (this.isExceptionResponseBody(response)) {
       return response;
     }
+
     return null;
   }
 
@@ -59,11 +61,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (body !== null) {
       const statusCode = body.statusCode;
+
       if (this.isHttpStatus(statusCode)) {
         return statusCode;
       }
 
       const status = body.status;
+
       if (this.isHttpStatus(status)) {
         return status;
       }
@@ -89,8 +93,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
   }
 
   private resolveCode(exception: unknown, body: ExceptionResponseBody | null): string {
-    if (body !== null && this.isNonEmptyString(body.code)) {
-      return body.code;
+    if (body !== null) {
+      const code = body.code;
+
+      if (typeof code === 'string' && code.trim().length > 0) {
+        return code;
+      }
     }
 
     if (exception instanceof HttpException) {
@@ -98,26 +106,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const isNamedError = exception instanceof Error && exception.name !== 'Error';
+
     if (isNamedError) {
       return exception.name;
     }
 
     if (this.hasCodeProperty(exception)) {
       const code = exception['code'];
-      if (this.isNonEmptyString(code)) {
+
+      if (typeof code === 'string' && code.trim().length > 0) {
         return code;
       }
     }
 
-    if (body !== null && this.isNonEmptyString(body.error)) {
-      return body.error;
+    if (body !== null) {
+      const error = body.error;
+
+      if (typeof error === 'string' && error.trim().length > 0) {
+        return error;
+      }
     }
 
     return INTERNAL_ERROR_CODE;
-  }
-
-  private isNonEmptyString(value: unknown): value is string {
-    return typeof value === 'string' && value.trim().length > 0;
   }
 
   private findRequestId(request: RequestLike): string | undefined {
@@ -138,16 +148,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const value = headers[name];
 
       const isValidString = typeof value === 'string' && value.trim().length > 0;
+
       if (isValidString) {
         return value;
       }
 
       if (Array.isArray(value)) {
-        const found = value.find((item) => this.isNonEmptyString(item));
+        const found = value.find((item) => typeof item === 'string' && item.trim().length > 0);
 
-        if (found) {
-          return found;
-        }
+        return found;
       }
     }
 
@@ -209,11 +218,62 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return typeof value === 'object' && value !== null;
   }
 
+  private getRequest(value: unknown): RequestLike {
+    if (this.isRequestLike(value)) {
+      return value;
+    }
+
+    return {
+      method: 'UNKNOWN',
+      url: '',
+      headers: {},
+    };
+  }
+
+  private getResponse(value: unknown): ResponseLike {
+    if (this.isResponseLike(value)) {
+      return value;
+    }
+
+    return {
+      status: () => this.getFallbackResponse(),
+      json: () => undefined,
+    };
+  }
+
+  private getFallbackResponse(): ResponseLike {
+    return {
+      status: () => this.getFallbackResponse(),
+      json: () => undefined,
+    };
+  }
+
   private isExceptionResponseBody(value: unknown): value is ExceptionResponseBody {
     if (!this.isRecord(value)) {
       return false;
     }
+
     return 'statusCode' in value || 'message' in value || 'error' in value;
+  }
+
+  private isRequestLike(value: unknown): value is RequestLike {
+    if (!this.isRecord(value)) {
+      return false;
+    }
+
+    return (
+      typeof value.method === 'string' &&
+      typeof value.url === 'string' &&
+      this.isRecord(value.headers)
+    );
+  }
+
+  private isResponseLike(value: unknown): value is ResponseLike {
+    if (!this.isRecord(value)) {
+      return false;
+    }
+
+    return typeof value.status === 'function' && typeof value.json === 'function';
   }
 
   private hasCodeProperty(value: unknown): value is { code: unknown } {
