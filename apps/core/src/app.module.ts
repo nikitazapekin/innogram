@@ -23,6 +23,7 @@ import { UsersModule } from './users/users.module';
   imports: [
     ConfigModule.forRoot({
       envFilePath: ['.env'],
+      ignoreEnvFile: true,
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
