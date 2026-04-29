@@ -2,7 +2,9 @@ import { createServer, type Server } from 'node:http';
 
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
+import { createAuthCoreProducer } from './kafka/auth-core-producer';
 import { createLogger, serializeError } from './shared/logger';
+
 export const SERVICE_NAME = 'auth-microservice';
 
 const SERVER_REQUEST_TIMEOUT_MS = 30_000;
@@ -31,8 +33,10 @@ const listen = (server: Server, port: number): Promise<void> =>
 const bootstrap = async (): Promise<void> => {
   const config = loadConfig();
   const logger = createLogger(SERVICE_NAME);
+  const authCoreProducer = await createAuthCoreProducer();
 
   const app = createApp({
+    authCoreProducer,
     logger,
   });
   const server = createServer(app);

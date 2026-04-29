@@ -4,9 +4,8 @@
   "private": true,
   "packageManager": "npm@10.9.4",
   "workspaces": [
-    "apps/core_microservice",
-    "apps/auth_microservice",
-    "apps/posts_microservice",
+    "apps/core",
+    "apps/auth",
     "packages/shared"
   ],
   "scripts": {

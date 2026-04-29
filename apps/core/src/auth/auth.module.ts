@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
 
-@Module({})
+import { AuthKafkaController } from './auth.kafka.controller';
+
+@Module({
+  controllers: [AuthKafkaController],
+})
 export class AuthModule {}
