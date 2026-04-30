@@ -9,7 +9,7 @@ type CreateAuthRouterOptions = Readonly<{
 export const createAuthRouter = ({ authCoreProducer }: CreateAuthRouterOptions): Router => {
   const router = Router();
 
-  router.post('/kafka/signup', async (_request, response, next) => {
+  router.post('/auth/signup', async (_request, response, next) => {
     try {
       await authCoreProducer.sendSignupMessage();
 

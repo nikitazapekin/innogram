@@ -5,9 +5,13 @@ import { loadConfig } from './config/app-config';
 import { createAuthCoreProducer } from './kafka/auth-core-producer';
 import { createLogger, serializeError } from './shared/logger';
 
-export const SERVICE_NAME = 'auth-microservice';
+const DEFAULT_SERVICE_NAME = 'auth-microservice';
+const DEFAULT_SERVER_REQUEST_TIMEOUT_MS = 30_000;
 
-const SERVER_REQUEST_TIMEOUT_MS = 30_000;
+export const SERVICE_NAME = process.env.AUTH_SERVICE_NAME?.trim() || DEFAULT_SERVICE_NAME;
+const SERVER_REQUEST_TIMEOUT_MS = Number(
+  process.env.AUTH_SERVER_REQUEST_TIMEOUT_MS?.trim() || DEFAULT_SERVER_REQUEST_TIMEOUT_MS,
+);
 
 const configureServer = (server: Server): void => {
   server.requestTimeout = SERVER_REQUEST_TIMEOUT_MS;

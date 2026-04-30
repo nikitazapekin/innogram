@@ -1,7 +1,10 @@
 import { ClientProxyFactory, Transport, type ClientProxy } from '@nestjs/microservices';
 
-const AUTH_CORE_SIGNUP_TOPIC = 'auth.core.stub';
+const DEFAULT_AUTH_CORE_SIGNUP_TOPIC = 'auth.core.stub';
 const DEFAULT_KAFKA_BROKERS = 'localhost:9092';
+
+const readSignupTopic = (): string =>
+  process.env.AUTH_CORE_SIGNUP_TOPIC?.trim() || DEFAULT_AUTH_CORE_SIGNUP_TOPIC;
 
 const readKafkaBrokers = (): string[] =>
   (process.env.KAFKA_BROKERS ?? DEFAULT_KAFKA_BROKERS)
@@ -30,7 +33,7 @@ export const createAuthCoreProducer = async (): Promise<AuthCoreProducer> => {
   const sendMessage = (): Promise<void> =>
     new Promise((resolve, reject) => {
       client
-        .emit(AUTH_CORE_SIGNUP_TOPIC, {
+        .emit(readSignupTopic(), {
           source: 'auth-microservice',
         })
         .subscribe({
