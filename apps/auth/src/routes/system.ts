@@ -12,7 +12,7 @@ export const createSystemRouter = (): Router => {
   router.get('/health', (_request, response) => {
     response.status(200).json({
       status: 'ok',
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
     });
   });
 
