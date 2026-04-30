@@ -8,9 +8,8 @@ import {
 
 export const buildAuthResponse = (
   email: string,
-  passwordHash: string,
   config: AppConfig,
-): Readonly<{ accessToken: string; email: string; passwordHash: string; refreshToken: string }> => {
+): Readonly<{ accessToken: string; email: string; refreshToken: string }> => {
   const accessToken = createAccessToken(
     email,
     config.accessTokenSecret,
@@ -28,7 +27,6 @@ export const buildAuthResponse = (
   return {
     accessToken,
     email,
-    passwordHash,
     refreshToken,
   };
 };

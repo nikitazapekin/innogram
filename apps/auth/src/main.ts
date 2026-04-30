@@ -1,15 +1,38 @@
 import { createServer, type Server } from 'node:http';
 
+import { config as loadEnvironment } from 'dotenv';
+
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
 import { createLogger, serializeError } from './shared/logger';
 
-const DEFAULT_SERVICE_NAME = 'auth-microservice';
-const DEFAULT_SERVER_REQUEST_TIMEOUT_MS = 30_000;
+loadEnvironment();
 
-export const SERVICE_NAME = process.env.AUTH_SERVICE_NAME?.trim() || DEFAULT_SERVICE_NAME;
-const SERVER_REQUEST_TIMEOUT_MS = Number(
-  process.env.AUTH_SERVER_REQUEST_TIMEOUT_MS?.trim() || DEFAULT_SERVER_REQUEST_TIMEOUT_MS,
+const readRequiredString = (value: string | undefined, envName: string): string => {
+  const parsedValue = value?.trim();
+
+  if (!parsedValue) {
+    throw new Error(`Missing required environment variable: ${envName}`);
+  }
+
+  return parsedValue;
+};
+
+const readRequiredPositiveInteger = (value: string | undefined, envName: string): number => {
+  const rawValue = readRequiredString(value, envName);
+  const parsedValue = Number(rawValue);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    throw new Error(`Environment variable ${envName} must be a positive integer.`);
+  }
+
+  return parsedValue;
+};
+
+export const SERVICE_NAME = readRequiredString(process.env.AUTH_SERVICE_NAME, 'AUTH_SERVICE_NAME');
+const SERVER_REQUEST_TIMEOUT_MS = readRequiredPositiveInteger(
+  process.env.AUTH_SERVER_REQUEST_TIMEOUT_MS,
+  'AUTH_SERVER_REQUEST_TIMEOUT_MS',
 );
 
 const configureServer = (server: Server): void => {

@@ -33,6 +33,7 @@ export const parseRegisterRequestBody = (
     'password',
   );
   const formattedEmail = email.trim().toLowerCase();
+
   return {
     email: formattedEmail,
     password,
@@ -54,6 +55,7 @@ export const parseLoginRequestBody = (
     'password',
   );
   const formattedEmail = email.trim().toLowerCase();
+
   return {
     email: formattedEmail,
     password,

@@ -1,12 +1,5 @@
 import { config as loadEnvironment } from 'dotenv';
 
-const DEFAULT_PORT = 3002;
-const DEFAULT_ACCESS_TOKEN_SECRET = 'innogram-auth-access-secret';
-const DEFAULT_REFRESH_TOKEN_SECRET = 'innogram-auth-refresh-secret';
-const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '15m';
-const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '7d';
-const DEFAULT_PASSWORD_SALT_ROUNDS = 10;
-
 export type AppConfig = Readonly<{
   accessTokenExpiresIn: string;
   accessTokenSecret: string;
@@ -16,26 +9,22 @@ export type AppConfig = Readonly<{
   refreshTokenSecret: string;
 }>;
 
-const readPort = (): number => {
-  const rawValue = process.env.AUTH_HTTP_PORT?.trim() || process.env.PORT?.trim();
+const readRequiredString = (value: string | undefined, envName: string): string => {
+  const parsedValue = value?.trim();
 
-  if (!rawValue) {
-    return DEFAULT_PORT;
+  if (!parsedValue) {
+    throw new Error(`Missing required environment variable: ${envName}`);
   }
 
-  const port = Number(rawValue);
-
-  return port;
+  return parsedValue;
 };
 
-const readString = (value: string | undefined, fallback: string): string =>
-  value?.trim() || fallback;
-
-const readPositiveInteger = (value: string | undefined, fallback: number): number => {
-  const parsedValue = Number(value?.trim() || fallback);
+const readRequiredPositiveInteger = (value: string | undefined, envName: string): number => {
+  const rawValue = readRequiredString(value, envName);
+  const parsedValue = Number(rawValue);
 
   if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    return fallback;
+    throw new Error(`Environment variable ${envName} must be a positive integer.`);
   }
 
   return parsedValue;
@@ -45,26 +34,26 @@ export const loadConfig = (): AppConfig => {
   loadEnvironment();
 
   return {
-    accessTokenExpiresIn: readString(
+    accessTokenExpiresIn: readRequiredString(
       process.env.AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN,
-      DEFAULT_ACCESS_TOKEN_EXPIRES_IN,
+      'AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN',
     ),
-    accessTokenSecret: readString(
+    accessTokenSecret: readRequiredString(
       process.env.AUTH_JWT_ACCESS_TOKEN_SECRET,
-      DEFAULT_ACCESS_TOKEN_SECRET,
+      'AUTH_JWT_ACCESS_TOKEN_SECRET',
     ),
-    passwordSaltRounds: readPositiveInteger(
+    passwordSaltRounds: readRequiredPositiveInteger(
       process.env.AUTH_PASSWORD_SALT_ROUNDS,
-      DEFAULT_PASSWORD_SALT_ROUNDS,
+      'AUTH_PASSWORD_SALT_ROUNDS',
     ),
-    port: readPort(),
-    refreshTokenExpiresIn: readString(
+    port: readRequiredPositiveInteger(process.env.AUTH_HTTP_PORT, 'AUTH_HTTP_PORT'),
+    refreshTokenExpiresIn: readRequiredString(
       process.env.AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN,
-      DEFAULT_REFRESH_TOKEN_EXPIRES_IN,
+      'AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN',
     ),
-    refreshTokenSecret: readString(
+    refreshTokenSecret: readRequiredString(
       process.env.AUTH_JWT_REFRESH_TOKEN_SECRET,
-      DEFAULT_REFRESH_TOKEN_SECRET,
+      'AUTH_JWT_REFRESH_TOKEN_SECRET',
     ),
   };
 };

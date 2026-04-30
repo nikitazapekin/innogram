@@ -16,8 +16,10 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   router.post('/auth/register', async (request, response, next) => {
     try {
       const { email, password } = parseRegisterRequestBody(request.body);
-      const passwordHash = await hashPassword(password, config);
-      const authResponse = buildAuthResponse(email, passwordHash, config);
+
+      await hashPassword(password, config);
+
+      const authResponse = buildAuthResponse(email, config);
 
       response.status(201).json(authResponse);
     } catch (error: unknown) {
@@ -36,9 +38,8 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
   router.post('/auth/login', async (request, response, next) => {
     try {
-      const { email, password } = parseLoginRequestBody(request.body);
-      const passwordHash = await hashPassword(password, config);
-      const authResponse = buildAuthResponse(email, passwordHash, config);
+      const { email } = parseLoginRequestBody(request.body);
+      const authResponse = buildAuthResponse(email, config);
 
       response.status(200).json(authResponse);
     } catch (error: unknown) {
