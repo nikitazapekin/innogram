@@ -1,9 +1,8 @@
 import { createServer, type Server } from 'node:http';
 
-import { config as loadEnvironment } from 'dotenv';
-
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
+import { loadEnvironment } from './config/load-environment';
 import { createLogger, serializeError } from './shared/logger';
 
 loadEnvironment();

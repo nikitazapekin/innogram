@@ -1,4 +1,4 @@
-import { config as loadEnvironment } from 'dotenv';
+import { loadEnvironment } from './load-environment';
 
 export type AppConfig = Readonly<{
   accessTokenExpiresIn: string;

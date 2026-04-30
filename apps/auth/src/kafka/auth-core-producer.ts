@@ -1,5 +1,5 @@
 import { ClientProxyFactory, Transport, type ClientProxy } from '@nestjs/microservices';
-import { config as loadEnvironment } from 'dotenv';
+import { loadEnvironment } from '../config/load-environment';
 
 loadEnvironment();
 
