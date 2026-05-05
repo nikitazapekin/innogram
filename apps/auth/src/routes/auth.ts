@@ -1,22 +1,57 @@
 import { Router } from 'express';
 
-import type { AuthCoreProducer } from '../kafka/auth-core-producer';
+import type { AppConfig } from '../config/app-config';
+import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
+import { buildAuthResponse } from '../services/auth-response-service';
+import { hashPassword } from '../services/password-service';
+import { RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
-  authCoreProducer: AuthCoreProducer;
+  config: AppConfig;
 }>;
 
-export const createAuthRouter = ({ authCoreProducer }: CreateAuthRouterOptions): Router => {
+export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
   const router = Router();
 
-  router.post('/auth/signup', async (_request, response, next) => {
+  router.post('/auth/register', async (request, response, next) => {
     try {
-      await authCoreProducer.sendSignupMessage();
+      const { email, password } = parseRegisterRequestBody(request.body);
 
-      response.status(202).json({
-        status: 'sent',
-      });
+      await hashPassword(password, config);
+
+      const authResponse = buildAuthResponse(email, config);
+
+      response.status(201).json(authResponse);
     } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
+      next(error);
+    }
+  });
+
+  router.post('/auth/login', async (request, response, next) => {
+    try {
+      const { email } = parseLoginRequestBody(request.body);
+      const authResponse = buildAuthResponse(email, config);
+
+      response.status(200).json(authResponse);
+    } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
       next(error);
     }
   });

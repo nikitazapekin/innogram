@@ -1,13 +1,23 @@
 import { ClientProxyFactory, Transport, type ClientProxy } from '@nestjs/microservices';
+import { loadEnvironment } from '../config/load-environment';
 
-const DEFAULT_AUTH_CORE_SIGNUP_TOPIC = 'auth.core.stub';
-const DEFAULT_KAFKA_BROKERS = 'localhost:9092';
+loadEnvironment();
+
+const readRequiredString = (value: string | undefined, envName: string): string => {
+  const parsedValue = value?.trim();
+
+  if (!parsedValue) {
+    throw new Error(`Missing required environment variable: ${envName}`);
+  }
+
+  return parsedValue;
+};
 
 const readSignupTopic = (): string =>
-  process.env.AUTH_CORE_SIGNUP_TOPIC?.trim() || DEFAULT_AUTH_CORE_SIGNUP_TOPIC;
+  readRequiredString(process.env.AUTH_CORE_SIGNUP_TOPIC, 'AUTH_CORE_SIGNUP_TOPIC');
 
 const readKafkaBrokers = (): string[] =>
-  (process.env.KAFKA_BROKERS ?? DEFAULT_KAFKA_BROKERS)
+  readRequiredString(process.env.KAFKA_BROKERS, 'KAFKA_BROKERS')
     .split(',')
     .map((broker) => broker.trim())
     .filter(Boolean);

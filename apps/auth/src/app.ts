@@ -1,6 +1,6 @@
 import express, { type Express } from 'express';
 
-import type { AuthCoreProducer } from './kafka/auth-core-producer';
+import type { AppConfig } from './config/app-config';
 import { createErrorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found-handler';
 import { createRequestLogger } from './middleware/request-logger';
@@ -11,11 +11,11 @@ import type { Logger } from './shared/logger';
 const JSON_BODY_LIMIT = '16kb';
 
 type CreateAppOptions = Readonly<{
-  authCoreProducer: AuthCoreProducer;
+  config: AppConfig;
   logger: Logger;
 }>;
 
-export const createApp = ({ authCoreProducer, logger }: CreateAppOptions): Express => {
+export const createApp = ({ config, logger }: CreateAppOptions): Express => {
   const app = express();
 
   app.use(createRequestLogger(logger));
@@ -26,7 +26,7 @@ export const createApp = ({ authCoreProducer, logger }: CreateAppOptions): Expre
   );
 
   app.use(createSystemRouter());
-  app.use(createAuthRouter({ authCoreProducer }));
+  app.use(createAuthRouter({ config }));
   app.use(notFoundHandler);
   app.use(createErrorHandler(logger));
 
