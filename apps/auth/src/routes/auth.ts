@@ -9,6 +9,7 @@ import {
   createGoogleOAuthState,
   exchangeGoogleAuthorizationCode,
   fetchGoogleUserEmail,
+  parseGoogleOAuthState,
 } from '../services/google-oauth-service';
 import { hashPassword } from '../services/password-service';
 import { RouteError } from '../shared/route-error';
@@ -19,7 +20,16 @@ type CreateAuthRouterOptions = Readonly<{
 
 const GOOGLE_STATE_COOKIE_NAME = 'auth_google_oauth_state';
 const GOOGLE_CODE_VERIFIER_COOKIE_NAME = 'auth_google_code_verifier';
+const GOOGLE_REDIRECT_URI_COOKIE_NAME = 'auth_google_oauth_redirect_uri';
 const GOOGLE_OAUTH_COOKIE_MAX_AGE_MS = 10 * 60 * 1000;
+
+const safeDecodeURIComponent = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
 
 const parseCookieHeader = (cookieHeader: string | undefined): Record<string, string> => {
   if (!cookieHeader) {
@@ -40,15 +50,44 @@ const parseCookieHeader = (cookieHeader: string | undefined): Record<string, str
       return cookies;
     }
 
-    cookies[name] = decodeURIComponent(value);
+    cookies[name] = safeDecodeURIComponent(value);
 
     return cookies;
   }, {});
 };
 
+const getGoogleCallbackUrl = (request: {
+  headers: Record<string, string | string[] | undefined>;
+  protocol: string;
+}): string => {
+  const forwardedProtoHeader = request.headers['x-forwarded-proto'];
+  const forwardedHostHeader = request.headers['x-forwarded-host'];
+  const hostHeader = request.headers.host;
+  const protocol =
+    typeof forwardedProtoHeader === 'string' && forwardedProtoHeader.trim().length > 0
+      ? (forwardedProtoHeader.split(',')[0]?.trim() ?? request.protocol)
+      : request.protocol;
+  const host =
+    typeof forwardedHostHeader === 'string' && forwardedHostHeader.trim().length > 0
+      ? forwardedHostHeader.split(',')[0]?.trim()
+      : typeof hostHeader === 'string'
+        ? hostHeader.trim()
+        : '';
+
+  if (!host) {
+    throw new RouteError(
+      400,
+      'GOOGLE_OAUTH_HOST_MISSING',
+      'Google OAuth request did not contain a valid host header.',
+    );
+  }
+
+  return `${protocol}://${host}/auth/google/callback`;
+};
+
 const readGoogleOAuthCookies = (
   cookieHeader: string | undefined,
-): Readonly<{ codeVerifier: string; state: string }> => {
+): Readonly<{ codeVerifier: string; redirectUri: string | undefined; state: string }> => {
   const cookies = parseCookieHeader(cookieHeader);
   const state = cookies[GOOGLE_STATE_COOKIE_NAME];
   const codeVerifier = cookies[GOOGLE_CODE_VERIFIER_COOKIE_NAME];
@@ -63,6 +102,7 @@ const readGoogleOAuthCookies = (
 
   return {
     codeVerifier,
+    redirectUri: cookies[GOOGLE_REDIRECT_URI_COOKIE_NAME],
     state,
   };
 };
@@ -78,6 +118,53 @@ const clearGoogleOAuthCookies = (response: Response): void => {
     sameSite: 'lax',
     secure: true,
   });
+  response.clearCookie(GOOGLE_REDIRECT_URI_COOKIE_NAME, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: true,
+  });
+};
+
+const readGoogleOAuthSession = (
+  cookieHeader: string | undefined,
+  returnedState: string,
+  config: AppConfig,
+): Readonly<{ codeVerifier: string; redirectUri: string; state: string }> => {
+  try {
+    const session = readGoogleOAuthCookies(cookieHeader);
+
+    if (session.state !== returnedState) {
+      throw new RouteError(
+        400,
+        'GOOGLE_OAUTH_STATE_MISMATCH',
+        'Google OAuth state validation failed.',
+      );
+    }
+
+    const parsedState = parseGoogleOAuthState(returnedState, config);
+
+    return {
+      codeVerifier: session.codeVerifier,
+      redirectUri: session.redirectUri ?? parsedState.redirectUri,
+      state: session.state,
+    };
+  } catch (error: unknown) {
+    if (
+      error instanceof RouteError &&
+      (error.code === 'GOOGLE_OAUTH_SESSION_MISSING' ||
+        error.code === 'GOOGLE_OAUTH_STATE_MISMATCH')
+    ) {
+      const parsedState = parseGoogleOAuthState(returnedState, config);
+
+      return {
+        codeVerifier: parsedState.codeVerifier,
+        redirectUri: parsedState.redirectUri,
+        state: returnedState,
+      };
+    }
+
+    throw error;
+  }
 };
 
 export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
@@ -127,9 +214,13 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   });
 
   router.get('/auth/google', (request, response) => {
-    const state = createGoogleOAuthState();
     const codeVerifier = createGoogleCodeVerifier();
-    const authorizationUrl = createGoogleAuthorizationUrl(config, state, codeVerifier);
+    const redirectUri = getGoogleCallbackUrl(request);
+    const state = createGoogleOAuthState(config, {
+      codeVerifier,
+      redirectUri,
+    });
+    const authorizationUrl = createGoogleAuthorizationUrl(config, state, codeVerifier, redirectUri);
     const secureCookies = request.secure || request.headers['x-forwarded-proto'] === 'https';
 
     response.cookie(GOOGLE_STATE_COOKIE_NAME, state, {
@@ -139,6 +230,12 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       secure: secureCookies,
     });
     response.cookie(GOOGLE_CODE_VERIFIER_COOKIE_NAME, codeVerifier, {
+      httpOnly: true,
+      maxAge: GOOGLE_OAUTH_COOKIE_MAX_AGE_MS,
+      sameSite: 'lax',
+      secure: secureCookies,
+    });
+    response.cookie(GOOGLE_REDIRECT_URI_COOKIE_NAME, redirectUri, {
       httpOnly: true,
       maxAge: GOOGLE_OAUTH_COOKIE_MAX_AGE_MS,
       sameSite: 'lax',
@@ -181,17 +278,18 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         );
       }
 
-      const { codeVerifier, state } = readGoogleOAuthCookies(request.headers.cookie);
+      const { codeVerifier, redirectUri } = readGoogleOAuthSession(
+        request.headers.cookie,
+        returnedState,
+        config,
+      );
 
-      if (returnedState !== state) {
-        throw new RouteError(
-          400,
-          'GOOGLE_OAUTH_STATE_MISMATCH',
-          'Google OAuth state validation failed.',
-        );
-      }
-
-      const accessToken = await exchangeGoogleAuthorizationCode(code.trim(), codeVerifier, config);
+      const accessToken = await exchangeGoogleAuthorizationCode(
+        code.trim(),
+        codeVerifier,
+        config,
+        redirectUri,
+      );
       const email = await fetchGoogleUserEmail(accessToken);
       const authResponse = buildAuthResponse(email, config);
 
