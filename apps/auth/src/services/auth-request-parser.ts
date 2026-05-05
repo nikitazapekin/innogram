@@ -32,7 +32,7 @@ export const parseRegisterRequestBody = (
     'INVALID_PASSWORD',
     'password',
   );
-  const formattedEmail = email.trim().toLowerCase();
+  const formattedEmail = email.toLowerCase();
 
   return {
     email: formattedEmail,
