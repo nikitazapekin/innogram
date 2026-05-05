@@ -10,13 +10,10 @@ const GOOGLE_SCOPE = 'openid email profile';
 
 type GoogleOAuthStatePayload = Readonly<{
   codeVerifier: string;
-  expiresAt: number;
-  nonce: string;
   redirectUri: string;
 }>;
 
 const GOOGLE_STATE_TOKEN_VERSION = 'v1';
-const GOOGLE_STATE_TTL_MS = 10 * 60 * 1000;
 
 const ensureNonEmptyString = (value: unknown, code: string, message: string): string => {
   if (typeof value !== 'string' || value.trim().length === 0) {
@@ -40,8 +37,6 @@ export const createGoogleOAuthState = (
   const cipher = createCipheriv('aes-256-gcm', createGoogleStateEncryptionKey(config), iv);
   const statePayload: GoogleOAuthStatePayload = {
     codeVerifier: payload.codeVerifier,
-    expiresAt: Date.now() + GOOGLE_STATE_TTL_MS,
-    nonce: randomBytes(16).toString('base64url'),
     redirectUri: payload.redirectUri,
   };
   const encrypted = Buffer.concat([
@@ -97,20 +92,10 @@ export const parseGoogleOAuthState = (
     }
 
     let codeVerifier: unknown;
-    let expiresAt: unknown;
-    let nonce: unknown;
     let redirectUri: unknown;
 
     if ('codeVerifier' in parsedValue) {
       codeVerifier = parsedValue.codeVerifier;
-    }
-
-    if ('expiresAt' in parsedValue) {
-      expiresAt = parsedValue.expiresAt;
-    }
-
-    if ('nonce' in parsedValue) {
-      nonce = parsedValue.nonce;
     }
 
     if ('redirectUri' in parsedValue) {
@@ -125,30 +110,11 @@ export const parseGoogleOAuthState = (
       throw new Error('invalid state payload');
     }
 
-    if (typeof nonce !== 'string' || nonce.trim().length === 0) {
-      throw new Error('invalid state payload');
-    }
-
-    if (typeof expiresAt !== 'number' || !Number.isFinite(expiresAt)) {
-      throw new Error('invalid state payload');
-    }
-
     return {
       codeVerifier,
-      expiresAt,
-      nonce,
       redirectUri,
     };
   } catch (error: unknown) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 'GOOGLE_OAUTH_STATE_EXPIRED'
-    ) {
-      throw error;
-    }
-
     throw createRouteError(
       400,
       'GOOGLE_OAUTH_STATE_INVALID',

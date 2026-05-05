@@ -1,12 +1,7 @@
 import { Router } from 'express';
 
 import type { AppConfig } from '../config/app-config';
-import {
-  clearGoogleOAuthCookies,
-  getGoogleCallbackUrl,
-  readGoogleOAuthSession,
-  setGoogleOAuthCookies,
-} from '../helpers/google-oauth-helpers';
+import { getGoogleCallbackUrl } from '../helpers/google-oauth-helpers';
 import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
 import { buildAuthResponse } from '../services/auth-response-service';
 import {
@@ -15,6 +10,7 @@ import {
   createGoogleOAuthState,
   exchangeGoogleAuthorizationCode,
   fetchGoogleUserEmail,
+  parseGoogleOAuthState,
 } from '../services/google-oauth-service';
 import { hashPassword } from '../services/password-service';
 import { RouteError } from '../shared/route-error';
@@ -77,9 +73,6 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       redirectUri,
     });
     const authorizationUrl = createGoogleAuthorizationUrl(config, state, codeVerifier, redirectUri);
-    const secureCookies = request.secure || request.headers['x-forwarded-proto'] === 'https';
-
-    setGoogleOAuthCookies(response, { codeVerifier, redirectUri, state }, secureCookies);
 
     response.redirect(302, authorizationUrl);
   });
@@ -89,7 +82,6 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       const googleError = request.query.error;
 
       if (typeof googleError === 'string' && googleError.trim().length > 0) {
-        clearGoogleOAuthCookies(response);
         response.status(400).json({
           error: 'GOOGLE_OAUTH_DENIED',
           message: `Google OAuth failed: ${googleError.trim()}.`,
@@ -117,11 +109,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         );
       }
 
-      const { codeVerifier, redirectUri } = readGoogleOAuthSession(
-        request.headers.cookie,
-        returnedState,
-        config,
-      );
+      const { codeVerifier, redirectUri } = parseGoogleOAuthState(returnedState, config);
 
       const accessToken = await exchangeGoogleAuthorizationCode(
         code.trim(),
@@ -132,11 +120,8 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       const email = await fetchGoogleUserEmail(accessToken);
       const authResponse = buildAuthResponse(email, config);
 
-      clearGoogleOAuthCookies(response);
       response.status(200).json(authResponse);
     } catch (error: unknown) {
-      clearGoogleOAuthCookies(response);
-
       if (error instanceof RouteError) {
         response.status(error.status).json({
           error: error.code,
