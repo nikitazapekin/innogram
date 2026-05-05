@@ -3,6 +3,9 @@ import { loadEnvironment } from './load-environment';
 export type AppConfig = Readonly<{
   accessTokenExpiresIn: string;
   accessTokenSecret: string;
+  googleClientId: string;
+  googleClientSecret: string;
+  googleRedirectUri: string;
   passwordSaltRounds: number;
   port: number;
   refreshTokenExpiresIn: string;
@@ -41,6 +44,15 @@ export const loadConfig = (): AppConfig => {
     accessTokenSecret: readRequiredString(
       process.env.AUTH_JWT_ACCESS_TOKEN_SECRET,
       'AUTH_JWT_ACCESS_TOKEN_SECRET',
+    ),
+    googleClientId: readRequiredString(process.env.AUTH_GOOGLE_CLIENT_ID, 'AUTH_GOOGLE_CLIENT_ID'),
+    googleClientSecret: readRequiredString(
+      process.env.AUTH_GOOGLE_CLIENT_SECRET,
+      'AUTH_GOOGLE_CLIENT_SECRET',
+    ),
+    googleRedirectUri: readRequiredString(
+      process.env.AUTH_GOOGLE_REDIRECT_URI,
+      'AUTH_GOOGLE_REDIRECT_URI',
     ),
     passwordSaltRounds: readRequiredPositiveInteger(
       process.env.AUTH_PASSWORD_SALT_ROUNDS,
