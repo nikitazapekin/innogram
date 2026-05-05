@@ -26,85 +26,11 @@ const ensureNonEmptyString = (value: unknown, code: string, message: string): st
   return value.trim();
 };
 
-const parseJsonRecord = async (response: Response): Promise<Record<string, unknown>> => {
-  let parsedValue: unknown;
-
-  try {
-    parsedValue = await response.json();
-  } catch {
-    throw createRouteError(
-      502,
-      'GOOGLE_OAUTH_INVALID_RESPONSE',
-      'Google OAuth response is invalid.',
-    );
-  }
-
-  if (typeof parsedValue !== 'object' || parsedValue === null) {
-    throw createRouteError(
-      502,
-      'GOOGLE_OAUTH_INVALID_RESPONSE',
-      'Google OAuth response is invalid.',
-    );
-  }
-
-  return Object(parsedValue);
-};
-
 const createSha256Base64Url = (value: string): string =>
   createHash('sha256').update(value).digest('base64url');
 
 const createGoogleStateEncryptionKey = (config: AppConfig): Buffer =>
   createHash('sha256').update(config.accessTokenSecret).digest();
-
-const readGoogleOAuthStatePayload = (value: unknown): GoogleOAuthStatePayload | null => {
-  if (typeof value !== 'object' || value === null) {
-    return null;
-  }
-
-  let codeVerifier: unknown;
-  let expiresAt: unknown;
-  let nonce: unknown;
-  let redirectUri: unknown;
-
-  if ('codeVerifier' in value) {
-    codeVerifier = value.codeVerifier;
-  }
-
-  if ('expiresAt' in value) {
-    expiresAt = value.expiresAt;
-  }
-
-  if ('nonce' in value) {
-    nonce = value.nonce;
-  }
-
-  if ('redirectUri' in value) {
-    redirectUri = value.redirectUri;
-  }
-
-  if (typeof codeVerifier !== 'string' || codeVerifier.trim().length === 0) {
-    return null;
-  }
-
-  if (typeof redirectUri !== 'string' || redirectUri.trim().length === 0) {
-    return null;
-  }
-
-  if (typeof nonce !== 'string' || nonce.trim().length === 0) {
-    return null;
-  }
-
-  if (typeof expiresAt !== 'number' || !Number.isFinite(expiresAt)) {
-    return null;
-  }
-
-  return {
-    codeVerifier,
-    expiresAt,
-    nonce,
-    redirectUri,
-  };
-};
 
 export const createGoogleOAuthState = (
   config: AppConfig,
@@ -123,14 +49,13 @@ export const createGoogleOAuthState = (
     cipher.final(),
   ]);
   const tag = cipher.getAuthTag();
-  const stateTokenParts = [
+  const responseString = [
     GOOGLE_STATE_TOKEN_VERSION,
     iv.toString('base64url'),
     encrypted.toString('base64url'),
     tag.toString('base64url'),
-  ];
-
-  return stateTokenParts.join('.');
+  ].join('.');
+  return responseString;
 };
 
 export const parseGoogleOAuthState = (
@@ -166,34 +91,61 @@ export const parseGoogleOAuthState = (
       decipher.final(),
     ]).toString('utf8');
     const parsedValue: unknown = JSON.parse(decryptedPayload);
-    const statePayload = readGoogleOAuthStatePayload(parsedValue);
 
-    if (!statePayload) {
+    if (typeof parsedValue !== 'object' || parsedValue === null) {
       throw new Error('invalid state payload');
     }
 
-    if (statePayload.expiresAt < Date.now()) {
-      throw createRouteError(
-        400,
-        'GOOGLE_OAUTH_STATE_EXPIRED',
-        'Google OAuth state token has expired.',
-      );
+    let codeVerifier: unknown;
+    let expiresAt: unknown;
+    let nonce: unknown;
+    let redirectUri: unknown;
+
+    if ('codeVerifier' in parsedValue) {
+      codeVerifier = parsedValue.codeVerifier;
+    }
+
+    if ('expiresAt' in parsedValue) {
+      expiresAt = parsedValue.expiresAt;
+    }
+
+    if ('nonce' in parsedValue) {
+      nonce = parsedValue.nonce;
+    }
+
+    if ('redirectUri' in parsedValue) {
+      redirectUri = parsedValue.redirectUri;
+    }
+
+    if (typeof codeVerifier !== 'string' || codeVerifier.trim().length === 0) {
+      throw new Error('invalid state payload');
+    }
+
+    if (typeof redirectUri !== 'string' || redirectUri.trim().length === 0) {
+      throw new Error('invalid state payload');
+    }
+
+    if (typeof nonce !== 'string' || nonce.trim().length === 0) {
+      throw new Error('invalid state payload');
+    }
+
+    if (typeof expiresAt !== 'number' || !Number.isFinite(expiresAt)) {
+      throw new Error('invalid state payload');
     }
 
     return {
-      codeVerifier: statePayload.codeVerifier,
-      expiresAt: statePayload.expiresAt,
-      nonce: statePayload.nonce,
-      redirectUri: statePayload.redirectUri,
+      codeVerifier,
+      expiresAt,
+      nonce,
+      redirectUri,
     };
   } catch (error: unknown) {
-    const hasExpiredGoogleOAuthStateErrorCode =
+    if (
       typeof error === 'object' &&
       error !== null &&
       'code' in error &&
-      error.code === 'GOOGLE_OAUTH_STATE_EXPIRED';
-
-    if (hasExpiredGoogleOAuthStateErrorCode) {
+      error.code === 'GOOGLE_OAUTH_STATE_EXPIRED'
+    ) {
       throw error;
     }
 
@@ -246,28 +198,48 @@ export const exchangeGoogleAuthorizationCode = async (
     },
     method: 'POST',
   });
-  const responseBody = await parseJsonRecord(response);
+  let responseBody: unknown;
+
+  try {
+    responseBody = await response.json();
+  } catch {
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_INVALID_RESPONSE',
+      'Google OAuth response is invalid.',
+    );
+  }
+
+  if (typeof responseBody !== 'object' || responseBody === null) {
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_INVALID_RESPONSE',
+      'Google OAuth response is invalid.',
+    );
+  }
+
+  const responseBodyRecord = Object(responseBody);
 
   if (!response.ok) {
     const error = ensureNonEmptyString(
-      responseBody.error ?? 'google_oauth_error',
+      responseBodyRecord.error ?? 'google_oauth_error',
       'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED',
       'Google OAuth token exchange failed.',
     );
     let description = 'Google OAuth token exchange failed.';
 
     if (
-      typeof responseBody.error_description === 'string' &&
-      responseBody.error_description.trim()
+      typeof responseBodyRecord.error_description === 'string' &&
+      responseBodyRecord.error_description.trim()
     ) {
-      description = responseBody.error_description.trim();
+      description = responseBodyRecord.error_description.trim();
     }
 
     throw createRouteError(502, 'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED', `${error}: ${description}`);
   }
 
   return ensureNonEmptyString(
-    responseBody.access_token,
+    responseBodyRecord.access_token,
     'GOOGLE_OAUTH_TOKEN_MISSING',
     'Google OAuth token response did not contain an access token.',
   );
@@ -280,7 +252,27 @@ export const fetchGoogleUserEmail = async (accessToken: string): Promise<string>
     },
     method: 'GET',
   });
-  const responseBody = await parseJsonRecord(response);
+  let responseBody: unknown;
+
+  try {
+    responseBody = await response.json();
+  } catch {
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_INVALID_RESPONSE',
+      'Google OAuth response is invalid.',
+    );
+  }
+
+  if (typeof responseBody !== 'object' || responseBody === null) {
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_INVALID_RESPONSE',
+      'Google OAuth response is invalid.',
+    );
+  }
+
+  const responseBodyRecord = Object(responseBody);
 
   if (!response.ok) {
     throw createRouteError(
@@ -290,7 +282,7 @@ export const fetchGoogleUserEmail = async (accessToken: string): Promise<string>
     );
   }
 
-  if (responseBody.email_verified !== true) {
+  if (responseBodyRecord.email_verified !== true) {
     throw createRouteError(
       403,
       'GOOGLE_EMAIL_NOT_VERIFIED',
@@ -299,7 +291,7 @@ export const fetchGoogleUserEmail = async (accessToken: string): Promise<string>
   }
 
   return ensureNonEmptyString(
-    responseBody.email,
+    responseBodyRecord.email,
     'GOOGLE_EMAIL_MISSING',
     'Google OAuth user info did not contain an email address.',
   ).toLowerCase();
