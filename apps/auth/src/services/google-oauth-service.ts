@@ -50,6 +50,7 @@ export const createGoogleOAuthState = (
     encrypted.toString('base64url'),
     tag.toString('base64url'),
   ].join('.');
+
   return responseString;
 };
 
@@ -114,7 +115,7 @@ export const parseGoogleOAuthState = (
       codeVerifier,
       redirectUri,
     };
-  } catch (error: unknown) {
+  } catch (_error: unknown) {
     throw createRouteError(
       400,
       'GOOGLE_OAUTH_STATE_INVALID',
