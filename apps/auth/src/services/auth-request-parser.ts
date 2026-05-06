@@ -61,3 +61,16 @@ export const parseLoginRequestBody = (
     password,
   };
 };
+
+export const parseRefreshTokenRequestBody = (body: unknown): Readonly<{ refreshToken: string }> => {
+  const requestBody = ensureBodyRecord(body);
+  const refreshToken = ensureNonEmptyString(
+    getRecordValue(requestBody, 'refreshToken'),
+    'INVALID_REFRESH_TOKEN',
+    'refreshToken',
+  );
+
+  return {
+    refreshToken: refreshToken.trim(),
+  };
+};

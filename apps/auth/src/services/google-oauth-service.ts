@@ -136,6 +136,7 @@ export const createGoogleAuthorizationUrl = (
     client_id: config.googleClientId,
     code_challenge: createSha256Base64Url(codeVerifier),
     code_challenge_method: 'S256',
+    prompt: 'select_account',
     redirect_uri: redirectUri,
     response_type: 'code',
     scope: GOOGLE_SCOPE,

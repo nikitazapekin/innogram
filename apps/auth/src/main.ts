@@ -3,6 +3,8 @@ import { createServer, type Server } from 'node:http';
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
 import { loadEnvironment } from './config/load-environment';
+import { createAuthSessionService } from './services/auth-session-service';
+import { createRedisSessionStore } from './services/redis-session-store';
 import { createLogger, serializeError } from './shared/logger';
 
 loadEnvironment();
@@ -58,8 +60,20 @@ const listen = (server: Server, port: number): Promise<void> =>
 const bootstrap = async (): Promise<void> => {
   const config = loadConfig();
   const logger = createLogger(SERVICE_NAME);
+  const sessionStore = createRedisSessionStore({
+    logger,
+    redisUrl: config.redisUrl,
+  });
+
+  await sessionStore.connect();
+
+  const authSessionService = createAuthSessionService({
+    config,
+    sessionStore,
+  });
 
   const app = createApp({
+    authSessionService,
     config,
     logger,
   });

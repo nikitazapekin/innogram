@@ -1,8 +1,12 @@
-import { Router } from 'express';
+import { type Response, Router } from 'express';
 
 import type { AppConfig } from '../config/app-config';
-import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
-import { buildAuthResponse } from '../services/auth-response-service';
+import {
+  parseLoginRequestBody,
+  parseRefreshTokenRequestBody,
+  parseRegisterRequestBody,
+} from '../services/auth-request-parser';
+import type { AuthSessionService } from '../services/auth-session-service';
 import {
   createGoogleAuthorizationUrl,
   createGoogleCodeVerifier,
@@ -15,11 +19,28 @@ import { hashPassword } from '../services/password-service';
 import { RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
+  authSessionService: AuthSessionService;
   config: AppConfig;
 }>;
 
-export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
+export const createAuthRouter = ({
+  authSessionService,
+  config,
+}: CreateAuthRouterOptions): Router => {
   const router = Router();
+
+  const startGoogleOAuthFlow = (response: Response) => {
+    const codeVerifier = createGoogleCodeVerifier();
+    const redirectUri = config.googleRedirectUri;
+    const state = createGoogleOAuthState(config, {
+      codeVerifier,
+      redirectUri,
+    });
+    const authorizationUrl = createGoogleAuthorizationUrl(config, state, codeVerifier, redirectUri);
+
+    response.set('cache-control', 'no-store');
+    response.redirect(302, authorizationUrl);
+  };
 
   router.post('/auth/register', async (request, response, next) => {
     try {
@@ -27,7 +48,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
       await hashPassword(password, config);
 
-      const authResponse = buildAuthResponse(email, config);
+      const authResponse = await authSessionService.createSession(email);
 
       response.status(201).json(authResponse);
     } catch (error: unknown) {
@@ -47,7 +68,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   router.post('/auth/login', async (request, response, next) => {
     try {
       const { email } = parseLoginRequestBody(request.body);
-      const authResponse = buildAuthResponse(email, config);
+      const authResponse = await authSessionService.createSession(email);
 
       response.status(200).json(authResponse);
     } catch (error: unknown) {
@@ -64,16 +85,49 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
     }
   });
 
-  router.get('/auth/google', (request, response) => {
-    const codeVerifier = createGoogleCodeVerifier();
-    const redirectUri = config.googleRedirectUri;
-    const state = createGoogleOAuthState(config, {
-      codeVerifier,
-      redirectUri,
-    });
-    const authorizationUrl = createGoogleAuthorizationUrl(config, state, codeVerifier, redirectUri);
+  router.post('/auth/refresh', async (request, response, next) => {
+    try {
+      const { refreshToken } = parseRefreshTokenRequestBody(request.body);
+      const authResponse = await authSessionService.refreshSession(refreshToken);
 
-    response.redirect(302, authorizationUrl);
+      response.status(200).json(authResponse);
+    } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
+      next(error);
+    }
+  });
+
+  router.post('/auth/logout', async (request, response, next) => {
+    try {
+      const { refreshToken } = parseRefreshTokenRequestBody(request.body);
+
+      await authSessionService.logout(refreshToken);
+
+      response.status(204).send();
+    } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
+      next(error);
+    }
+  });
+
+  router.get('/auth/google', (_request, response) => {
+    startGoogleOAuthFlow(response);
   });
 
   router.get('/auth/google/callback', async (request, response, next) => {
@@ -117,11 +171,22 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         redirectUri,
       );
       const email = await fetchGoogleUserEmail(accessToken);
-      const authResponse = buildAuthResponse(email, config);
+      const authResponse = await authSessionService.createSession(email);
 
+      response.set('cache-control', 'no-store');
       response.status(200).json(authResponse);
     } catch (error: unknown) {
       if (error instanceof RouteError) {
+        if (
+          error.code === 'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED' &&
+          error.message.includes('invalid_grant')
+        ) {
+          startGoogleOAuthFlow(response);
+
+          return;
+        }
+
+        response.set('cache-control', 'no-store');
         response.status(error.status).json({
           error: error.code,
           message: error.message,

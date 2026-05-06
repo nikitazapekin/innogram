@@ -15,7 +15,8 @@
     "bcrypt": "^5.1.1",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "redis": "^5.12.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

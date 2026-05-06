@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { createRouteError } from '../shared/route-error';
 
@@ -6,14 +6,18 @@ type TokenType = 'access' | 'refresh';
 
 type UnsignedAuthTokenPayload = Readonly<{
   email: string;
+  jti: string;
+  sessionId: string;
   sub: string;
   tokenType: TokenType;
 }>;
 
-type AuthTokenPayload = Readonly<{
+export type AuthTokenPayload = Readonly<{
   email: string;
   exp: number;
   iat: number;
+  jti: string;
+  sessionId: string;
   sub: string;
   tokenType: TokenType;
 }>;
@@ -42,7 +46,7 @@ const parseJsonRecord = (value: string): Record<string, unknown> => {
   return Object(parsedValue);
 };
 
-const parseTokenLifetimeSeconds = (expiresIn: string): number => {
+export const parseTokenLifetimeSeconds = (expiresIn: string): number => {
   if (/^\d+$/.test(expiresIn)) {
     return Number(expiresIn);
   }
@@ -73,8 +77,14 @@ const parseTokenLifetimeSeconds = (expiresIn: string): number => {
 const signHmacSha256 = (value: string, secret: string): Buffer =>
   createHmac('sha256', secret).update(value).digest();
 
-const createTokenPayload = (email: string, tokenType: TokenType): UnsignedAuthTokenPayload => ({
+const createTokenPayload = (
+  email: string,
+  sessionId: string,
+  tokenType: TokenType,
+): UnsignedAuthTokenPayload => ({
   email,
+  jti: randomUUID(),
+  sessionId,
   sub: email,
   tokenType,
 });
@@ -133,13 +143,15 @@ const validateToken = (
     throw createRouteError(500, 'INVALID_TOKEN_HEADER', 'JWT header has invalid shape.');
   }
 
-  const { email, exp, iat, sub, tokenType } = decodedPayload;
+  const { email, exp, iat, jti, sessionId, sub, tokenType } = decodedPayload;
 
   if (typeof exp !== 'number' || typeof iat !== 'number' || tokenType !== expectedTokenType) {
     throw createRouteError(500, 'INVALID_TOKEN_PAYLOAD', 'JWT payload has invalid shape.');
   }
 
   const validatedEmail = ensureNonEmptyString(email);
+  const validatedJti = ensureNonEmptyString(jti);
+  const validatedSessionId = ensureNonEmptyString(sessionId);
   const validatedSub = ensureNonEmptyString(sub);
 
   if (exp <= Math.floor(Date.now() / 1000)) {
@@ -150,16 +162,26 @@ const validateToken = (
     email: validatedEmail,
     exp,
     iat,
+    jti: validatedJti,
+    sessionId: validatedSessionId,
     sub: validatedSub,
     tokenType: expectedTokenType,
   };
 };
 
-export const createAccessToken = (email: string, secret: string, expiresIn: string): string =>
-  signToken(createTokenPayload(email, 'access'), secret, expiresIn);
+export const createAccessToken = (
+  email: string,
+  sessionId: string,
+  secret: string,
+  expiresIn: string,
+): string => signToken(createTokenPayload(email, sessionId, 'access'), secret, expiresIn);
 
-export const createRefreshToken = (email: string, secret: string, expiresIn: string): string =>
-  signToken(createTokenPayload(email, 'refresh'), secret, expiresIn);
+export const createRefreshToken = (
+  email: string,
+  sessionId: string,
+  secret: string,
+  expiresIn: string,
+): string => signToken(createTokenPayload(email, sessionId, 'refresh'), secret, expiresIn);
 
 export const validateAccessToken = (token: string, secret: string): AuthTokenPayload =>
   validateToken(token, secret, 'access');
