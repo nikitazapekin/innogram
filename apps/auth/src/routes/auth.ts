@@ -1,7 +1,6 @@
 import { Router } from 'express';
 
 import type { AppConfig } from '../config/app-config';
-import { getGoogleCallbackUrl } from '../helpers/google-oauth-helpers';
 import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
 import { buildAuthResponse } from '../services/auth-response-service';
 import {
@@ -67,7 +66,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
   router.get('/auth/google', (request, response) => {
     const codeVerifier = createGoogleCodeVerifier();
-    const redirectUri = getGoogleCallbackUrl(request);
+    const redirectUri = config.googleRedirectUri;
     const state = createGoogleOAuthState(config, {
       codeVerifier,
       redirectUri,
