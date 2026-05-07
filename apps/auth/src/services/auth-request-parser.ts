@@ -41,8 +41,10 @@ export const parseRegisterRequestBody = (
 };
 
 export const parseLoginRequestBody = (
+  // добавить юзер дто
   body: unknown,
 ): Readonly<{ email: string; password: string }> => {
+  //добавить коннект с юхером в кор модуле
   const requestBody = ensureBodyRecord(body);
   const email = ensureNonEmptyString(
     getRecordValue(requestBody, 'email'),

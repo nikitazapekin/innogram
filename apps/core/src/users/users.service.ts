@@ -8,6 +8,7 @@ import { UserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
+  // find email
   private readonly logger = new Logger(UsersService.name);
 
   constructor(

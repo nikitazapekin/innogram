@@ -33,10 +33,11 @@ export const createAuthRouter = ({
 
   const setRefreshTokenCookie = (response: Response, refreshToken: string): void => {
     response.cookie('refreshToken', refreshToken, {
+      // все разбрасоно по разным местам
       httpOnly: true,
       maxAge: refreshTokenCookieMaxAgeMs,
       path: '/auth',
-      sameSite: 'lax',
+      sameSite: 'lax', //проверить
     });
   };
 
@@ -87,16 +88,19 @@ export const createAuthRouter = ({
   });
 
   router.post('/auth/login', async (request, response, next) => {
+    // попробовать сделать проверку юзера , откуда берем юхера
     try {
       const { email } = parseLoginRequestBody(request.body);
-      const authResponse = await authSessionService.createSession(email);
+      const authResponse = await authSessionService.createSession(email); // убрать цепочки вложености. this.kafkaservise.findEmailAdress
 
-      setRefreshTokenCookie(response, authResponse.refreshToken);
+      setRefreshTokenCookie(response, authResponse.refreshToken); // добавьть this.redis.setRefreshTokenCookie( email ,refresh token ...)
 
-      response.status(200).json(toPublicAuthResponse(authResponse));
+      response.status(200).json(toPublicAuthResponse(authResponse)); //убрать 200 статус так как он будет автоматическим
     } catch (error: unknown) {
       if (error instanceof RouteError) {
+        // catch error большой. сделать один логгер
         response.status(error.status).json({
+          // хардкдокд
           error: error.code,
           message: error.message,
         });
