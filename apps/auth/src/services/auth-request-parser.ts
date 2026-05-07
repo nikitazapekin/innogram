@@ -74,3 +74,37 @@ export const parseRefreshTokenRequestBody = (body: unknown): Readonly<{ refreshT
     refreshToken: refreshToken.trim(),
   };
 };
+
+export const parseRefreshTokenCookie = (
+  cookieHeader: string | undefined,
+): Readonly<{ refreshToken: string }> => {
+  if (typeof cookieHeader !== 'string' || cookieHeader.trim().length === 0) {
+    throw createRouteError(
+      401,
+      'MISSING_REFRESH_TOKEN_COOKIE',
+      'Refresh token cookie is required.',
+    );
+  }
+
+  const cookieEntries = cookieHeader.split(';');
+
+  for (const cookieEntry of cookieEntries) {
+    const [rawName, ...rawValueParts] = cookieEntry.split('=');
+
+    if (rawName?.trim() !== 'refreshToken') {
+      continue;
+    }
+
+    const rawValue = rawValueParts.join('=').trim();
+
+    if (rawValue.length === 0) {
+      break;
+    }
+
+    return {
+      refreshToken: decodeURIComponent(rawValue),
+    };
+  }
+
+  throw createRouteError(401, 'MISSING_REFRESH_TOKEN_COOKIE', 'Refresh token cookie is required.');
+};

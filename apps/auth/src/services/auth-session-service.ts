@@ -16,6 +16,11 @@ type AuthResponse = Readonly<{
   refreshToken: string;
 }>;
 
+export type PublicAuthResponse = Readonly<{
+  accessToken: string;
+  email: string;
+}>;
+
 type CreateAuthSessionServiceOptions = Readonly<{
   config: AppConfig;
   sessionStore: RedisSessionStore;
@@ -26,6 +31,11 @@ export type AuthSessionService = Readonly<{
   logout: (refreshToken: string) => Promise<void>;
   refreshSession: (refreshToken: string) => Promise<AuthResponse>;
 }>;
+
+export const toPublicAuthResponse = (authResponse: AuthResponse): PublicAuthResponse => ({
+  accessToken: authResponse.accessToken,
+  email: authResponse.email,
+});
 
 const buildAuthResponse = (email: string, sessionId: string, config: AppConfig): AuthResponse => {
   const accessToken = createAccessToken(
