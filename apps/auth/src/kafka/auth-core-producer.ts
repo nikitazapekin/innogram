@@ -1,4 +1,4 @@
-import { ClientProxyFactory, Transport, type ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { loadEnvironment } from '../config/load-environment';
 
 loadEnvironment();
@@ -13,43 +13,65 @@ const readRequiredString = (value: string | undefined, envName: string): string 
   return parsedValue;
 };
 
-const readSignupTopic = (): string =>
-  readRequiredString(process.env.AUTH_CORE_SIGNUP_TOPIC, 'AUTH_CORE_SIGNUP_TOPIC');
-
 const readKafkaBrokers = (): string[] =>
   readRequiredString(process.env.KAFKA_BROKERS, 'KAFKA_BROKERS')
     .split(',')
     .map((broker) => broker.trim())
     .filter(Boolean);
 
+export type AuthCoreUser = Readonly<{
+  accountId: string | null;
+  createdAt: string;
+  email: string;
+  id: number;
+  passwordHash: string;
+  updatedAt: string;
+}>;
+
 export type AuthCoreProducer = Readonly<{
-  sendSignupMessage: () => Promise<void>;
+  createUser: (payload: Readonly<{ email: string; passwordHash: string }>) => Promise<AuthCoreUser>;
+  findUserByEmail: (payload: Readonly<{ email: string }>) => Promise<AuthCoreUser | null>;
 }>;
 
 export const createAuthCoreProducer = async (): Promise<AuthCoreProducer> => {
-  const client: ClientProxy = ClientProxyFactory.create({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: readKafkaBrokers(),
-        clientId: 'auth-microservice',
-      },
-      producerOnlyMode: true,
+  const options = {
+    client: {
+      brokers: readKafkaBrokers(),
+      clientId: 'auth-microservice',
     },
-  });
+  };
+  const client = new ClientKafka(options);
 
+  client.subscribeToResponseOf('auth.core.find-user-by-email');
+  client.subscribeToResponseOf('auth.core.create-user');
   await client.connect();
 
-  const sendMessage = (): Promise<void> =>
+  const findUserByEmail = (payload: Readonly<{ email: string }>): Promise<AuthCoreUser | null> =>
     new Promise((resolve, reject) => {
       client
-        .emit(readSignupTopic(), {
-          source: 'auth-microservice',
-        })
+        .send<
+          AuthCoreUser | null,
+          Readonly<{ email: string }>
+        >('auth.core.find-user-by-email', payload)
         .subscribe({
-          complete: () => {
-            resolve();
+          next: (response) => resolve(response),
+          error: (error: unknown) => {
+            reject(error);
           },
+        });
+    });
+
+  const createUser = (
+    payload: Readonly<{ email: string; passwordHash: string }>,
+  ): Promise<AuthCoreUser> =>
+    new Promise((resolve, reject) => {
+      client
+        .send<
+          AuthCoreUser,
+          Readonly<{ email: string; passwordHash: string }>
+        >('auth.core.create-user', payload)
+        .subscribe({
+          next: (response) => resolve(response),
           error: (error: unknown) => {
             reject(error);
           },
@@ -57,6 +79,7 @@ export const createAuthCoreProducer = async (): Promise<AuthCoreProducer> => {
     });
 
   return {
-    sendSignupMessage: sendMessage,
+    createUser,
+    findUserByEmail,
   };
 };

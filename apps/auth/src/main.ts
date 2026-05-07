@@ -2,6 +2,7 @@ import { createServer, type Server } from 'node:http';
 
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
+import { createAuthCoreProducer } from './kafka/auth-core-producer';
 import { loadEnvironment } from './config/load-environment';
 import { createLogger, serializeError } from './shared/logger';
 
@@ -58,8 +59,10 @@ const listen = (server: Server, port: number): Promise<void> =>
 const bootstrap = async (): Promise<void> => {
   const config = loadConfig();
   const logger = createLogger(SERVICE_NAME);
+  const authCoreProducer = await createAuthCoreProducer();
 
   const app = createApp({
+    authCoreProducer,
     config,
     logger,
   });

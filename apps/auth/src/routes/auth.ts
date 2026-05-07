@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import type { AppConfig } from '../config/app-config';
+import type { AuthCoreProducer } from '../kafka/auth-core-producer';
 import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
 import { buildAuthResponse } from '../services/auth-response-service';
 import {
@@ -11,25 +12,37 @@ import {
   fetchGoogleUserEmail,
   parseGoogleOAuthState,
 } from '../services/google-oauth-service';
-import { hashPassword } from '../services/password-service';
+import { hashPassword, verifyPassword } from '../services/password-service';
 import { RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
+  authCoreProducer: AuthCoreProducer;
   config: AppConfig;
 }>;
 
-export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
+export const createAuthRouter = ({ authCoreProducer, config }: CreateAuthRouterOptions): Router => {
   const router = Router();
 
   router.post('/auth/register', async (request, response, next) => {
     try {
       const { email, password } = parseRegisterRequestBody(request.body);
+      const existingUser = await authCoreProducer.findUserByEmail({ email });
 
-      await hashPassword(password, config);
+      if (existingUser) {
+        throw new RouteError(409, 'USER_ALREADY_EXISTS', 'User with this email already exists.');
+      }
 
-      const authResponse = buildAuthResponse(email, config);
+      const passwordHash = await hashPassword(password, config);
+      const createdUser = await authCoreProducer.createUser({
+        email,
+        passwordHash,
+      });
 
-      response.status(201).json(authResponse);
+      response.status(201).json({
+        accountId: createdUser.accountId,
+        email: createdUser.email,
+        userId: createdUser.id,
+      });
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
@@ -46,10 +59,24 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
   router.post('/auth/login', async (request, response, next) => {
     try {
-      const { email } = parseLoginRequestBody(request.body);
-      const authResponse = buildAuthResponse(email, config);
+      const { email, password } = parseLoginRequestBody(request.body);
+      const user = await authCoreProducer.findUserByEmail({ email });
 
-      response.status(200).json(authResponse);
+      if (!user) {
+        throw new RouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
+      }
+
+      const isPasswordValid = await verifyPassword(password, user.passwordHash);
+
+      if (!isPasswordValid) {
+        throw new RouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
+      }
+
+      response.json({
+        accountId: user.accountId,
+        email: user.email,
+        userId: user.id,
+      });
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
