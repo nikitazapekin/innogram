@@ -11,7 +11,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 const CORE_HTTP_PORT = Number(process.env.CORE_HTTP_PORT ?? 3001);
 const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
-const CLIENT_ORIGIN = 'http://localhost:3000';
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? 'http://localhost:3000';
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS ?? 'localhost:9092')
   .split(',')
   .map((broker) => broker.trim())

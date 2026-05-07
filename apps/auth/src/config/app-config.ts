@@ -13,19 +13,12 @@ export type AppConfig = Readonly<{
   refreshTokenSecret: string;
 }>;
 
-const readRequiredString = (value: string | undefined, envName: string): string => {
-  const parsedValue = value?.trim();
-
-  if (!parsedValue) {
+const readRequiredPositiveInteger = (value: string | undefined, envName: string): number => {
+  if (!value) {
     throw new Error(`Missing required config value: ${envName}`);
   }
 
-  return parsedValue;
-};
-
-const readRequiredPositiveInteger = (value: string | undefined, envName: string): number => {
-  const rawValue = readRequiredString(value, envName);
-  const parsedValue = Number(rawValue);
+  const parsedValue = Number(value);
 
   if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
     throw new Error(`${envName} must be a positive integer.`);
@@ -37,37 +30,60 @@ const readRequiredPositiveInteger = (value: string | undefined, envName: string)
 export const loadConfig = (): AppConfig => {
   loadEnvironment();
 
+  const accessTokenExpiresIn = process.env.AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN;
+  const accessTokenSecret = process.env.AUTH_JWT_ACCESS_TOKEN_SECRET;
+  const googleClientId = process.env.AUTH_GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.AUTH_GOOGLE_CLIENT_SECRET;
+  const googleRedirectUri = process.env.AUTH_GOOGLE_REDIRECT_URI;
+  const redisUrl = process.env.AUTH_REDIS_URL;
+  const refreshTokenExpiresIn = process.env.AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN;
+  const refreshTokenSecret = process.env.AUTH_JWT_REFRESH_TOKEN_SECRET;
+
+  if (!accessTokenExpiresIn) {
+    throw new Error('Missing required config value: AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN');
+  }
+
+  if (!accessTokenSecret) {
+    throw new Error('Missing required config value: AUTH_JWT_ACCESS_TOKEN_SECRET');
+  }
+
+  if (!googleClientId) {
+    throw new Error('Missing required config value: AUTH_GOOGLE_CLIENT_ID');
+  }
+
+  if (!googleClientSecret) {
+    throw new Error('Missing required config value: AUTH_GOOGLE_CLIENT_SECRET');
+  }
+
+  if (!googleRedirectUri) {
+    throw new Error('Missing required config value: AUTH_GOOGLE_REDIRECT_URI');
+  }
+
+  if (!redisUrl) {
+    throw new Error('Missing required config value: AUTH_REDIS_URL');
+  }
+
+  if (!refreshTokenExpiresIn) {
+    throw new Error('Missing required config value: AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN');
+  }
+
+  if (!refreshTokenSecret) {
+    throw new Error('Missing required config value: AUTH_JWT_REFRESH_TOKEN_SECRET');
+  }
+
   return {
-    accessTokenExpiresIn: readRequiredString(
-      process.env.AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN,
-      'AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN',
-    ),
-    accessTokenSecret: readRequiredString(
-      process.env.AUTH_JWT_ACCESS_TOKEN_SECRET,
-      'AUTH_JWT_ACCESS_TOKEN_SECRET',
-    ),
-    googleClientId: readRequiredString(process.env.AUTH_GOOGLE_CLIENT_ID, 'AUTH_GOOGLE_CLIENT_ID'),
-    googleClientSecret: readRequiredString(
-      process.env.AUTH_GOOGLE_CLIENT_SECRET,
-      'AUTH_GOOGLE_CLIENT_SECRET',
-    ),
-    googleRedirectUri: readRequiredString(
-      process.env.AUTH_GOOGLE_REDIRECT_URI,
-      'AUTH_GOOGLE_REDIRECT_URI',
-    ),
+    accessTokenExpiresIn,
+    accessTokenSecret,
+    googleClientId,
+    googleClientSecret,
+    googleRedirectUri,
     passwordSaltRounds: readRequiredPositiveInteger(
       process.env.AUTH_PASSWORD_SALT_ROUNDS,
       'AUTH_PASSWORD_SALT_ROUNDS',
     ),
     port: readRequiredPositiveInteger(process.env.AUTH_HTTP_PORT, 'AUTH_HTTP_PORT'),
-    redisUrl: readRequiredString(process.env.AUTH_REDIS_URL, 'AUTH_REDIS_URL'),
-    refreshTokenExpiresIn: readRequiredString(
-      process.env.AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN,
-      'AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN',
-    ),
-    refreshTokenSecret: readRequiredString(
-      process.env.AUTH_JWT_REFRESH_TOKEN_SECRET,
-      'AUTH_JWT_REFRESH_TOKEN_SECRET',
-    ),
+    redisUrl,
+    refreshTokenExpiresIn,
+    refreshTokenSecret,
   };
 };

@@ -11,7 +11,7 @@ const ensureBodyRecord = (body: unknown): Record<string, unknown> => {
 const getRecordValue = (record: Record<string, unknown>, key: string): unknown => record[key];
 
 const ensureNonEmptyString = (value: unknown, code: string, field: string): string => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+  if (typeof value !== 'string' || value.length === 0) {
     throw createRouteError(400, code, `Field "${field}" must be a non-empty string.`);
   }
 
@@ -54,7 +54,7 @@ export const parseLoginRequestBody = (
     'INVALID_PASSWORD',
     'password',
   );
-  const formattedEmail = email.trim().toLowerCase();
+  const formattedEmail = email.toLowerCase();
 
   return {
     email: formattedEmail,
@@ -71,14 +71,14 @@ export const parseRefreshTokenRequestBody = (body: unknown): Readonly<{ refreshT
   );
 
   return {
-    refreshToken: refreshToken.trim(),
+    refreshToken: refreshToken,
   };
 };
 
 export const parseRefreshTokenCookie = (
   cookieHeader: string | undefined,
 ): Readonly<{ refreshToken: string }> => {
-  if (typeof cookieHeader !== 'string' || cookieHeader.trim().length === 0) {
+  if (typeof cookieHeader !== 'string' || cookieHeader.length === 0) {
     throw createRouteError(
       401,
       'MISSING_REFRESH_TOKEN_COOKIE',
@@ -91,11 +91,11 @@ export const parseRefreshTokenCookie = (
   for (const cookieEntry of cookieEntries) {
     const [rawName, ...rawValueParts] = cookieEntry.split('=');
 
-    if (rawName?.trim() !== 'refreshToken') {
+    if (rawName !== 'refreshToken') {
       continue;
     }
 
-    const rawValue = rawValueParts.join('=').trim();
+    const rawValue = rawValueParts.join('=');
 
     if (rawValue.length === 0) {
       break;

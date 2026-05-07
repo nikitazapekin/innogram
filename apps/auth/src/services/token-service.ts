@@ -25,7 +25,7 @@ export type AuthTokenPayload = Readonly<{
 const JWT_ALGORITHM = 'HS256';
 
 const ensureNonEmptyString = (value: unknown): string => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+  if (typeof value !== 'string' || value.length === 0) {
     throw createRouteError(500, 'INVALID_TOKEN_PAYLOAD', 'JWT payload has invalid shape.');
   }
 

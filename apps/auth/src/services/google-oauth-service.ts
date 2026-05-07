@@ -16,11 +16,11 @@ type GoogleOAuthStatePayload = Readonly<{
 const GOOGLE_STATE_TOKEN_VERSION = 'v1';
 
 const ensureNonEmptyString = (value: unknown, code: string, message: string): string => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+  if (typeof value !== 'string' || value.length === 0) {
     throw createRouteError(502, code, message);
   }
 
-  return value.trim();
+  return value;
 };
 
 const createSha256Base64Url = (value: string): string =>
@@ -103,11 +103,11 @@ export const parseGoogleOAuthState = (
       redirectUri = parsedValue.redirectUri;
     }
 
-    if (typeof codeVerifier !== 'string' || codeVerifier.trim().length === 0) {
+    if (typeof codeVerifier !== 'string' || codeVerifier.length === 0) {
       throw new Error('invalid state payload');
     }
 
-    if (typeof redirectUri !== 'string' || redirectUri.trim().length === 0) {
+    if (typeof redirectUri !== 'string' || redirectUri.length === 0) {
       throw new Error('invalid state payload');
     }
 
@@ -198,9 +198,9 @@ export const exchangeGoogleAuthorizationCode = async (
 
     if (
       typeof responseBodyRecord.error_description === 'string' &&
-      responseBodyRecord.error_description.trim()
+      responseBodyRecord.error_description
     ) {
-      description = responseBodyRecord.error_description.trim();
+      description = responseBodyRecord.error_description;
     }
 
     throw createRouteError(502, 'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED', `${error}: ${description}`);
