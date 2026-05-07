@@ -68,6 +68,7 @@ export const createAuthRouter = ({
       await hashPassword(password, config);
 
       const authResponse = await authSessionService.createSession(email);
+
       setRefreshTokenCookie(response, authResponse.refreshToken);
 
       response.status(201).json(toPublicAuthResponse(authResponse));
@@ -89,6 +90,7 @@ export const createAuthRouter = ({
     try {
       const { email } = parseLoginRequestBody(request.body);
       const authResponse = await authSessionService.createSession(email);
+
       setRefreshTokenCookie(response, authResponse.refreshToken);
 
       response.status(200).json(toPublicAuthResponse(authResponse));
@@ -110,6 +112,7 @@ export const createAuthRouter = ({
     try {
       const { refreshToken } = parseRefreshTokenCookie(request.headers.cookie);
       const authResponse = await authSessionService.refreshSession(refreshToken);
+
       setRefreshTokenCookie(response, authResponse.refreshToken);
 
       response.status(200).json(toPublicAuthResponse(authResponse));
@@ -195,6 +198,7 @@ export const createAuthRouter = ({
       );
       const email = await fetchGoogleUserEmail(accessToken);
       const authResponse = await authSessionService.createSession(email);
+
       setRefreshTokenCookie(response, authResponse.refreshToken);
 
       response.set('cache-control', 'no-store');
