@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import './global.scss';
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -12,16 +13,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          margin: 0,
-        }}
-      >
+      <body className="layout">
         <header>Header</header>
-        <main style={{ flex: 1 }}>{children}</main>
+        <main className="layout__main">{children}</main>
         <footer>Footer</footer>
       </body>
     </html>

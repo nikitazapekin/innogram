@@ -1,83 +1,16 @@
 @use "./variables" as *;
 
-@mixin breakpoint-sm {
-  @media (min-width: 640px) {
+@mixin breakpoint($size) {
+  @media (min-width: $size) {
     @content;
   }
-}
-
-@mixin breakpoint-md {
-  @media (min-width: 768px) {
-    @content;
-  }
-}
-
-@mixin breakpoint-lg {
-  @media (min-width: 1024px) {
-    @content;
-  }
-}
-
-@mixin breakpoint-xl {
-  @media (min-width: 1280px) {
-    @content;
-  }
-}
-
-@mixin breakpoint-2xl {
-  @media (min-width: 1536px) {
-    @content;
-  }
-}
-
-@mixin flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@mixin flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-@mixin flex-column {
-  display: flex;
-  flex-direction: column;
-}
-
-@mixin flex-column-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
 @mixin container {
   width: 100%;
+  max-width: $container-sm;
   margin: 0 auto;
   padding: 0 1rem;
-
-  @include breakpoint-sm {
-    max-width: 640px;
-  }
-
-  @include breakpoint-md {
-    max-width: 768px;
-  }
-
-  @include breakpoint-lg {
-    max-width: 1024px;
-  }
-
-  @include breakpoint-xl {
-    max-width: 1280px;
-  }
-
-  @include breakpoint-2xl {
-    max-width: 1536px;
-  }
 }
 
 @mixin text-truncate {
