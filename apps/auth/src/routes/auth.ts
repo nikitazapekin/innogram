@@ -11,7 +11,7 @@ import {
   fetchGoogleUserEmail,
   parseGoogleOAuthState,
 } from '../services/google-oauth-service';
-import { hashPassword } from '../services/password-service';
+import { forwardAuthPayload } from '../services/api-gateway-client';
 import { RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
@@ -25,11 +25,12 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
     try {
       const { email, password } = parseRegisterRequestBody(request.body);
 
-      await hashPassword(password, config);
+      await forwardAuthPayload('/auth/register', {
+        login: email,
+        password,
+      });
 
-      const authResponse = buildAuthResponse(email, config);
-
-      response.status(201).json(authResponse);
+      response.status(201).json({ ok: true });
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
@@ -46,10 +47,14 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
   router.post('/auth/login', async (request, response, next) => {
     try {
-      const { email } = parseLoginRequestBody(request.body);
-      const authResponse = buildAuthResponse(email, config);
+      const { email, password } = parseLoginRequestBody(request.body);
 
-      response.status(200).json(authResponse);
+      await forwardAuthPayload('/auth/login', {
+        login: email,
+        password,
+      });
+
+      response.json({ ok: true });
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
