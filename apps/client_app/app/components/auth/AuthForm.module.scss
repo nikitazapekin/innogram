@@ -1,0 +1,164 @@
+@use "../../styles" as *;
+
+.authPage {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xxl $spacing-lg $spacing-lg;
+  background:
+    radial-gradient(circle at top left, rgba($color-white, 0.7), transparent 30%),
+    linear-gradient(180deg, rgba($color-blue, 0.35) 0%, rgba($color-white, 0.9) 100%);
+}
+
+.authCard {
+  width: min(100%, 440px);
+  display: grid;
+  gap: $spacing-xl;
+  padding: $spacing-xl;
+  background: $color-blue;
+  border: 2px solid $color-black;
+  border-radius: $radius-xlarge;
+}
+
+.authIntro {
+  display: grid;
+}
+
+.title {
+  margin: 0;
+  color: $color-black;
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.05;
+}
+
+.form {
+  display: grid;
+  gap: $spacing-lg;
+}
+
+.field {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.label {
+  color: $color-black;
+  font-size: $font-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 $spacing-md;
+  color: $color-black;
+  background: $color-white;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
+  outline: none;
+
+  &::placeholder {
+    color: rgba($color-black, 0.45);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($color-white, 0.55);
+  }
+}
+
+.error {
+  color: $color-redDark;
+  font-size: $font-xs;
+  font-weight: 600;
+}
+
+.submitButton,
+.providerButton {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md $spacing-lg;
+  color: $color-white;
+  background: $color-black;
+  border: 2px solid $color-black;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba($color-black, 0.18);
+  }
+}
+
+.submitButton {
+  width: 100%;
+  font-size: $font-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.provider {
+  display: grid;
+  justify-items: center;
+  gap: $spacing-md;
+}
+
+.providerTitle {
+  margin: 0;
+  color: $color-black;
+  font-size: $font-sm;
+  font-weight: 700;
+}
+
+.providerButton {
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  min-height: auto;
+  background: transparent;
+  border: 0;
+
+  &:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: none;
+  }
+}
+
+.providerImage {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: $color-white;
+}
+
+.switchText {
+  margin: 0;
+  text-align: center;
+}
+
+.switchLink {
+  color: rgba($color-black, 0.72);
+  font-size: $font-sm;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.18s ease;
+
+  &:hover {
+    color: $color-black;
+  }
+}
+
+@include breakpoint($breakpoint-sm) {
+ 
+
+  .authCard {
+    padding: $spacing-xxl;
+  }
+}
