@@ -11,7 +11,6 @@ import {
   fetchGoogleUserEmail,
   parseGoogleOAuthState,
 } from '../services/google-oauth-service';
-import { hashPassword } from '../services/password-service';
 import { RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
@@ -23,10 +22,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
   router.post('/auth/register', async (request, response, next) => {
     try {
-      const { email, password } = parseRegisterRequestBody(request.body);
-
-      await hashPassword(password, config);
-
+      const { email } = parseRegisterRequestBody(request.body);
       const authResponse = buildAuthResponse(email, config);
 
       response.status(201).json(authResponse);
@@ -49,7 +45,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       const { email } = parseLoginRequestBody(request.body);
       const authResponse = buildAuthResponse(email, config);
 
-      response.status(200).json(authResponse);
+      response.json(authResponse);
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
