@@ -3,8 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { InputField } from '@/app/shared/ui/input';
 import styles from './AuthForm.module.scss';
-import { authSchema, type AuthFormValues } from './authSchema';
+import { authSchema, type AuthFormValues } from '../../model/authSchema';
 
 type AuthFormProps = {
   description: string;
@@ -60,31 +61,25 @@ export function AuthForm({
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
-          <label className={styles.field}>
-            <span className={styles.label}>Почта</span>
-            <input
-              className={styles.input}
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              value={values.email}
-              onChange={(event) => handleFieldChange('email', event.target.value)}
-            />
-            {errors.email ? <span className={styles.error}>{errors.email}</span> : null}
-          </label>
+          <InputField
+            error={errors.email}
+            label="Почта"
+            name="email"
+            placeholder="you@example.com"
+            type="email"
+            value={values.email}
+            onChange={(event) => handleFieldChange('email', event.target.value)}
+          />
 
-          <label className={styles.field}>
-            <span className={styles.label}>Пароль</span>
-            <input
-              className={styles.input}
-              name="password"
-              type="password"
-              placeholder="Минимум 6 символов"
-              value={values.password}
-              onChange={(event) => handleFieldChange('password', event.target.value)}
-            />
-            {errors.password ? <span className={styles.error}>{errors.password}</span> : null}
-          </label>
+          <InputField
+            error={errors.password}
+            label="Пароль"
+            name="password"
+            placeholder="Минимум 6 символов"
+            type="password"
+            value={values.password}
+            onChange={(event) => handleFieldChange('password', event.target.value)}
+          />
 
           <button className={styles.submitButton} type="submit">
             {submitLabel}
