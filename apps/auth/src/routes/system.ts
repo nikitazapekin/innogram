@@ -1,32 +1,20 @@
-type AppRequest = Readonly<{
-  method: string;
-  path: string;
-}>;
+import { Router } from 'express';
 
-type AppResponse = Readonly<{
-  json: (statusCode: number, body: unknown) => void;
-}>;
+export const createSystemRouter = (): Router => {
+  const router = Router();
 
-export const handleSystemRoute = async (
-  request: AppRequest,
-  response: AppResponse,
-): Promise<boolean> => {
-  if (request.method === 'GET' && request.path === '/') {
-    response.json(200, {
+  router.get('/', (_request, response) => {
+    response.json({
       message: 'Authentication microservice is running.',
     });
+  });
 
-    return true;
-  }
-
-  if (request.method === 'GET' && request.path === '/health') {
-    response.json(200, {
+  router.get('/health', (_request, response) => {
+    response.json({
       status: 'ok',
       timestamp: new Date(),
     });
+  });
 
-    return true;
-  }
-
-  return false;
+  return router;
 };
