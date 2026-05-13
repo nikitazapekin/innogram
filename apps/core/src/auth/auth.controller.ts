@@ -3,6 +3,8 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { CreateAuthUserDto } from './dto/create-auth-user.dto';
+import { GetAuthUserQueryDto } from './dto/get-auth-user-query.dto';
+import { VerifyAuthUserCredentialsDto } from './dto/verify-auth-user-credentials.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -14,7 +16,14 @@ export class AuthController {
   }
 
   @Get('user')
-  getUserByEmail(@Query('email') email: string): Promise<AuthUserDto | null> {
-    return this.authService.getUserByEmail(email);
+  getUserByEmail(@Query() query: GetAuthUserQueryDto): Promise<AuthUserDto | null> {
+    return this.authService.getUserByEmail(query.email);
+  }
+
+  @Post('user/verify')
+  verifyUserCredentials(
+    @Body() verifyAuthUserCredentialsDto: VerifyAuthUserCredentialsDto,
+  ): Promise<AuthUserDto | null> {
+    return this.authService.verifyUserCredentials(verifyAuthUserCredentialsDto);
   }
 }

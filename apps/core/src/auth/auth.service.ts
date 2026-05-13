@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { UserEntity } from '../entities/user.entity';
 import { AuthUserDto } from './dto/auth-user.dto';
 import { CreateAuthUserDto } from './dto/create-auth-user.dto';
+import { VerifyAuthUserCredentialsDto } from './dto/verify-auth-user-credentials.dto';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +20,18 @@ export class AuthService {
       email: createAuthUserDto.email,
       passwordHash: createAuthUserDto.passwordHash,
     });
-    const savedUser = await this.usersRepository.save(user);
+
+    let savedUser: UserEntity;
+
+    try {
+      savedUser = await this.usersRepository.save(user);
+    } catch (error: unknown) {
+      if (this.isUniqueConstraintViolation(error)) {
+        throw new ConflictException('User already exists');
+      }
+
+      throw error;
+    }
 
     return this.toAuthUserDto(savedUser);
   }
@@ -33,13 +46,45 @@ export class AuthService {
     return this.toAuthUserDto(user);
   }
 
+  async verifyUserCredentials(
+    verifyAuthUserCredentialsDto: VerifyAuthUserCredentialsDto,
+  ): Promise<AuthUserDto | null> {
+    const user = await this.usersRepository.findOneBy({
+      email: verifyAuthUserCredentialsDto.email,
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      verifyAuthUserCredentialsDto.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return this.toAuthUserDto(user);
+  }
+
   private toAuthUserDto(user: UserEntity): AuthUserDto {
     return {
       id: user.id,
       email: user.email,
-      passwordHash: user.passwordHash,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  private isUniqueConstraintViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = error.driverError as { code?: string; constraint?: string } | undefined;
+
+    return driverError?.code === '23505' && driverError.constraint === 'UQ_auth_user_email';
   }
 }

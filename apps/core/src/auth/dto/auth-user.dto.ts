@@ -3,8 +3,6 @@ export class AuthUserDto {
 
   email: string;
 
-  passwordHash: string;
-
   createdAt: Date;
 
   updatedAt: Date;

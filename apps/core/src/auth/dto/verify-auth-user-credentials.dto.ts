@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-export class CreateAuthUserDto {
+export class VerifyAuthUserCredentialsDto {
   @IsString()
   @IsNotEmpty()
   @IsEmail()
@@ -9,6 +9,6 @@ export class CreateAuthUserDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(255)
-  passwordHash: string;
+  @MaxLength(4096)
+  password: string;
 }

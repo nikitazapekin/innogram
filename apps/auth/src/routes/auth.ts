@@ -4,7 +4,7 @@ import axios from 'axios';
 import type { AppConfig } from '../config/app-config';
 import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
 import { buildAuthResponse } from '../services/auth-response-service';
-import { hashPassword, verifyPassword } from '../services/password-service';
+import { hashPassword } from '../services/password-service';
 
 import { createRouteError, RouteError } from '../shared/route-error';
 
@@ -15,7 +15,6 @@ type CreateAuthRouterOptions = Readonly<{
 type AuthUser = Readonly<{
   id: number;
   email: string;
-  passwordHash: string;
   createdAt: string;
   updatedAt: string;
 }>;
@@ -28,14 +27,6 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   router.post('/auth/register', async (request, response, next) => {
     try {
       const { email, password } = parseRegisterRequestBody(request.body);
-      const { data: user } = await axios.get<AuthUser | null>(`${CORE_AUTH_URL}/auth/user`, {
-        params: { email },
-      });
-
-      if (user) {
-        throw createRouteError(409, 'USER_ALREADY_EXISTS', 'User with typed login already exist');
-      }
-
       const passwordHash = await hashPassword(password, config);
 
       await axios.post<AuthUser>(`${CORE_AUTH_URL}/auth/user`, {
@@ -54,6 +45,15 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         return;
       }
 
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        response.status(409).json({
+          error: 'USER_ALREADY_EXISTS',
+          message: 'User already exists',
+        });
+
+        return;
+      }
+
       next(error);
     }
   });
@@ -61,17 +61,15 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   router.post('/auth/login', async (request, response, next) => {
     try {
       const { email, password } = parseLoginRequestBody(request.body);
-      const { data: user } = await axios.get<AuthUser | null>(`${CORE_AUTH_URL}/auth/user`, {
-        params: { email },
-      });
+      const { data: user } = await axios.post<AuthUser | null>(
+        `${CORE_AUTH_URL}/auth/user/verify`,
+        {
+          email,
+          password,
+        },
+      );
 
       if (!user) {
-        throw createRouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
-      }
-
-      const isPasswordValid = await verifyPassword(password, user.passwordHash);
-
-      if (!isPasswordValid) {
         throw createRouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
       }
 
