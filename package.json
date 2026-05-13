@@ -7,6 +7,7 @@
     "apps/core_microservice",
     "apps/auth_microservice",
     "apps/posts_microservice",
+    "apps/client_app",
     "packages/shared"
   ],
   "scripts": {
