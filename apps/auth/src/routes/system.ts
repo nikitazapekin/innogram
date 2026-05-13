@@ -4,13 +4,13 @@ export const createSystemRouter = (): Router => {
   const router = Router();
 
   router.get('/', (_request, response) => {
-    response.status(200).json({
+    response.json({
       message: 'Authentication microservice is running.',
     });
   });
 
   router.get('/health', (_request, response) => {
-    response.status(200).json({
+    response.json({
       status: 'ok',
       timestamp: new Date(),
     });

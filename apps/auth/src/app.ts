@@ -19,12 +19,7 @@ export const createApp = ({ config, logger }: CreateAppOptions): Express => {
   const app = express();
 
   app.use(createRequestLogger(logger));
-  app.use(
-    express.json({
-      limit: JSON_BODY_LIMIT,
-    }),
-  );
-
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
   app.use(createSystemRouter());
   app.use(createAuthRouter({ config }));
   app.use(notFoundHandler);

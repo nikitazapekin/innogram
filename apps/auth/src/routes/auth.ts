@@ -1,36 +1,54 @@
 import { Router } from 'express';
+import axios from 'axios';
 
 import type { AppConfig } from '../config/app-config';
 import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
 import { buildAuthResponse } from '../services/auth-response-service';
-import {
-  createGoogleAuthorizationUrl,
-  createGoogleCodeVerifier,
-  createGoogleOAuthState,
-  exchangeGoogleAuthorizationCode,
-  fetchGoogleUserEmail,
-  parseGoogleOAuthState,
-} from '../services/google-oauth-service';
-import { RouteError } from '../shared/route-error';
+import { hashPassword } from '../services/password-service';
+
+import { createRouteError, RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
   config: AppConfig;
 }>;
+
+type AuthUser = Readonly<{
+  id: number;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+const CORE_AUTH_URL = process.env.AUTH_CORE_HTTP_URL?.trim() || 'http://localhost:3001';
 
 export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
   const router = Router();
 
   router.post('/auth/register', async (request, response, next) => {
     try {
-      const { email } = parseRegisterRequestBody(request.body);
-      const authResponse = buildAuthResponse(email, config);
+      const { email, password } = parseRegisterRequestBody(request.body);
+      const passwordHash = await hashPassword(password, config);
 
-      response.status(201).json(authResponse);
+      await axios.post<AuthUser>(`${CORE_AUTH_URL}/auth/user`, {
+        email,
+        passwordHash,
+      });
+
+      response.status(201).json(buildAuthResponse(email, config));
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
           error: error.code,
           message: error.message,
+        });
+
+        return;
+      }
+
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        response.status(409).json({
+          error: 'USER_ALREADY_EXISTS',
+          message: 'User already exists',
         });
 
         return;
@@ -42,80 +60,20 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
 
   router.post('/auth/login', async (request, response, next) => {
     try {
-      const { email } = parseLoginRequestBody(request.body);
-      const authResponse = buildAuthResponse(email, config);
-
-      response.json(authResponse);
-    } catch (error: unknown) {
-      if (error instanceof RouteError) {
-        response.status(error.status).json({
-          error: error.code,
-          message: error.message,
-        });
-
-        return;
-      }
-
-      next(error);
-    }
-  });
-
-  router.get('/auth/google', (request, response) => {
-    const codeVerifier = createGoogleCodeVerifier();
-    const redirectUri = config.googleRedirectUri;
-    const state = createGoogleOAuthState(config, {
-      codeVerifier,
-      redirectUri,
-    });
-    const authorizationUrl = createGoogleAuthorizationUrl(config, state, codeVerifier, redirectUri);
-
-    response.redirect(302, authorizationUrl);
-  });
-
-  router.get('/auth/google/callback', async (request, response, next) => {
-    try {
-      const googleError = request.query.error;
-
-      if (typeof googleError === 'string' && googleError.trim().length > 0) {
-        response.status(400).json({
-          error: 'GOOGLE_OAUTH_DENIED',
-          message: `Google OAuth failed: ${googleError.trim()}.`,
-        });
-
-        return;
-      }
-
-      const code = request.query.code;
-      const returnedState = request.query.state;
-
-      if (typeof code !== 'string' || code.trim().length === 0) {
-        throw new RouteError(
-          400,
-          'GOOGLE_OAUTH_CODE_MISSING',
-          'Google OAuth callback did not contain an authorization code.',
-        );
-      }
-
-      if (typeof returnedState !== 'string' || returnedState.trim().length === 0) {
-        throw new RouteError(
-          400,
-          'GOOGLE_OAUTH_STATE_MISSING',
-          'Google OAuth callback did not contain a state parameter.',
-        );
-      }
-
-      const { codeVerifier, redirectUri } = parseGoogleOAuthState(returnedState, config);
-
-      const accessToken = await exchangeGoogleAuthorizationCode(
-        code.trim(),
-        codeVerifier,
-        config,
-        redirectUri,
+      const { email, password } = parseLoginRequestBody(request.body);
+      const { data: user } = await axios.post<AuthUser | null>(
+        `${CORE_AUTH_URL}/auth/user/verify`,
+        {
+          email,
+          password,
+        },
       );
-      const email = await fetchGoogleUserEmail(accessToken);
-      const authResponse = buildAuthResponse(email, config);
 
-      response.status(200).json(authResponse);
+      if (!user) {
+        throw createRouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
+      }
+
+      response.json(buildAuthResponse(user.email, config));
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
