@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@nestjs/microservices": "^10.4.17",
+    "axios": "^1.13.2",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",

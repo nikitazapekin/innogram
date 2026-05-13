@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
+import { AuthModule } from './auth/auth.module';
 import { DatabaseConfigService } from './database.config';
 import { ChatsModule } from './chats/chats.module';
 import { CommentsModule } from './comments/comments.module';
@@ -39,6 +40,7 @@ import { UsersModule } from './users/users.module';
       Profile,
       UserEntity,
     ]),
+    AuthModule,
     UsersModule,
     PostsModule,
     CommentsModule,
