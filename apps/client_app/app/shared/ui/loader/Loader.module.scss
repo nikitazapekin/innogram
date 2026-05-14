@@ -1,0 +1,77 @@
+@use "../../../styles" as *;
+
+.loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-md;
+}
+
+.loader_center {
+  width: 100%;
+}
+
+.loader_fullscreen {
+  min-height: 100%;
+}
+
+.loader_compact {
+  gap: $spacing-sm;
+}
+
+.spinner {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border: 2px solid rgba($color-black, 0.16);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.spinner::before,
+.spinner::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+
+.spinner::before {
+  inset: 5px;
+  border: 5px solid transparent;
+  border-top-color: $color-black;
+}
+
+.spinner::after {
+  inset: 14px;
+  background: $color-blue;
+}
+
+.spinner_compact {
+  width: 18px;
+  height: 18px;
+  border-width: 1.5px;
+}
+
+.spinner_compact::before {
+  inset: 2px;
+  border-width: 2px;
+}
+
+.spinner_compact::after {
+  inset: 5px;
+}
+
+.text {
+  color: rgba($color-black, 0.74);
+  font-size: $font-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
