@@ -2,8 +2,14 @@ import { Router } from 'express';
 import axios from 'axios';
 
 import type { AppConfig } from '../config/app-config';
+import {
+  createUserAndProfile,
+  findUserByEmail,
+  verifyUserCredentials,
+} from '../services/auth-core-client';
 import { parseLoginRequestBody, parseRegisterRequestBody } from '../services/auth-request-parser';
 import { buildAuthResponse } from '../services/auth-response-service';
+import { createDefaultDisplayName } from '../services/display-name-service';
 import {
   createGoogleAuthorizationUrl,
   createGoogleCodeVerifier,
@@ -12,77 +18,18 @@ import {
   fetchGoogleUserProfile,
   parseGoogleOAuthState,
 } from '../services/google-oauth-service';
+import { createOAuthRedirectUrl } from '../services/oauth-redirect-service';
 import { hashPassword } from '../services/password-service';
+import {
+  getOptionalTrimmedQueryParam,
+  getRequiredQueryParam,
+} from '../services/request-query-service';
 
 import { createRouteError, RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
   config: AppConfig;
 }>;
-
-type AuthUser = Readonly<{
-  id: number;
-  email: string;
-  createdAt: string;
-  updatedAt: string;
-}>;
-
-const CORE_AUTH_URL = process.env.AUTH_CORE_HTTP_URL?.trim() || 'http://localhost:3001';
-const CORE_USERS_URL = process.env.AUTH_CORE_USERS_HTTP_URL?.trim() || CORE_AUTH_URL;
-
-const normalizeDisplayName = (displayName: string): string => {
-  if (displayName.length === 0) {
-    return 'user';
-  }
-
-  return displayName;
-};
-
-const createProfile = async (displayName: string): Promise<void> => {
-  await axios.post(`${CORE_USERS_URL}/users`, {
-    displayName: normalizeDisplayName(displayName),
-  });
-};
-
-const createUserAndProfile = async (payload: {
-  displayName: string;
-  email: string;
-  googleId?: string;
-  passwordHash?: string | null;
-  provider: 'local' | 'google';
-}): Promise<AuthUser> => {
-  const { data: user } = await axios.post<AuthUser>(`${CORE_AUTH_URL}/auth/user`, {
-    email: payload.email,
-    googleId: payload.googleId ?? null,
-    passwordHash: payload.passwordHash ?? null,
-    provider: payload.provider,
-  });
-
-  await createProfile(payload.displayName);
-
-  return user;
-};
-
-const getRequiredQueryParam = (value: unknown, field: string): string => {
-  if (typeof value !== 'string' || value.length === 0) {
-    throw createRouteError(400, 'INVALID_REQUEST', `Query parameter "${field}" is required.`);
-  }
-
-  return value;
-};
-
-const createOAuthRedirectUrl = (
-  redirectUri: string,
-  params: Readonly<Record<string, string>>,
-): string => {
-  const url = new URL(redirectUri);
-
-  url.hash = new URLSearchParams(params).toString();
-
-  return url.toString();
-};
-
-const createDefaultDisplayName = (email: string): string => email.split('@')[0] || email;
 
 export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
   const router = Router();
@@ -162,14 +109,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         config.googleRedirectUri,
       );
       const googleUser = await fetchGoogleUserProfile(accessToken);
-      const { data: existingUser } = await axios.get<AuthUser | null>(
-        `${CORE_AUTH_URL}/auth/user`,
-        {
-          params: {
-            email: googleUser.email,
-          },
-        },
-      );
+      const existingUser = await findUserByEmail(googleUser.email);
 
       if (!existingUser) {
         const displayName = googleUser.name ?? createDefaultDisplayName(googleUser.email);
@@ -191,11 +131,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       );
     } catch (error: unknown) {
       if (error instanceof RouteError) {
-        let stateToken: string | undefined;
-
-        if (typeof request.query.state === 'string') {
-          stateToken = request.query.state.trim();
-        }
+        const stateToken = getOptionalTrimmedQueryParam(request.query.state);
 
         if (stateToken) {
           try {
@@ -235,13 +171,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   router.post('/auth/login', async (request, response, next) => {
     try {
       const { email, password } = parseLoginRequestBody(request.body);
-      const { data: user } = await axios.post<AuthUser | null>(
-        `${CORE_AUTH_URL}/auth/user/verify`,
-        {
-          email,
-          password,
-        },
-      );
+      const user = await verifyUserCredentials(email, password);
 
       if (!user) {
         throw createRouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
