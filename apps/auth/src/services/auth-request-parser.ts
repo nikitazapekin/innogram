@@ -11,7 +11,7 @@ const ensureBodyRecord = (body: unknown): Record<string, unknown> => {
 const getRecordValue = (record: Record<string, unknown>, key: string): unknown => record[key];
 
 const ensureNonEmptyString = (value: unknown, code: string, field: string): string => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+  if (typeof value !== 'string' || value.length === 0) {
     throw createRouteError(400, code, `Field "${field}" must be a non-empty string.`);
   }
 
@@ -20,7 +20,7 @@ const ensureNonEmptyString = (value: unknown, code: string, field: string): stri
 
 export const parseRegisterRequestBody = (
   body: unknown,
-): Readonly<{ email: string; password: string }> => {
+): Readonly<{ displayName: string; email: string; password: string }> => {
   const requestBody = ensureBodyRecord(body);
   const email = ensureNonEmptyString(
     getRecordValue(requestBody, 'email'),
@@ -35,6 +35,7 @@ export const parseRegisterRequestBody = (
   const formattedEmail = email.toLowerCase();
 
   return {
+    displayName: formattedEmail.split('@')[0] || formattedEmail,
     email: formattedEmail,
     password,
   };
@@ -54,7 +55,7 @@ export const parseLoginRequestBody = (
     'INVALID_PASSWORD',
     'password',
   );
-  const formattedEmail = email.trim().toLowerCase();
+  const formattedEmail = email.toLowerCase();
 
   return {
     email: formattedEmail,

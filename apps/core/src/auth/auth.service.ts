@@ -18,7 +18,9 @@ export class AuthService {
   async createUser(createAuthUserDto: CreateAuthUserDto): Promise<AuthUserDto> {
     const user = this.usersRepository.create({
       email: createAuthUserDto.email,
-      passwordHash: createAuthUserDto.passwordHash,
+      provider: createAuthUserDto.provider,
+      googleId: createAuthUserDto.googleId ?? undefined,
+      passwordHash: createAuthUserDto.passwordHash ?? undefined,
     });
 
     let savedUser: UserEntity;
@@ -57,6 +59,10 @@ export class AuthService {
       return null;
     }
 
+    if (user.provider !== 'local' || !user.passwordHash) {
+      return null;
+    }
+
     const isPasswordValid = await bcrypt.compare(
       verifyAuthUserCredentialsDto.password,
       user.passwordHash,
@@ -83,8 +89,22 @@ export class AuthService {
       return false;
     }
 
-    const driverError = error.driverError as { code?: string; constraint?: string } | undefined;
+    if (!this.isDriverErrorWithConstraint(error.driverError)) {
+      return false;
+    }
+
+    const driverError = error.driverError;
 
     return driverError?.code === '23505' && driverError.constraint === 'UQ_auth_user_email';
+  }
+
+  private isDriverErrorWithConstraint(
+    value: unknown,
+  ): value is Readonly<{ code?: string; constraint?: string }> {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+
+    return true;
   }
 }
