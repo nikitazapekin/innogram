@@ -20,10 +20,7 @@ import {
 } from '../services/google-oauth-service';
 import { createOAuthRedirectUrl } from '../services/oauth-redirect-service';
 import { hashPassword } from '../services/password-service';
-import {
-  getOptionalTrimmedQueryParam,
-  getRequiredQueryParam,
-} from '../services/request-query-service';
+import { getOptionalQueryParam, getRequiredQueryParam } from '../services/request-query-service';
 
 import { createRouteError, RouteError } from '../shared/route-error';
 
@@ -131,7 +128,7 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       );
     } catch (error: unknown) {
       if (error instanceof RouteError) {
-        const stateToken = getOptionalTrimmedQueryParam(request.query.state);
+        const stateToken = getOptionalQueryParam(request.query.state);
 
         if (stateToken) {
           try {
