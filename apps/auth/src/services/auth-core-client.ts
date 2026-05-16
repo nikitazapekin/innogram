@@ -32,6 +32,10 @@ const createProfile = async (displayName: string): Promise<void> => {
   });
 };
 
+const deleteUser = async (userId: number): Promise<void> => {
+  await axios.delete(`${CORE_AUTH_URL}/auth/user/${userId}`);
+};
+
 export const createUserAndProfile = async (options: CreateUserOptions): Promise<AuthUser> => {
   const { data: user } = await axios.post<AuthUser>(`${CORE_AUTH_URL}/auth/user`, {
     email: options.email,
@@ -40,7 +44,13 @@ export const createUserAndProfile = async (options: CreateUserOptions): Promise<
     provider: options.provider,
   });
 
-  await createProfile(options.displayName);
+  try {
+    await createProfile(options.displayName);
+  } catch (error: unknown) {
+    await deleteUser(user.id);
+
+    throw error;
+  }
 
   return user;
 };

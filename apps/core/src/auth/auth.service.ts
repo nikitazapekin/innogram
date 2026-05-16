@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { QueryFailedError, Repository } from 'typeorm';
@@ -46,6 +46,14 @@ export class AuthService {
     }
 
     return this.toAuthUserDto(user);
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    const deleteResult = await this.usersRepository.delete(id);
+
+    if (!deleteResult.affected) {
+      throw new NotFoundException('User was not found.');
+    }
   }
 
   async verifyUserCredentials(

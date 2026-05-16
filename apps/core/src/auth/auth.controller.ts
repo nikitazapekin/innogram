@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 import { AuthUserDto } from './dto/auth-user.dto';
@@ -18,6 +18,11 @@ export class AuthController {
   @Get('user')
   getUserByEmail(@Query() query: GetAuthUserQueryDto): Promise<AuthUserDto | null> {
     return this.authService.getUserByEmail(query.email);
+  }
+
+  @Delete('user/:id')
+  deleteUser(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.authService.deleteUser(id);
   }
 
   @Post('user/verify')
