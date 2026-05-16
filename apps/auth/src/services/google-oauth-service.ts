@@ -29,6 +29,14 @@ const ensureNonEmptyString = (value: unknown, code: string, message: string): st
   return value;
 };
 
+const getErrorMessage = (error: unknown): string | null => {
+  if (error instanceof Error && typeof error.message === 'string' && error.message.length > 0) {
+    return error.message;
+  }
+
+  return null;
+};
+
 const createSha256Base64Url = (value: string): string =>
   createHash('sha256').update(value).digest('base64url');
 
@@ -157,20 +165,35 @@ export const exchangeGoogleAuthorizationCode = async (
   config: AppConfig,
   redirectUri: string = config.googleRedirectUri,
 ): Promise<string> => {
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    body: new URLSearchParams({
-      client_id: config.googleClientId,
-      client_secret: config.googleClientSecret,
-      code,
-      code_verifier: codeVerifier,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-    }),
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    method: 'POST',
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(GOOGLE_TOKEN_URL, {
+      body: new URLSearchParams({
+        client_id: config.googleClientId,
+        client_secret: config.googleClientSecret,
+        code,
+        code_verifier: codeVerifier,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      method: 'POST',
+    });
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED',
+      errorMessage
+        ? `Google OAuth token exchange failed: ${errorMessage}`
+        : 'Google OAuth token exchange failed.',
+    );
+  }
+
   let responseBody: unknown;
 
   try {
@@ -219,12 +242,27 @@ export const exchangeGoogleAuthorizationCode = async (
 };
 
 export const fetchGoogleUserProfile = async (accessToken: string): Promise<GoogleUserProfile> => {
-  const response = await fetch(GOOGLE_USER_INFO_URL, {
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-    },
-    method: 'GET',
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(GOOGLE_USER_INFO_URL, {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      method: 'GET',
+    });
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_USERINFO_FAILED',
+      errorMessage
+        ? `Google OAuth user info request failed: ${errorMessage}`
+        : 'Google OAuth user info request failed.',
+    );
+  }
+
   let responseBody: unknown;
 
   try {
