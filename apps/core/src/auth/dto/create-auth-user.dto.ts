@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateAuthUserDto {
   @IsString()
@@ -8,7 +8,16 @@ export class CreateAuthUserDto {
   email: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsIn(['local', 'google'])
+  provider: 'local' | 'google';
+
+  @IsOptional()
+  @IsString()
   @MaxLength(255)
-  passwordHash: string;
+  googleId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  passwordHash?: string | null;
 }

@@ -8,6 +8,12 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USER_INFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
 const GOOGLE_SCOPE = 'openid email profile';
 
+export type GoogleUserProfile = Readonly<{
+  email: string;
+  googleId: string;
+  name: string | null;
+}>;
+
 type GoogleOAuthStatePayload = Readonly<{
   codeVerifier: string;
   redirectUri: string;
@@ -16,11 +22,19 @@ type GoogleOAuthStatePayload = Readonly<{
 const GOOGLE_STATE_TOKEN_VERSION = 'v1';
 
 const ensureNonEmptyString = (value: unknown, code: string, message: string): string => {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+  if (typeof value !== 'string' || value.length === 0) {
     throw createRouteError(502, code, message);
   }
 
-  return value.trim();
+  return value;
+};
+
+const getErrorMessage = (error: unknown): string | null => {
+  if (error instanceof Error && typeof error.message === 'string' && error.message.length > 0) {
+    return error.message;
+  }
+
+  return null;
 };
 
 const createSha256Base64Url = (value: string): string =>
@@ -151,20 +165,35 @@ export const exchangeGoogleAuthorizationCode = async (
   config: AppConfig,
   redirectUri: string = config.googleRedirectUri,
 ): Promise<string> => {
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    body: new URLSearchParams({
-      client_id: config.googleClientId,
-      client_secret: config.googleClientSecret,
-      code,
-      code_verifier: codeVerifier,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-    }),
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    method: 'POST',
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(GOOGLE_TOKEN_URL, {
+      body: new URLSearchParams({
+        client_id: config.googleClientId,
+        client_secret: config.googleClientSecret,
+        code,
+        code_verifier: codeVerifier,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+      }),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      method: 'POST',
+    });
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED',
+      errorMessage
+        ? `Google OAuth token exchange failed: ${errorMessage}`
+        : 'Google OAuth token exchange failed.',
+    );
+  }
+
   let responseBody: unknown;
 
   try {
@@ -197,9 +226,9 @@ export const exchangeGoogleAuthorizationCode = async (
 
     if (
       typeof responseBodyRecord.error_description === 'string' &&
-      responseBodyRecord.error_description.trim()
+      responseBodyRecord.error_description
     ) {
-      description = responseBodyRecord.error_description.trim();
+      description = responseBodyRecord.error_description;
     }
 
     throw createRouteError(502, 'GOOGLE_OAUTH_TOKEN_EXCHANGE_FAILED', `${error}: ${description}`);
@@ -212,13 +241,28 @@ export const exchangeGoogleAuthorizationCode = async (
   );
 };
 
-export const fetchGoogleUserEmail = async (accessToken: string): Promise<string> => {
-  const response = await fetch(GOOGLE_USER_INFO_URL, {
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-    },
-    method: 'GET',
-  });
+export const fetchGoogleUserProfile = async (accessToken: string): Promise<GoogleUserProfile> => {
+  let response: Response;
+
+  try {
+    response = await fetch(GOOGLE_USER_INFO_URL, {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      method: 'GET',
+    });
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+
+    throw createRouteError(
+      502,
+      'GOOGLE_OAUTH_USERINFO_FAILED',
+      errorMessage
+        ? `Google OAuth user info request failed: ${errorMessage}`
+        : 'Google OAuth user info request failed.',
+    );
+  }
+
   let responseBody: unknown;
 
   try {
@@ -257,9 +301,25 @@ export const fetchGoogleUserEmail = async (accessToken: string): Promise<string>
     );
   }
 
-  return ensureNonEmptyString(
+  const email = ensureNonEmptyString(
     responseBodyRecord.email,
     'GOOGLE_EMAIL_MISSING',
     'Google OAuth user info did not contain an email address.',
   ).toLowerCase();
+  const googleId = ensureNonEmptyString(
+    responseBodyRecord.sub,
+    'GOOGLE_SUB_MISSING',
+    'Google OAuth user info did not contain a Google user id.',
+  );
+  let name: string | null = null;
+
+  if (typeof responseBodyRecord.name === 'string' && responseBodyRecord.name.length > 0) {
+    name = responseBodyRecord.name;
+  }
+
+  return {
+    email,
+    googleId,
+    name,
+  };
 };

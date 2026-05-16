@@ -17,7 +17,13 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 320, unique: true })
   email: string;
 
-  @Column({ name: 'password_hash', type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 20, default: 'local' })
+  provider: 'local' | 'google';
+
+  @Column({ name: 'google_id', type: 'varchar', length: 255, nullable: true, unique: true })
+  googleId: string;
+
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
   passwordHash: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

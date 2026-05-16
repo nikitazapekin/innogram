@@ -3,6 +3,7 @@ import { loadEnvironment } from './load-environment';
 export type AppConfig = Readonly<{
   accessTokenExpiresIn: string;
   accessTokenSecret: string;
+  allowedOAuthRedirectOrigins: readonly string[];
   googleClientId: string;
   googleClientSecret: string;
   googleRedirectUri: string;
@@ -33,6 +34,19 @@ const readRequiredPositiveInteger = (value: string | undefined, envName: string)
   return parsedValue;
 };
 
+const readRequiredStringList = (value: string | undefined, envName: string): readonly string[] => {
+  const parsedValues = readRequiredString(value, envName)
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  if (parsedValues.length === 0) {
+    throw new Error(`${envName} must contain at least one value.`);
+  }
+
+  return parsedValues;
+};
+
 export const loadConfig = (): AppConfig => {
   loadEnvironment();
 
@@ -44,6 +58,10 @@ export const loadConfig = (): AppConfig => {
     accessTokenSecret: readRequiredString(
       process.env.AUTH_JWT_ACCESS_TOKEN_SECRET,
       'AUTH_JWT_ACCESS_TOKEN_SECRET',
+    ),
+    allowedOAuthRedirectOrigins: readRequiredStringList(
+      process.env.AUTH_ALLOWED_OAUTH_REDIRECT_ORIGINS,
+      'AUTH_ALLOWED_OAUTH_REDIRECT_ORIGINS',
     ),
     googleClientId: readRequiredString(process.env.AUTH_GOOGLE_CLIENT_ID, 'AUTH_GOOGLE_CLIENT_ID'),
     googleClientSecret: readRequiredString(
