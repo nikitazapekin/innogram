@@ -3,7 +3,7 @@ type AuthGatewayPayload = Readonly<{
   password: string;
 }>;
 
-const getApiGatewayUrl = (): string => process.env.API_GATEWAY_URL || 'http://localhost:3002';
+const getApiGatewayUrl = (): string => process.env.API_GATEWAY_URL || 'http://localhost:3004';
 
 export const forwardAuthPayload = async (
   path: string,

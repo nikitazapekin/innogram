@@ -19,7 +19,8 @@
     "format:check": "prettier --check \"apps/**/*.ts\" \"packages/**/*.ts\"",
     "prepare": "husky",
     "start:core": "npm --prefix apps/core_microservice run start:dev",
-    "start:all": "turbo run start:dev --parallel --filter=@innogram/core-microservice --filter=@innogram/auth-microservice",
+    "start:gateway": "npm --prefix apps/api-gateway run start:dev",
+    "start:all": "turbo run start:dev --parallel --filter=@innogram/core-microservice --filter=@innogram/auth-microservice --filter=@innogram/api-gateway",
     "build:shared": "npm --prefix packages/shared run build",
     "build:core": "npm --prefix apps/core_microservice run build",
     "start:core:prod": "node apps/core_microservice/dist/main.js"
