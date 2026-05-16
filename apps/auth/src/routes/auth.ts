@@ -70,6 +70,19 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
   router.get('/auth/google', async (request, response, next) => {
     try {
       const redirectUri = getRequiredQueryParam(request.query.redirectUri, 'redirectUri');
+      const allowedOrigins = new Set(config.allowedOAuthRedirectOrigins);
+      let redirectUrl: URL;
+
+      try {
+        redirectUrl = new URL(redirectUri);
+      } catch {
+        throw createRouteError(400, 'INVALID_REDIRECT_URI', 'Redirect URI is not allowed.');
+      }
+
+      if (!allowedOrigins.has(redirectUrl.origin)) {
+        throw createRouteError(400, 'INVALID_REDIRECT_URI', 'Redirect URI is not allowed.');
+      }
+
       const codeVerifier = createGoogleCodeVerifier();
       const state = createGoogleOAuthState(config, {
         codeVerifier,
