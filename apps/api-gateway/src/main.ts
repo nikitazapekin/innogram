@@ -40,7 +40,7 @@ const readAuthServiceUrl = (): string => {
     return DEFAULT_AUTH_SERVICE_URL;
   }
 
-  return rawUrl.trim();
+  return rawUrl;
 };
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
@@ -92,7 +92,7 @@ const buildUpstreamUrl = (serviceUrl: string, originalUrl: string | undefined): 
 };
 
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>
-  Readable.toWeb(stream) as ReadableStream<Uint8Array>;
+  Readable.toWeb(stream);
 
 const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
   headers.forEach((headerValue, headerName) => {
@@ -136,6 +136,7 @@ async function bootstrap(): Promise<void> {
       applyUpstreamHeaders(response, upstreamResponse.headers);
 
       const responseBody = Buffer.from(await upstreamResponse.arrayBuffer());
+
       response.send(responseBody);
     } catch (error) {
       response.status(502).json({
