@@ -39,11 +39,13 @@ const toValidateTokenResponseBody = (value: unknown): ValidateTokenResponseBody 
   }
 
   let payload: unknown;
+
   if ('payload' in value) {
     payload = value.payload;
   }
 
   let message: string | undefined;
+
   if ('message' in value && typeof value.message === 'string') {
     message = value.message;
   }
