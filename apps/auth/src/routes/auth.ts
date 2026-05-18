@@ -21,6 +21,7 @@ import {
 import { createOAuthRedirectUrl } from '../services/oauth-redirect-service';
 import { hashPassword } from '../services/password-service';
 import { getOptionalQueryParam, getRequiredQueryParam } from '../services/request-query-service';
+import { validateAuthorizationHeader } from '../services/auth-token-service';
 
 import { createRouteError, RouteError } from '../shared/route-error';
 
@@ -188,6 +189,27 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
       }
 
       response.json(buildAuthResponse(user.email, config));
+    } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
+      next(error);
+    }
+  });
+
+  router.get('/auth/validate', async (request, response, next) => {
+    try {
+      const payload = validateAuthorizationHeader(request.header('authorization'), config);
+
+      response.json({
+        payload,
+      });
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
