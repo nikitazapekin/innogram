@@ -1,10 +1,5 @@
 import type { AppConfig } from '../config/app-config';
-import {
-  createAccessToken,
-  createRefreshToken,
-  validateAccessToken,
-  validateRefreshToken,
-} from './token-service';
+import { createAccessToken, validateAccessToken } from './token-service';
 
 export const buildAuthResponse = (
   email: string,
@@ -15,14 +10,8 @@ export const buildAuthResponse = (
     config.accessTokenSecret,
     config.accessTokenExpiresIn,
   );
-  const refreshToken = createRefreshToken(
-    email,
-    config.refreshTokenSecret,
-    config.refreshTokenExpiresIn,
-  );
 
   validateAccessToken(accessToken, config.accessTokenSecret);
-  validateRefreshToken(refreshToken, config.refreshTokenSecret);
 
   return {
     accessToken,
