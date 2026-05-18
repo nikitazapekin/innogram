@@ -11,9 +11,6 @@ import { loadEnvironment } from './config/load-environment';
 
 loadEnvironment();
 
-const DEFAULT_API_GATEWAY_PORT = 3004;
-const DEFAULT_AUTH_SERVICE_URL = 'http://localhost:3002';
-
 const REQUEST_HEADERS_TO_SKIP = new Set([
   'connection',
   'content-length',
@@ -23,25 +20,28 @@ const REQUEST_HEADERS_TO_SKIP = new Set([
 
 const RESPONSE_HEADERS_TO_SKIP = new Set(['connection', 'content-length', 'transfer-encoding']);
 
+const readRequiredEnv = (envName: string): string => {
+  const value = process.env[envName]?.trim();
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${envName}`);
+  }
+
+  return value;
+};
+
 const readApiGatewayPort = (): number => {
-  const rawPort = process.env.API_GATEWAY_PORT;
+  const rawPort = readRequiredEnv('API_GATEWAY_PORT');
+  const parsedPort = Number(rawPort);
 
-  if (!rawPort) {
-    return DEFAULT_API_GATEWAY_PORT;
+  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
+    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
   }
 
-  return Number(rawPort);
+  return parsedPort;
 };
 
-const readAuthServiceUrl = (): string => {
-  const rawUrl = process.env.AUTH_SERVICE_URL;
-
-  if (!rawUrl) {
-    return DEFAULT_AUTH_SERVICE_URL;
-  }
-
-  return rawUrl;
-};
+const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -139,9 +139,9 @@ async function bootstrap(): Promise<void> {
 
       response.send(responseBody);
     } catch (error) {
-      response.status(502).json({
-        error: 'bad_gateway',
-        message: error instanceof Error ? error.message : 'Failed to reach upstream service.',
+      response.status(500).json({
+        error: 'internal_server_error',
+        message: error instanceof Error ? error.message : 'Internal server error.',
       });
     }
   });

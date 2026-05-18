@@ -3,7 +3,17 @@ type AuthGatewayPayload = Readonly<{
   password: string;
 }>;
 
-const getApiGatewayUrl = (): string => process.env.API_GATEWAY_URL || 'http://localhost:3004';
+const readRequiredEnv = (envName: string): string => {
+  const value = process.env[envName];
+
+  if (!value) {
+    throw new Error(`Missing required variable: ${envName}`);
+  }
+
+  return value;
+};
+
+const getApiGatewayUrl = (): string => readRequiredEnv('API_GATEWAY_URL');
 
 export const forwardAuthPayload = async (
   path: string,
