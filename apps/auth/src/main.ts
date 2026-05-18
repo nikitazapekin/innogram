@@ -8,10 +8,10 @@ import { createLogger, serializeError } from './shared/logger';
 loadEnvironment();
 
 const readRequiredString = (value: string | undefined, envName: string): string => {
-  const parsedValue = value?.trim();
+  const parsedValue = value;
 
   if (!parsedValue) {
-    throw new Error(`Missing required environment variable: ${envName}`);
+    throw new Error(`Missing required variable: ${envName}`);
   }
 
   return parsedValue;
@@ -22,7 +22,7 @@ const readRequiredPositiveInteger = (value: string | undefined, envName: string)
   const parsedValue = Number(rawValue);
 
   if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    throw new Error(`Environment variable ${envName} must be a positive integer.`);
+    throw new Error(`Variable ${envName} must be a positive integer.`);
   }
 
   return parsedValue;
