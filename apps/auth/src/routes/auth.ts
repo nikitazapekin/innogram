@@ -20,15 +20,25 @@ import {
 } from '../services/google-oauth-service';
 import { createOAuthRedirectUrl } from '../services/oauth-redirect-service';
 import { hashPassword } from '../services/password-service';
+import type { RefreshSessionService } from '../services/refresh-session-service';
+import {
+  clearRefreshTokenCookie,
+  resolveRefreshToken,
+  setRefreshTokenCookie,
+} from '../services/refresh-token-cookie-service';
 import { getOptionalQueryParam, getRequiredQueryParam } from '../services/request-query-service';
 
 import { createRouteError, RouteError } from '../shared/route-error';
 
 type CreateAuthRouterOptions = Readonly<{
   config: AppConfig;
+  refreshSessionService: RefreshSessionService;
 }>;
 
-export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
+export const createAuthRouter = ({
+  config,
+  refreshSessionService,
+}: CreateAuthRouterOptions): Router => {
   const router = Router();
 
   router.post('/auth/register', async (request, response, next) => {
@@ -43,7 +53,11 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         provider: 'local',
       });
 
-      response.status(201).json(buildAuthResponse(email, config));
+      const refreshSession = await refreshSessionService.createSession(email);
+      const authResponse = buildAuthResponse(email, config);
+
+      setRefreshTokenCookie(response, refreshSession.refreshToken);
+      response.status(201).json(authResponse);
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({
@@ -132,10 +146,15 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         });
       }
 
+      const refreshSession = await refreshSessionService.createSession(googleUser.email);
+      const authResponse = buildAuthResponse(googleUser.email, config);
+
+      setRefreshTokenCookie(response, refreshSession.refreshToken);
+
       response.redirect(
         302,
         createOAuthRedirectUrl(redirectUri, {
-          accessToken: buildAuthResponse(googleUser.email, config).accessToken,
+          accessToken: authResponse.accessToken,
           email: googleUser.email,
         }),
       );
@@ -187,7 +206,54 @@ export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router =>
         throw createRouteError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
       }
 
-      response.json(buildAuthResponse(user.email, config));
+      const refreshSession = await refreshSessionService.createSession(user.email);
+      const authResponse = buildAuthResponse(user.email, config);
+
+      setRefreshTokenCookie(response, refreshSession.refreshToken);
+      response.json(authResponse);
+    } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
+      next(error);
+    }
+  });
+
+  router.post('/auth/refresh', async (request, response, next) => {
+    try {
+      const refreshToken = resolveRefreshToken(request);
+      const refreshSession = await refreshSessionService.rotateSession(refreshToken);
+
+      setRefreshTokenCookie(response, refreshSession.refreshToken);
+      response.json(buildAuthResponse(refreshSession.email, config));
+    } catch (error: unknown) {
+      if (error instanceof RouteError) {
+        response.status(error.status).json({
+          error: error.code,
+          message: error.message,
+        });
+
+        return;
+      }
+
+      next(error);
+    }
+  });
+
+  router.post('/auth/logout', async (request, response, next) => {
+    try {
+      const refreshToken = resolveRefreshToken(request);
+
+      await refreshSessionService.deleteSession(refreshToken);
+
+      clearRefreshTokenCookie(response);
+      response.status(204).send();
     } catch (error: unknown) {
       if (error instanceof RouteError) {
         response.status(error.status).json({

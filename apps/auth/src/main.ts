@@ -3,6 +3,7 @@ import { createServer, type Server } from 'node:http';
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
 import { loadEnvironment } from './config/load-environment';
+import { createRefreshSessionService } from './services/refresh-session-service';
 import { createLogger, serializeError } from './shared/logger';
 
 loadEnvironment();
@@ -58,10 +59,12 @@ const listen = (server: Server, port: number): Promise<void> =>
 const bootstrap = async (): Promise<void> => {
   const config = loadConfig();
   const logger = createLogger(SERVICE_NAME);
+  const refreshSessionService = await createRefreshSessionService({ config });
 
   const app = createApp({
     config,
     logger,
+    refreshSessionService,
   });
   const server = createServer(app);
 
