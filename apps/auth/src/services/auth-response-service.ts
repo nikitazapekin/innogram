@@ -5,10 +5,12 @@ import {
   validateAccessToken,
 } from './token-service';
 
-export const buildAuthResponse = (
-  email: string,
-  config: AppConfig,
-): Readonly<{ accessToken: string; email: string }> => {
+export type AuthResponse = Readonly<{
+  accessToken: string;
+  email: string;
+}>;
+
+export const buildAuthResponse = (email: string, config: AppConfig): AuthResponse => {
   const accessToken = createAccessToken(
     email,
     config.accessTokenPrivateKey,

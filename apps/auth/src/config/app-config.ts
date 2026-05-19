@@ -10,12 +10,14 @@ export type AppConfig = Readonly<{
   googleRedirectUri: string;
   passwordSaltRounds: number;
   port: number;
+  redisKeyPrefix: string;
+  redisUrl: string;
   refreshTokenExpiresIn: string;
   refreshTokenSecret: string;
 }>;
 
 const readRequiredString = (value: string | undefined, envName: string): string => {
-  const parsedValue = value?.trim();
+  const parsedValue = value;
 
   if (!parsedValue) {
     throw new Error(`Missing required config value: ${envName}`);
@@ -85,6 +87,8 @@ export const loadConfig = (): AppConfig => {
       'AUTH_PASSWORD_SALT_ROUNDS',
     ),
     port: readRequiredPositiveInteger(process.env.AUTH_HTTP_PORT, 'AUTH_HTTP_PORT'),
+    redisKeyPrefix: readRequiredString(process.env.AUTH_REDIS_KEY_PREFIX, 'AUTH_REDIS_KEY'),
+    redisUrl: readRequiredString(process.env.AUTH_REDIS_URL, 'AUTH_REDIS_URL'),
     refreshTokenExpiresIn: readRequiredString(
       process.env.AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN,
       'AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN',
