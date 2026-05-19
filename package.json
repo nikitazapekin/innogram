@@ -7,6 +7,8 @@
     "apps/core",
     "apps/auth",
     "apps/api-gateway",
+    "apps/posts_microservice",
+    "apps/client_app",
     "packages/shared"
   ],
   "scripts": {

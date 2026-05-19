@@ -1,0 +1,38 @@
+@use "../../../styles" as *;
+
+.field {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.label {
+  color: $color-black;
+  font-size: $font-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 $spacing-md;
+  color: $color-black;
+  background: $color-white;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
+  outline: none;
+
+  &::placeholder {
+    color: rgba($color-black, 0.45);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($color-white, 0.55);
+  }
+}
+
+.error {
+  color: $color-redDark;
+  font-size: $font-xs;
+  font-weight: 600;
+}

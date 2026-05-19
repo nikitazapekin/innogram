@@ -1,0 +1,12 @@
+@use "../../styles" as *;
+
+.screen {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xxl $spacing-lg;
+  background:
+    radial-gradient(circle at top left, rgba($color-white, 0.7), transparent 30%),
+    linear-gradient(180deg, rgba($color-blue, 0.35) 0%, rgba($color-white, 0.9) 100%);
+}
