@@ -34,14 +34,19 @@ type RedisSessionClient = ReturnType<typeof createClient>;
 const buildSessionKey = (config: AppConfig, sessionId: string): string =>
   `${config.redisKeyPrefix}:${sessionId}`;
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 const parseStoredSession = (value: string): StoredRefreshSession => {
   const parsedValue: unknown = JSON.parse(value);
 
-  if (typeof parsedValue !== 'object' || parsedValue === null) {
+  if (!isObjectRecord(parsedValue)) {
     throw createRouteError(500, 'INVALID_REFRESH_SESSION', 'Refresh session payload is invalid.');
   }
 
-  const { email, refreshToken, sessionId } = parsedValue as Record<string, unknown>;
+  const email = parsedValue['email'];
+  const refreshToken = parsedValue['refreshToken'];
+  const sessionId = parsedValue['sessionId'];
 
   if (
     typeof email !== 'string' ||
