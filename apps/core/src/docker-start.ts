@@ -30,10 +30,12 @@ async function prepareDatabase() {
       } finally {
         await AppDataSource.destroy();
       }
+
       return;
     } catch (error) {
       lastError = error;
       console.error(`Database connection failed (attempt ${attempt}/${MAX_RETRIES}):`, error);
+
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_DELAY_MS);
       }

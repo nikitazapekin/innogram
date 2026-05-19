@@ -26,6 +26,7 @@ export class LoggingInterceptor implements NestInterceptor {
       }),
       catchError((err) => {
         this.log(response.statusCode ?? 500, method, url, requestId, Date.now() - startedAt);
+
         return throwError(() => err);
       }),
     );
@@ -69,6 +70,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
       if (Array.isArray(headerValue)) {
         const nonEmptyItem = headerValue.find(isNonEmptyString);
+
         if (nonEmptyItem) {
           return nonEmptyItem;
         }
