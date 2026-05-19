@@ -2,6 +2,8 @@ import { createClient } from 'redis';
 
 import type { AppConfig } from '../config/app-config';
 import { createRouteError, RouteError } from '../shared/route-error';
+import type { Logger } from '../shared/logger';
+import { serializeError } from '../shared/logger';
 import {
   createRefreshSessionId,
   createRefreshToken,
@@ -24,6 +26,7 @@ export type RefreshSessionService = Readonly<{
 
 type CreateRefreshSessionServiceOptions = Readonly<{
   config: AppConfig;
+  logger: Logger;
 }>;
 
 type RedisSessionClient = ReturnType<typeof createClient>;
@@ -90,12 +93,17 @@ const loadStoredSession = async (
 
 export const createRefreshSessionService = async ({
   config,
+  logger,
 }: CreateRefreshSessionServiceOptions): Promise<RefreshSessionService> => {
   const redis = createClient({
     url: config.redisUrl,
   });
 
-  redis.on('error', () => undefined);
+  redis.on('error', (error) => {
+    logger.error('Redis connection error', {
+      error: serializeError(error),
+    });
+  });
   await redis.connect();
 
   const refreshTokenTtlSeconds = parseTokenLifetimeSeconds(config.refreshTokenExpiresIn);

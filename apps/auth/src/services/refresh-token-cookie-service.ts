@@ -8,6 +8,7 @@ export const setRefreshTokenCookie = (response: Response, refreshToken: string):
   response.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
     httpOnly: true,
     path: '/',
+    secure: true,
     sameSite: 'lax',
   });
 };

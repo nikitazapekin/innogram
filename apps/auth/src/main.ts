@@ -59,7 +59,7 @@ const listen = (server: Server, port: number): Promise<void> =>
 const bootstrap = async (): Promise<void> => {
   const config = loadConfig();
   const logger = createLogger(SERVICE_NAME);
-  const refreshSessionService = await createRefreshSessionService({ config });
+  const refreshSessionService = await createRefreshSessionService({ config, logger });
 
   const app = createApp({
     config,

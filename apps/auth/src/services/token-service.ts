@@ -24,7 +24,7 @@ const JWT_ALGORITHM = 'HS256';
 
 const ensureNonEmptyString = (value: unknown): string => {
   if (typeof value !== 'string' || value.trim().length === 0) {
-    throw createRouteError(500, 'INVALID_TOKEN_PAYLOAD', 'JWT payload has invalid shape.');
+    throw createRouteError(401, 'INVALID_TOKEN_PAYLOAD', 'JWT payload has invalid shape.');
   }
 
   return value;
@@ -38,7 +38,7 @@ const parseJsonRecord = (value: string): Record<string, unknown> => {
   const parsedValue: unknown = JSON.parse(value);
 
   if (typeof parsedValue !== 'object' || parsedValue === null) {
-    throw createRouteError(500, 'INVALID_TOKEN', 'JWT content must be a JSON object.');
+    throw createRouteError(401, 'INVALID_TOKEN', 'JWT content must be a JSON object.');
   }
 
   return Object(parsedValue);
@@ -119,7 +119,7 @@ const validateToken = (
   const tokenParts = token.split('.');
 
   if (tokenParts.length !== 3) {
-    throw createRouteError(500, 'INVALID_TOKEN', 'JWT must contain header, payload and signature.');
+    throw createRouteError(401, 'INVALID_TOKEN', 'JWT must contain header, payload and signature.');
   }
 
   const [encodedHeader, encodedPayload, encodedSignature] = tokenParts;
@@ -130,27 +130,27 @@ const validateToken = (
     actualSignature.length !== expectedSignature.length ||
     !timingSafeEqual(actualSignature, expectedSignature)
   ) {
-    throw createRouteError(500, 'INVALID_TOKEN_SIGNATURE', 'JWT signature validation failed.');
+    throw createRouteError(401, 'INVALID_TOKEN_SIGNATURE', 'JWT signature validation failed.');
   }
 
   const decodedHeader = parseJsonRecord(decodeBase64Url(encodedHeader));
   const decodedPayload = parseJsonRecord(decodeBase64Url(encodedPayload));
 
   if (decodedHeader.alg !== JWT_ALGORITHM || decodedHeader.typ !== 'JWT') {
-    throw createRouteError(500, 'INVALID_TOKEN_HEADER', 'JWT header has invalid shape.');
+    throw createRouteError(401, 'INVALID_TOKEN_HEADER', 'JWT header has invalid shape.');
   }
 
   const { email, exp, iat, jti, sub, tokenType } = decodedPayload;
 
   if (typeof exp !== 'number' || typeof iat !== 'number' || tokenType !== expectedTokenType) {
-    throw createRouteError(500, 'INVALID_TOKEN_PAYLOAD', 'JWT payload has invalid shape.');
+    throw createRouteError(401, 'INVALID_TOKEN_PAYLOAD', 'JWT payload has invalid shape.');
   }
 
   const validatedEmail = ensureNonEmptyString(email);
   const validatedSub = ensureNonEmptyString(sub);
 
   if (exp <= Math.floor(Date.now() / 1000)) {
-    throw createRouteError(500, 'TOKEN_EXPIRED', 'JWT has already expired.');
+    throw createRouteError(401, 'TOKEN_EXPIRED', 'JWT has already expired.');
   }
 
   let validatedJti: string | undefined;
