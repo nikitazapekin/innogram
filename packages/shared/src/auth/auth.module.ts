@@ -1,24 +1,23 @@
 import { DynamicModule, Module } from '@nestjs/common';
 
-import {
-  SHARED_AUTH_CLIENT_OPTIONS,
-  SharedAuthClientOptions,
-  SharedAuthClientService,
-} from './auth-client.service';
+import { SHARED_AUTH_OPTIONS, SharedAuthOptions } from './auth-config';
+import { SharedAuthGuard } from './auth.guard';
+import { SharedJwksClientService } from './jwks-client.service';
 
 @Module({})
 export class SharedAuthModule {
-  public static forRoot(options: SharedAuthClientOptions): DynamicModule {
+  public static forRoot(options: SharedAuthOptions): DynamicModule {
     return {
       module: SharedAuthModule,
       providers: [
         {
-          provide: SHARED_AUTH_CLIENT_OPTIONS,
+          provide: SHARED_AUTH_OPTIONS,
           useValue: options,
         },
-        SharedAuthClientService,
+        SharedJwksClientService,
+        SharedAuthGuard,
       ],
-      exports: [SharedAuthClientService],
+      exports: [SharedAuthGuard, SharedJwksClientService],
     };
   }
 }

@@ -22,6 +22,7 @@ import { createOAuthRedirectUrl } from '../services/oauth-redirect-service';
 import { hashPassword } from '../services/password-service';
 import { getOptionalQueryParam, getRequiredQueryParam } from '../services/request-query-service';
 import { validateAuthorizationHeader } from '../services/auth-token-service';
+import { getAccessTokenJwks } from '../services/token-service';
 
 import { createRouteError, RouteError } from '../shared/route-error';
 
@@ -31,6 +32,10 @@ type CreateAuthRouterOptions = Readonly<{
 
 export const createAuthRouter = ({ config }: CreateAuthRouterOptions): Router => {
   const router = Router();
+
+  router.get('/.well-known/jwks.json', (_request, response) => {
+    response.json(getAccessTokenJwks(config.accessTokenPrivateKey, config.accessTokenKeyId));
+  });
 
   router.post('/auth/register', async (request, response, next) => {
     try {

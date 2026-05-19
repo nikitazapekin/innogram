@@ -1,6 +1,6 @@
 import type { AppConfig } from '../config/app-config';
 import { createRouteError } from '../shared/route-error';
-import { validateAccessToken } from './token-service';
+import { getAccessTokenPublicKeyPem, validateAccessToken } from './token-service';
 
 export type AuthenticatedAccessTokenPayload = Readonly<{
   email: string;
@@ -52,7 +52,10 @@ export const validateAuthorizationHeader = (
   const token = extractBearerToken(authorizationHeader);
 
   try {
-    const payload = validateAccessToken(token, config.accessTokenSecret);
+    const payload = validateAccessToken(
+      token,
+      getAccessTokenPublicKeyPem(config.accessTokenPrivateKey),
+    );
 
     return {
       ...payload,

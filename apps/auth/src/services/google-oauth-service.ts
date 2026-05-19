@@ -41,7 +41,7 @@ const createSha256Base64Url = (value: string): string =>
   createHash('sha256').update(value).digest('base64url');
 
 const createGoogleStateEncryptionKey = (config: AppConfig): Buffer =>
-  createHash('sha256').update(config.accessTokenSecret).digest();
+  createHash('sha256').update(config.accessTokenPrivateKey).digest();
 
 export const createGoogleOAuthState = (
   config: AppConfig,

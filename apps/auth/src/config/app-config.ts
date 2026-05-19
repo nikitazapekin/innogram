@@ -2,7 +2,8 @@ import { loadEnvironment } from './load-environment';
 
 export type AppConfig = Readonly<{
   accessTokenExpiresIn: string;
-  accessTokenSecret: string;
+  accessTokenKeyId: string;
+  accessTokenPrivateKey: string;
   allowedOAuthRedirectOrigins: readonly string[];
   googleClientId: string;
   googleClientSecret: string;
@@ -47,6 +48,9 @@ const readRequiredStringList = (value: string | undefined, envName: string): rea
   return parsedValues;
 };
 
+const readRequiredMultilineString = (value: string | undefined, envName: string): string =>
+  readRequiredString(value, envName).replace(/\\n/g, '\n');
+
 export const loadConfig = (): AppConfig => {
   loadEnvironment();
 
@@ -55,9 +59,13 @@ export const loadConfig = (): AppConfig => {
       process.env.AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN,
       'AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN',
     ),
-    accessTokenSecret: readRequiredString(
-      process.env.AUTH_JWT_ACCESS_TOKEN_SECRET,
-      'AUTH_JWT_ACCESS_TOKEN_SECRET',
+    accessTokenKeyId: readRequiredString(
+      process.env.AUTH_JWT_ACCESS_TOKEN_KEY_ID,
+      'AUTH_JWT_ACCESS_TOKEN_KEY_ID',
+    ),
+    accessTokenPrivateKey: readRequiredMultilineString(
+      process.env.AUTH_JWT_ACCESS_TOKEN_PRIVATE_KEY,
+      'AUTH_JWT_ACCESS_TOKEN_PRIVATE_KEY',
     ),
     allowedOAuthRedirectOrigins: readRequiredStringList(
       process.env.AUTH_ALLOWED_OAUTH_REDIRECT_ORIGINS,

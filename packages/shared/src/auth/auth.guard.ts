@@ -2,7 +2,8 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 
 import { IS_PUBLIC_ROUTE_KEY } from './constants';
-import { SharedAuthClientService } from './auth-client.service';
+import { SharedJwksClientService } from './jwks-client.service';
+import { extractKeyId, validateAccessToken } from './token.service';
 import type { AuthenticatedRequest } from './types';
 
 const extractBearerToken = (authorizationHeader: string | string[] | undefined): string => {
@@ -23,7 +24,7 @@ const extractBearerToken = (authorizationHeader: string | string[] | undefined):
 export class SharedAuthGuard implements CanActivate {
   public constructor(
     private readonly reflector: Reflector,
-    private readonly sharedAuthClientService: SharedAuthClientService,
+    private readonly sharedJwksClientService: SharedJwksClientService,
   ) {}
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -38,7 +39,8 @@ export class SharedAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = extractBearerToken(request.headers.authorization);
-    const payload = await this.sharedAuthClientService.validateAccessToken(token);
+    const publicKey = await this.sharedJwksClientService.getPublicKey(extractKeyId(token));
+    const payload = validateAccessToken(token, publicKey);
 
     request.auth = payload;
     request.user = payload;
