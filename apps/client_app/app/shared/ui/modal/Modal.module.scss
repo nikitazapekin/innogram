@@ -1,0 +1,80 @@
+@use "../../../styles" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg;
+  background:
+    linear-gradient(180deg, rgba($color-blue, 0.6) 0%, rgba($color-black, 0.24) 100%),
+    rgba($color-white, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.dialog {
+  width: min(100%, 460px);
+  display: grid;
+  gap: $spacing-lg;
+  padding: $spacing-xl;
+  background: $color-blue;
+  border: 2px solid $color-black;
+  border-radius: $radius-xlarge;
+  box-shadow: 0 24px 60px rgba($color-black, 0.18);
+}
+
+.header {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.title {
+  margin: 0;
+  color: $color-black;
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.05;
+}
+
+.close {
+  padding: $spacing-xs $spacing-sm;
+  flex-shrink: 0;
+  color: $color-black;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: $font-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.description {
+  margin: 0;
+  color: rgba($color-black, 0.72);
+  font-size: $font-xs;
+  line-height: 1.5;
+}
+
+.body {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+}
+
+@include breakpoint($breakpoint-sm) {
+  .dialog {
+    padding: $spacing-xxl;
+  }
+}

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { RequestLoader } from '@/app/features/system-feedback';
 import { InputField } from '@/app/shared/ui/input';
 import styles from './AuthForm.module.scss';
 import { authSchema, type AuthFormValues } from '../../model/authSchema';
@@ -29,12 +30,13 @@ export function AuthForm({
 }: AuthFormProps) {
   const [values, setValues] = useState<AuthFormValues>(initialValues);
   const [errors, setErrors] = useState<Partial<Record<keyof AuthFormValues, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFieldChange = (field: keyof AuthFormValues, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const result = authSchema.safeParse(values);
@@ -51,6 +53,13 @@ export function AuthForm({
     }
 
     setErrors({});
+    setIsSubmitting(true);
+
+    try {
+      await Promise.resolve(values);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,8 +90,8 @@ export function AuthForm({
             onChange={(event) => handleFieldChange('password', event.target.value)}
           />
 
-          <button className={styles.submitButton} type="submit">
-            {submitLabel}
+          <button className={styles.submitButton} type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <RequestLoader inline label="Отправка" /> : submitLabel}
           </button>
         </form>
 

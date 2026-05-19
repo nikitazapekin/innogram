@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './global.scss';
+import { AppErrorBoundary } from './widgets/app-error-boundary';
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -14,9 +15,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="layout">
-        <header>Header</header>
-        <main className="layout__main">{children}</main>
-        <footer>Footer</footer>
+        <AppErrorBoundary>
+          <header>Header</header>
+          <main className="layout__main">{children}</main>
+          <footer>Footer</footer>
+        </AppErrorBoundary>
       </body>
     </html>
   );
