@@ -1,5 +1,9 @@
 import type { AppConfig } from '../config/app-config';
-import { createAccessToken, validateAccessToken } from './token-service';
+import {
+  createAccessToken,
+  getAccessTokenPublicKeyPem,
+  validateAccessToken,
+} from './token-service';
 
 export type AuthResponse = Readonly<{
   accessToken: string;
@@ -9,11 +13,12 @@ export type AuthResponse = Readonly<{
 export const buildAuthResponse = (email: string, config: AppConfig): AuthResponse => {
   const accessToken = createAccessToken(
     email,
-    config.accessTokenSecret,
+    config.accessTokenPrivateKey,
     config.accessTokenExpiresIn,
+    config.accessTokenKeyId,
   );
 
-  validateAccessToken(accessToken, config.accessTokenSecret);
+  validateAccessToken(accessToken, getAccessTokenPublicKeyPem(config.accessTokenPrivateKey));
 
   return {
     accessToken,

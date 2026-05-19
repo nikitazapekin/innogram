@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import { Public } from '@innogram/shared';
 
 import { AuthService } from './auth.service';
 import { AuthUserDto } from './dto/auth-user.dto';
@@ -6,6 +7,7 @@ import { CreateAuthUserDto } from './dto/create-auth-user.dto';
 import { GetAuthUserQueryDto } from './dto/get-auth-user-query.dto';
 import { VerifyAuthUserCredentialsDto } from './dto/verify-auth-user-credentials.dto';
 
+@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

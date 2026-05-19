@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { SharedAuthGuard, SharedAuthModule } from '@innogram/shared';
 
 import { AuthModule } from './auth/auth.module';
+import { readRequiredEnv } from './common/read-required-env';
 import { DatabaseConfigService } from './database.config';
 import { ChatsModule } from './chats/chats.module';
 import { CommentsModule } from './comments/comments.module';
@@ -26,6 +29,9 @@ import { UsersModule } from './users/users.module';
       ignoreEnvFile: true,
       isGlobal: true,
     }),
+    SharedAuthModule.forRoot({
+      authServiceUrl: readRequiredEnv('AUTH_SERVICE_URL'),
+    }),
     TypeOrmModule.forRootAsync({
       useClass: DatabaseConfigService,
     }),
@@ -46,6 +52,12 @@ import { UsersModule } from './users/users.module';
     CommentsModule,
     ChatsModule,
     NotificationsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: SharedAuthGuard,
+    },
   ],
 })
 export class AppModule {}
