@@ -15,14 +15,14 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'comment', schema: 'main' })
 export class Comment {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'post_id', type: 'integer' })
+  @Column({ name: 'post_id', type: 'int' })
   postId: number;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'int' })
+  authorProfileId: number;
 
   @Column({ type: 'text' })
   content: string;

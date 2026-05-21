@@ -38,12 +38,14 @@ const readRequiredString = (value: string | undefined, name: string): string => 
   return value;
 };
 
-const resolveUpstream = (url: string | undefined): string => {
-  if (url?.startsWith('/auth')) {
-    return AUTH_SERVICE_URL;
+const AUTH_ROUTE_PREFIX = '/auth';
+
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  if (originalUrl?.startsWith(AUTH_ROUTE_PREFIX)) {
+    return buildUpstreamUrl(AUTH_SERVICE_URL, originalUrl);
   }
 
-  return CORE_URL;
+  return buildUpstreamUrl(CORE_URL, originalUrl);
 };
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
@@ -169,12 +171,7 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
-      const upstreamUrl = resolveUpstream(request.originalUrl);
-
-      const upstreamResponse = await fetch(
-        buildUpstreamUrl(upstreamUrl, request.originalUrl),
-        fetchOptions,
-      );
+      const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
       const status = upstreamResponse.status;
 
