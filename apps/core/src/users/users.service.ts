@@ -93,14 +93,6 @@ export class UsersService {
   async followProfile(followerId: number, followingId: number): Promise<void> {
     this.ensureDifferentProfileIds(followerId, followingId);
 
-    await Promise.all([this.findProfileById(followerId), this.findProfileById(followingId)]);
-
-    const alreadyFollowing = await this.isFollowing(followerId, followingId);
-
-    if (alreadyFollowing) {
-      return;
-    }
-
     await this.profilesRepository
       .createQueryBuilder()
       .relation(Profile, 'followingProfiles')
@@ -112,14 +104,6 @@ export class UsersService {
 
   async unfollowProfile(followerId: number, followingId: number): Promise<void> {
     this.ensureDifferentProfileIds(followerId, followingId);
-
-    await Promise.all([this.findProfileById(followerId), this.findProfileById(followingId)]);
-
-    const alreadyFollowing = await this.isFollowing(followerId, followingId);
-
-    if (!alreadyFollowing) {
-      return;
-    }
 
     await this.profilesRepository
       .createQueryBuilder()
@@ -138,16 +122,6 @@ export class UsersService {
     }
 
     return profile;
-  }
-
-  private async isFollowing(followerId: number, followingId: number): Promise<boolean> {
-    return this.profilesRepository
-      .createQueryBuilder('profile')
-      .innerJoin('profile.followingProfiles', 'following', 'following.id = :followingId', {
-        followingId,
-      })
-      .where('profile.id = :followerId', { followerId })
-      .getExists();
   }
 
   private ensureDifferentProfileIds(followerId: number, followingId: number): void {
