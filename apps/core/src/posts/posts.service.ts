@@ -49,12 +49,13 @@ export class PostsService {
     });
 
     const postsDto = posts.map((post) => this.toPostDto(post));
+    const totalPages = Math.ceil(total / limit);
     return {
       data: postsDto,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: totalPages,
     };
   }
 
