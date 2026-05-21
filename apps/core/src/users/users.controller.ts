@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UsersService } from './users.service';
@@ -35,8 +36,8 @@ export class UsersController {
   })
   @ApiBadRequestResponse({ description: 'Request body validation failed.' })
   @Post()
-  create(@Body() userDto: UpdateUserDto): Promise<UserDto> {
-    return this.usersService.create(userDto);
+  create(@Body() dto: CreateProfileDto): Promise<UserDto> {
+    return this.usersService.create(dto);
   }
 
   @Get()

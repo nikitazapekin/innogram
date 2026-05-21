@@ -8,6 +8,11 @@ export class UserDto {
   id?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  userId?: number;
+
+  @IsOptional()
   @IsString()
   displayName?: string;
 
