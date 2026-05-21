@@ -27,8 +27,9 @@ export class UsersService {
     private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
-  async create(userDto: UpdateUserDto): Promise<UserDto> {
+  async create(userDto: UpdateUserDto & { userId: number }): Promise<UserDto> {
     const profile = this.profilesRepository.create({
+      userId: userDto.userId,
       displayName: userDto.displayName,
       bio: userDto.bio,
       avatarAssetId: userDto.avatarAssetId,
@@ -261,6 +262,7 @@ export class UsersService {
   private toUserDto(profile: Profile): UserDto {
     return {
       id: profile.id,
+      userId: profile.userId,
       displayName: profile.displayName,
       bio: profile.bio ?? undefined,
       avatarAssetId: profile.avatarAssetId,

@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { Public } from '@innogram/shared';
+import { CreateProfileDto } from './dto/create-profile.dto';
 import { FollowRequestDto } from './dto/follow-request.dto';
 import { RespondFollowRequestDto } from './dto/respond-follow-request.dto';
 import { SubscribeProfileDto } from './dto/subscribe-profile.dto';
@@ -40,8 +41,8 @@ export class UsersController {
   })
   @ApiBadRequestResponse({ description: 'Request body validation failed.' })
   @Post()
-  create(@Body() userDto: UpdateUserDto): Promise<UserDto> {
-    return this.usersService.create(userDto);
+  create(@Body() dto: CreateProfileDto): Promise<UserDto> {
+    return this.usersService.create(dto);
   }
 
   @Get()
