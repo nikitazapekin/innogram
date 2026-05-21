@@ -6,12 +6,10 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { AuthenticatedRequest } from '@innogram/shared';
 
 import { AssetDto } from './dto/asset.dto';
 import { AssetsService } from './assets.service';
@@ -30,12 +28,11 @@ export class AssetsController {
   uploadFile(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body('profileId', ParseIntPipe) profileId: number,
-    @Req() request: AuthenticatedRequest,
   ): Promise<AssetDto> {
     if (!file) {
       throw new BadRequestException('File is required.');
     }
 
-    return this.assetsService.uploadFile(file, profileId, request.user!.sub);
+    return this.assetsService.uploadFile(file, profileId);
   }
 }

@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import * as Minio from 'minio';
@@ -12,7 +6,6 @@ import { Repository } from 'typeorm';
 import 'multer';
 import { Asset } from '../entities/asset.entity';
 import { Profile } from '../entities/profile.entity';
-import { UserEntity } from '../entities/user.entity';
 import { MINIO_CLIENT } from './assets.constants';
 import { readRequiredEnv } from '../common/read-required-env';
 import { AssetDto } from './dto/asset.dto';
@@ -26,8 +19,6 @@ export class AssetsService {
     private readonly assetsRepository: Repository<Asset>,
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
     @Inject(MINIO_CLIENT)
     private readonly minioClient: Minio.Client,
   ) {
@@ -40,19 +31,9 @@ export class AssetsService {
     return this.minioClient.presignedGetObject(this.bucketName, asset.fileName);
   }
 
-  async uploadFile(
-    file: Express.Multer.File,
-    profileId: number,
-    userEmail: string,
-  ): Promise<AssetDto> {
+  async uploadFile(file: Express.Multer.File, profileId: number): Promise<AssetDto> {
     if (!file.buffer?.length) {
       throw new BadRequestException('Uploaded file is empty.');
-    }
-
-    const user = await this.usersRepository.findOneBy({ email: userEmail });
-
-    if (!user) {
-      throw new UnauthorizedException('Authenticated user was not found.');
     }
 
     const profile = await this.profilesRepository.findOneBy({ id: profileId });
