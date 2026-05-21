@@ -1,15 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDate, IsNumber, IsString, MaxLength } from 'class-validator';
 
 export class AssetDto {
   @IsNumber()
   @Type(() => Number)
   id: number;
 
-  @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  ownerProfileId?: number | null;
+  ownerProfileId: number;
 
   @IsString()
   @MaxLength(255)
