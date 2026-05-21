@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,10 +7,12 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Req,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { AuthenticatedRequest } from '@innogram/shared';
 
 import { AssetDto } from './dto/asset.dto';
 import { AssetsService } from './assets.service';
@@ -27,9 +30,13 @@ export class AssetsController {
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body('profileId', ParseIntPipe) profileId: number,
+    @Req() request: AuthenticatedRequest,
   ): Promise<AssetDto> {
-    return this.assetsService.uploadFile(file, profileId);
+    if (!file) {
+      throw new BadRequestException('File is required.');
+    }
+
+    return this.assetsService.uploadFile(file, request.user!.email);
   }
 
   @Delete(':id')
