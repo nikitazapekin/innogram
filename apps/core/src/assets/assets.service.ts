@@ -13,7 +13,8 @@ import { Repository } from 'typeorm';
 import { Asset } from '../entities/asset.entity';
 import { Profile } from '../entities/profile.entity';
 import { UserEntity } from '../entities/user.entity';
-import { MINIO_CLIENT } from './assets.module';
+import { MINIO_CLIENT } from './assets.constants';
+import { readRequiredEnv } from '../common/read-required-env';
 import { AssetDto } from './dto/asset.dto';
 
 @Injectable()
@@ -30,7 +31,7 @@ export class AssetsService {
     @Inject(MINIO_CLIENT)
     private readonly minioClient: Minio.Client,
   ) {
-    this.bucketName = process.env.MINIO_BUCKET ?? 'main';
+    this.bucketName = readRequiredEnv('MINIO_BUCKET');
   }
 
   async getAssetUrl(id: number): Promise<string> {
