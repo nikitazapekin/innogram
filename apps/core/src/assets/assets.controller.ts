@@ -30,6 +30,7 @@ export class AssetsController {
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @UploadedFile() file: Express.Multer.File | undefined,
+    @Body('profileId', ParseIntPipe) profileId: number,
     @Req() request: AuthenticatedRequest,
   ): Promise<AssetDto> {
     if (!file) {
