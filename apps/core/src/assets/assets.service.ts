@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import * as Minio from 'minio';
@@ -13,7 +7,6 @@ import 'multer';
 
 import { Asset } from '../entities/asset.entity';
 import { Profile } from '../entities/profile.entity';
-import { UserEntity } from '../entities/user.entity';
 import { MINIO_CLIENT } from './assets.constants';
 import { readRequiredEnv } from '../common/read-required-env';
 import { AssetDto } from './dto/asset.dto';
@@ -27,8 +20,6 @@ export class AssetsService {
     private readonly assetsRepository: Repository<Asset>,
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
     @Inject(MINIO_CLIENT)
     private readonly minioClient: Minio.Client,
   ) {
