@@ -7,12 +7,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '@innogram/shared';
 
 import { CreatePostDto } from './dto/create-post.dto';
+import { PaginatedPostsDto } from './dto/paginated-posts.dto';
 import { PostDto } from './dto/post.dto';
+import { QueryPostsDto } from './dto/query-posts.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
 
@@ -21,8 +24,11 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  getPosts(): Promise<PostDto[]> {
-    return this.postsService.getPosts();
+  getPosts(@Query() query: QueryPostsDto): Promise<PaginatedPostsDto | PostDto[]> {
+    if (Object.keys(query).length === 0) {
+      return this.postsService.getPosts();
+    }
+    return this.postsService.getPostsByQuery(query);
   }
 
   @Get(':id')

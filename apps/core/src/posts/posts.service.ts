@@ -1,11 +1,13 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostDto } from './dto/post.dto';
+import { PaginatedPostsDto } from './dto/paginated-posts.dto';
+import { QueryPostsDto } from './dto/query-posts.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
 @Injectable()
@@ -21,8 +23,39 @@ export class PostsService {
     const posts = await this.postsRepository.find({
       order: { createdAt: 'DESC' },
     });
-
     return posts.map((post) => this.toPostDto(post));
+  }
+
+  async getPostsByQuery(query: QueryPostsDto): Promise<PaginatedPostsDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const sortBy = query.sortBy ?? 'createdAt';
+    const sortOrder = query.sortOrder ?? 'DESC';
+    const search = query.search;
+
+    const where: FindOptionsWhere<Post> = {};
+
+    if (search) {
+      where.title = Like(`%${search}%`);
+    }
+
+    const order: FindOptionsOrder<Post> = { [sortBy]: sortOrder };
+
+    const [posts, total] = await this.postsRepository.findAndCount({
+      where,
+      order,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const postsDto = posts.map((post) => this.toPostDto(post));
+    return {
+      data: postsDto,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getPost(id: number): Promise<PostDto> {
