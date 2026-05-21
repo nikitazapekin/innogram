@@ -3,6 +3,7 @@ import './config/load-environment';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -20,6 +21,8 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create(AppModule);
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.enableCors({
     origin: [CLIENT_ORIGIN, 'http://127.0.0.1:3000'],
