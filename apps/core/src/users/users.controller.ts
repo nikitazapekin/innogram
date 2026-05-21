@@ -62,6 +62,17 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Get(':id/following')
+  @ApiOperation({ summary: 'Get profiles followed by profile id' })
+  @ApiOkResponse({
+    description: 'Followed profiles have been retrieved successfully.',
+  })
+  @ApiBadRequestResponse({ description: 'The provided profile id is invalid.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  findFollowing(@Param('id', ParseIntPipe) id: number): Promise<UserDto[]> {
+    return this.usersService.findFollowingProfiles(id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update a profile' })
   @ApiOkResponse({
@@ -90,6 +101,34 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserDto> {
     return this.usersService.put(id, updateUserDto);
+  }
+
+  @Post(':id/following/:targetId')
+  @ApiOperation({ summary: 'Follow a profile' })
+  @ApiCreatedResponse({ description: 'Follow relation has been created successfully.' })
+  @ApiBadRequestResponse({
+    description: 'The provided profile ids are invalid or the profile tries to follow itself.',
+  })
+  @ApiNotFoundResponse({ description: 'Follower or target profile was not found.' })
+  follow(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('targetId', ParseIntPipe) targetId: number,
+  ): Promise<void> {
+    return this.usersService.followProfile(id, targetId);
+  }
+
+  @Delete(':id/following/:targetId')
+  @ApiOperation({ summary: 'Unfollow a profile' })
+  @ApiNoContentResponse({ description: 'Follow relation has been removed successfully.' })
+  @ApiBadRequestResponse({
+    description: 'The provided profile ids are invalid or the profile tries to unfollow itself.',
+  })
+  @ApiNotFoundResponse({ description: 'Follower or target profile was not found.' })
+  unfollow(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('targetId', ParseIntPipe) targetId: number,
+  ): Promise<void> {
+    return this.usersService.unfollowProfile(id, targetId);
   }
 
   @Delete(':id')

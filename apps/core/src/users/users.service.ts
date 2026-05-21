@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -48,6 +48,18 @@ export class UsersService {
     return profilesResponse;
   }
 
+  async findFollowingProfiles(id: number): Promise<UserDto[]> {
+    await this.findProfileById(id);
+
+    const followingProfiles = await this.profilesRepository
+      .createQueryBuilder('profile')
+      .relation(Profile, 'followingProfiles')
+      .of(id)
+      .loadMany<Profile>();
+
+    return followingProfiles.map((profile) => this.toUserDto(profile));
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const profile = await this.findProfileById(id);
 
@@ -78,6 +90,30 @@ export class UsersService {
     return savedProfileResponse;
   }
 
+  async followProfile(followerId: number, followingId: number): Promise<void> {
+    this.ensureDifferentProfileIds(followerId, followingId);
+
+    await this.profilesRepository
+      .createQueryBuilder()
+      .relation(Profile, 'followingProfiles')
+      .of(followerId)
+      .add(followingId);
+
+    this.logger.log(`Profile ${followerId} followed profile ${followingId}`);
+  }
+
+  async unfollowProfile(followerId: number, followingId: number): Promise<void> {
+    this.ensureDifferentProfileIds(followerId, followingId);
+
+    await this.profilesRepository
+      .createQueryBuilder()
+      .relation(Profile, 'followingProfiles')
+      .of(followerId)
+      .remove(followingId);
+
+    this.logger.log(`Profile ${followerId} unfollowed profile ${followingId}`);
+  }
+
   private async findProfileById(id: number): Promise<Profile> {
     const profile = await this.profilesRepository.findOneBy({ id });
 
@@ -86,6 +122,12 @@ export class UsersService {
     }
 
     return profile;
+  }
+
+  private ensureDifferentProfileIds(followerId: number, followingId: number): void {
+    if (followerId === followingId) {
+      throw new BadRequestException('Profile cannot follow itself.');
+    }
   }
 
   private updateProfileFieldsPartial(profile: Profile, updateUserDto: UpdateUserDto): void {
