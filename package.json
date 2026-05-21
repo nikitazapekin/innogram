@@ -27,6 +27,7 @@
     "start:core:prod": "node apps/core/dist/main.js"
   },
   "devDependencies": {
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",

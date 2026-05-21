@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import * as Minio from 'minio';
 import { Repository } from 'typeorm';
-
+import 'multer';
 import { Asset } from '../entities/asset.entity';
 import { Profile } from '../entities/profile.entity';
 import { UserEntity } from '../entities/user.entity';
