@@ -19,7 +19,7 @@ export class Asset {
   id: number;
 
   @Column({ name: 'owner_profile_id', type: 'integer', nullable: true })
-  ownerProfileId!: number;
+  ownerProfileId: number | null;
 
   @Column({ name: 'file_name', type: 'varchar', length: 255 })
   fileName: string;
@@ -35,7 +35,7 @@ export class Asset {
 
   @ManyToOne(() => Profile, { nullable: true })
   @JoinColumn({ name: 'owner_profile_id' })
-  ownerProfile!: Profile;
+  ownerProfile!: Profile | null;
 
   @ManyToMany(() => Post, (post) => post.assets)
   posts!: Post[];
