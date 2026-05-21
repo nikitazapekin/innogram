@@ -18,8 +18,8 @@ export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'post_id', type: 'uuid' })
-  postId: string;
+  @Column({ name: 'post_id', type: 'integer' })
+  postId: number;
 
   @Column({ name: 'author_profile_id', type: 'uuid' })
   authorProfileId: string;

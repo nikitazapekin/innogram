@@ -4,11 +4,10 @@
   "private": true,
   "packageManager": "npm@10.9.4",
   "workspaces": [
-    "apps/core",
-    "apps/auth",
     "apps/api-gateway",
-    "apps/posts_microservice",
+    "apps/auth",
     "apps/client_app",
+    "apps/core",
     "packages/shared"
   ],
   "scripts": {
@@ -20,12 +19,12 @@
     "format": "prettier --write \"apps/**/*.ts\" \"packages/**/*.ts\"",
     "format:check": "prettier --check \"apps/**/*.ts\" \"packages/**/*.ts\"",
     "prepare": "husky",
-    "start:core": "npm --prefix apps/core_microservice run start:dev",
+    "start:core": "npm --prefix apps/core run start:dev",
     "start:gateway": "npm --prefix apps/api-gateway run start:dev",
     "start:all": "turbo run start:dev --parallel --filter=@innogram/core-microservice --filter=@innogram/auth-microservice --filter=@innogram/api-gateway",
     "build:shared": "npm --prefix packages/shared run build",
-    "build:core": "npm --prefix apps/core_microservice run build",
-    "start:core:prod": "node apps/core_microservice/dist/main.js"
+    "build:core": "npm --prefix apps/core run build",
+    "start:core:prod": "node apps/core/dist/main.js"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
