@@ -66,8 +66,6 @@ export class PostsService {
   }
 
   async deletePost(id: number): Promise<void> {
-    await this.findPostById(id);
-
     const deleteResult = await this.postsRepository.delete(id);
 
     if (!deleteResult.affected) {
