@@ -40,7 +40,11 @@ export class AssetsService {
     return this.minioClient.presignedGetObject(this.bucketName, asset.fileName);
   }
 
-  async uploadFile(file: Express.Multer.File, userEmail: string): Promise<AssetDto> {
+  async uploadFile(
+    file: Express.Multer.File,
+    profileId: number,
+    userEmail: string,
+  ): Promise<AssetDto> {
     if (!file.buffer?.length) {
       throw new BadRequestException('Uploaded file is empty.');
     }
@@ -51,7 +55,12 @@ export class AssetsService {
       throw new UnauthorizedException('Authenticated user was not found.');
     }
 
-    const profile = await this.profilesRepository.findOneBy({ id: user.id });
+    const profile = await this.profilesRepository.findOneBy({ id: profileId });
+
+    if (!profile) {
+      throw new NotFoundException('Profile was not found.');
+    }
+
     const objectName = `${randomUUID()}-${file.originalname}`;
 
     await this.minioClient.putObject(this.bucketName, objectName, file.buffer, file.size, {
@@ -59,7 +68,7 @@ export class AssetsService {
     });
 
     const asset = this.assetsRepository.create({
-      ownerProfileId: profile?.id ?? null,
+      ownerProfileId: profile.id,
       fileName: objectName,
       mimeType: file.mimetype,
     });

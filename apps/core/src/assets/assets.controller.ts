@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Param,
@@ -28,12 +29,13 @@ export class AssetsController {
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @UploadedFile() file: Express.Multer.File | undefined,
+    @Body('profileId', ParseIntPipe) profileId: number,
     @Req() request: AuthenticatedRequest,
   ): Promise<AssetDto> {
     if (!file) {
       throw new BadRequestException('File is required.');
     }
 
-    return this.assetsService.uploadFile(file, request.user!.sub);
+    return this.assetsService.uploadFile(file, profileId, request.user!.sub);
   }
 }
