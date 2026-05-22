@@ -121,21 +121,24 @@ export class PostsService {
   async archivePost(id: number): Promise<PostDto> {
     const post = await this.findPostById(id);
 
-    if (!post.archivedPost) {
-      const archived = this.archivedPostRepository.create({ postId: id, isArchived: true });
+    let archived = post.archivedPost;
 
+    if (!archived) {
+      archived = this.archivedPostRepository.create({ postId: id, isArchived: true });
       await this.archivedPostRepository.save(archived);
     }
 
-    return this.getPost(id);
+    return this.toPostDto(post, archived);
   }
 
   async unarchivePost(id: number): Promise<PostDto> {
-    await this.findPostById(id);
+    const post = await this.findPostById(id);
 
-    await this.archivedPostRepository.delete({ postId: id });
+    if (post.archivedPost) {
+      await this.archivedPostRepository.delete({ postId: id });
+    }
 
-    return this.getPost(id);
+    return this.toPostDto(post);
   }
 
   async like(postId: number, profileId: number): Promise<void> {
@@ -206,7 +209,9 @@ export class PostsService {
     return post;
   }
 
-  private toPostDto(post: Post): PostDto {
+  private toPostDto(post: Post, archived?: ArchivedPost | null): PostDto {
+    const ap = archived ?? post.archivedPost;
+
     return {
       id: post.id,
       authorProfileId: post.authorProfileId,
@@ -215,8 +220,8 @@ export class PostsService {
       likesCount: post.likes?.length,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
-      isArchived: !!post.archivedPost,
-      archivedAt: post.archivedPost?.archivedAt ?? null,
+      isArchived: !!ap,
+      archivedAt: ap.archivedAt,
     };
   }
 }
