@@ -52,13 +52,8 @@ export class PostsService {
   async updatePost(id: number, updatePostDto: UpdatePostDto): Promise<PostDto> {
     const post = await this.findPostById(id);
 
-    if (updatePostDto.title !== undefined) {
-      post.title = updatePostDto.title;
-    }
-
-    if (updatePostDto.content !== undefined) {
-      post.content = updatePostDto.content;
-    }
+    post.title = updatePostDto.title ?? post.title;
+    post.content = updatePostDto.content ?? post.content;
 
     const savedPost = await this.postsRepository.save(post);
 
