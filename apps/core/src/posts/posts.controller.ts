@@ -28,6 +28,7 @@ export class PostsController {
     if (Object.keys(query).length === 0) {
       return this.postsService.getPosts();
     }
+
     return this.postsService.getPostsByQuery(query);
   }
 

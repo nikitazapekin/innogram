@@ -23,6 +23,7 @@ export class PostsService {
     const posts = await this.postsRepository.find({
       order: { createdAt: 'DESC' },
     });
+
     return posts.map((post) => this.toPostDto(post));
   }
 
@@ -50,6 +51,7 @@ export class PostsService {
 
     const postsDto = posts.map((post) => this.toPostDto(post));
     const totalPages = Math.ceil(total / limit);
+
     return {
       data: postsDto,
       total,
