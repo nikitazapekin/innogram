@@ -77,7 +77,7 @@ export class CommentsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Query('postId') postId?: string,
+    @Query('postId') _postId?: string,
   ): Promise<CommentDto> {
     return this.commentsService.update(id, updateCommentDto);
   }
@@ -93,7 +93,7 @@ export class CommentsController {
   put(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Query('postId') postId?: string,
+    @Query('postId') _postId?: string,
   ): Promise<CommentDto> {
     return this.commentsService.put(id, updateCommentDto);
   }
