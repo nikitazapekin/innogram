@@ -38,8 +38,8 @@ export class UsersController {
   })
   @ApiBadRequestResponse({ description: 'Request body validation failed.' })
   @Post()
-  create(@Body() dto: CreateProfileDto): Promise<UserDto> {
-    return this.usersService.create(dto);
+  create(@Body() createProfileDto: CreateProfileDto): Promise<UserDto> {
+    return this.usersService.create(createProfileDto);
   }
 
   @Get()

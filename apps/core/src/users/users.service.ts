@@ -110,7 +110,6 @@ export class UsersService {
   private toUserDto(profile: Profile): UserDto {
     return {
       id: profile.id,
-      userId: profile.userId,
       displayName: profile.displayName,
       bio: profile.bio ?? undefined,
       avatarAssetId: profile.avatarAssetId,
