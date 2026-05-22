@@ -30,7 +30,6 @@ const RESPONSE_HEADERS_TO_SKIP = new Set([
   'access-control-allow-headers',
 ]);
 
-
 const readRequiredString = (value: string | undefined, name: string): string => {
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
@@ -115,28 +114,6 @@ const API_GATEWAY_PORT = (() => {
 
 const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
 const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
-
-const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
-
-const corsMiddleware = (request: Request, response: Response, next: () => void): void => {
-  const origin = request.header('origin');
-
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    response.setHeader('Access-Control-Allow-Origin', origin);
-    response.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (request.method === 'OPTIONS') {
-    response.status(204).end();
-
-    return;
-  }
-
-  next();
-};
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
