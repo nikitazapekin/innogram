@@ -112,24 +112,21 @@ export class PostsService {
   async archivePost(id: number): Promise<PostDto> {
     const post = await this.findPostById(id);
 
-    let archived = post.archivedPost;
+    if (!post.archivedPost) {
+      const archived = this.archivedPostRepository.create({ postId: id, isArchived: true });
 
-    if (!archived) {
-      archived = this.archivedPostRepository.create({ postId: id, isArchived: true });
       await this.archivedPostRepository.save(archived);
     }
 
-    return this.toPostDto(post, archived);
+    return this.getPost(id);
   }
 
   async unarchivePost(id: number): Promise<PostDto> {
-    const post = await this.findPostById(id);
+    await this.findPostById(id);
 
-    if (post.archivedPost) {
-      await this.archivedPostRepository.delete({ postId: id });
-    }
+    await this.archivedPostRepository.delete({ postId: id });
 
-    return this.toPostDto(post);
+    return this.getPost(id);
   }
 
   async deletePost(id: number): Promise<void> {
@@ -155,9 +152,7 @@ export class PostsService {
     return post;
   }
 
-  private toPostDto(post: Post, archived?: ArchivedPost | null): PostDto {
-    const ap = archived ?? post.archivedPost;
-
+  private toPostDto(post: Post): PostDto {
     return {
       id: post.id,
       authorProfileId: post.authorProfileId,
@@ -165,8 +160,8 @@ export class PostsService {
       content: post.content,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
-      isArchived: !!ap,
-      archivedAt: ap.archivedAt,
+      isArchived: !!post.archivedPost,
+      archivedAt: post.archivedPost?.archivedAt ?? null,
     };
   }
 }
