@@ -9,6 +9,8 @@ import {
   Post,
   Query,
   Req,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '@innogram/shared';
 
@@ -20,6 +22,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
 
 @Controller('posts')
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
