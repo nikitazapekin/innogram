@@ -41,4 +41,9 @@ export class AssetsController {
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.assetsService.remove(id);
   }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.assetsService.remove(id);
+  }
 }
