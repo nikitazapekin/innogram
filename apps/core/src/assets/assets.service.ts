@@ -59,6 +59,13 @@ export class AssetsService {
     return this.toAssetDto(savedAsset);
   }
 
+  async remove(id: number): Promise<void> {
+    const asset = await this.findAssetById(id);
+
+    await this.minioClient.removeObject(this.bucketName, asset.fileName);
+    await this.assetsRepository.remove(asset);
+  }
+
   private async findAssetById(id: number): Promise<Asset> {
     const asset = await this.assetsRepository.findOneBy({ id });
 

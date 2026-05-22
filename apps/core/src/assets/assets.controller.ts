@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -34,5 +35,10 @@ export class AssetsController {
     }
 
     return this.assetsService.uploadFile(file, profileId);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.assetsService.remove(id);
   }
 }
