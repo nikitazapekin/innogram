@@ -56,6 +56,16 @@ export class PostsController {
     return this.postsService.updatePost(id, updatePostDto);
   }
 
+  @Post(':id/archive')
+  archivePost(@Param('id', ParseIntPipe) id: number): Promise<PostDto> {
+    return this.postsService.archivePost(id);
+  }
+
+  @Post(':id/unarchive')
+  unarchivePost(@Param('id', ParseIntPipe) id: number): Promise<PostDto> {
+    return this.postsService.unarchivePost(id);
+  }
+
   @Delete(':id')
   deletePost(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.postsService.deletePost(id);

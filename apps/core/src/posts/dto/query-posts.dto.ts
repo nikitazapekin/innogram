@@ -29,4 +29,8 @@ export class QueryPostsDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  archived?: boolean;
 }

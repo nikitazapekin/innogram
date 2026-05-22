@@ -4,6 +4,7 @@ import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
+import { ArchivedPost } from '../entities/archived-post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostDto } from './dto/post.dto';
 import { PaginatedPostsDto } from './dto/paginated-posts.dto';
@@ -17,14 +18,17 @@ export class PostsService {
     private readonly postsRepository: Repository<Post>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(ArchivedPost)
+    private readonly archivedPostRepository: Repository<ArchivedPost>,
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
     const posts = await this.postsRepository.find({
+      relations: ['archivedPost'],
       order: { createdAt: 'DESC' },
     });
 
-    return posts.map((post) => this.toPostDto(post));
+    return posts.filter((post) => !post.archivedPost).map((post) => this.toPostDto(post));
   }
 
   async getPostsByQuery(query: QueryPostsDto): Promise<PaginatedPostsDto> {
@@ -42,12 +46,21 @@ export class PostsService {
 
     const order: FindOptionsOrder<Post> = { [sortBy]: sortOrder };
 
-    const [posts, total] = await this.postsRepository.findAndCount({
+    let [posts, total] = await this.postsRepository.findAndCount({
       where,
+      relations: ['archivedPost'],
       order,
       skip: (page - 1) * limit,
       take: limit,
     });
+
+    if (query.archived === undefined || query.archived === false) {
+      posts = posts.filter((post) => !post.archivedPost);
+      total = posts.length;
+    } else {
+      posts = posts.filter((post) => post.archivedPost);
+      total = posts.length;
+    }
 
     const postsDto = posts.map((post) => this.toPostDto(post));
     const totalPages = Math.ceil(total / limit);
@@ -96,7 +109,29 @@ export class PostsService {
     return this.toPostDto(savedPost);
   }
 
+  async archivePost(id: number): Promise<PostDto> {
+    const post = await this.findPostById(id);
+
+    if (!post.archivedPost) {
+      const archived = this.archivedPostRepository.create({ postId: id, isArchived: true });
+
+      await this.archivedPostRepository.save(archived);
+    }
+
+    return this.getPost(id);
+  }
+
+  async unarchivePost(id: number): Promise<PostDto> {
+    await this.findPostById(id);
+
+    await this.archivedPostRepository.delete({ postId: id });
+
+    return this.getPost(id);
+  }
+
   async deletePost(id: number): Promise<void> {
+    await this.archivedPostRepository.delete({ postId: id });
+
     const deleteResult = await this.postsRepository.delete(id);
 
     if (!deleteResult.affected) {
@@ -105,7 +140,10 @@ export class PostsService {
   }
 
   private async findPostById(id: number): Promise<Post> {
-    const post = await this.postsRepository.findOneBy({ id });
+    const post = await this.postsRepository.findOne({
+      where: { id },
+      relations: ['archivedPost'],
+    });
 
     if (!post) {
       throw new NotFoundException('Post was not found.');
@@ -122,6 +160,8 @@ export class PostsService {
       content: post.content,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
+      isArchived: !!post.archivedPost,
+      archivedAt: post.archivedPost?.archivedAt ?? null,
     };
   }
 }
