@@ -26,8 +26,9 @@ const normalizeDisplayName = (displayName: string): string => {
   return displayName;
 };
 
-const createProfile = async (displayName: string): Promise<void> => {
+const createProfile = async (displayName: string, userId: number): Promise<void> => {
   await axios.post(`${CORE_USERS_URL}/users`, {
+    userId,
     displayName: normalizeDisplayName(displayName),
   });
 };
@@ -45,7 +46,7 @@ export const createUserAndProfile = async (options: CreateUserOptions): Promise<
   });
 
   try {
-    await createProfile(options.displayName);
+    await createProfile(options.displayName, user.id);
   } catch (error: unknown) {
     await deleteUser(user.id);
 
