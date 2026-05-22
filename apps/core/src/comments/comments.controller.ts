@@ -48,7 +48,6 @@ export class CommentsController {
   @ApiOkResponse({
     description: 'Comments have been retrieved successfully.',
     type: CommentDto,
-    isArray: true,
   })
   findAll(): Promise<CommentDto[]> {
     return this.commentsService.findAll();
