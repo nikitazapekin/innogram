@@ -31,7 +31,11 @@ export class AssetsService {
     return this.minioClient.presignedGetObject(this.bucketName, asset.fileName);
   }
 
-  async uploadFile(file: Express.Multer.File, profileId: number): Promise<AssetDto> {
+  async uploadFile(file: Express.Multer.File | undefined, profileId: number): Promise<AssetDto> {
+    if (!file) {
+      throw new BadRequestException('File is required.');
+    }
+
     if (!file.buffer?.length) {
       throw new BadRequestException('Uploaded file is empty.');
     }

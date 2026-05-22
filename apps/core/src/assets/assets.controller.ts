@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -30,10 +29,6 @@ export class AssetsController {
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body('profileId', ParseIntPipe) profileId: number,
   ): Promise<AssetDto> {
-    if (!file) {
-      throw new BadRequestException('File is required.');
-    }
-
     return this.assetsService.uploadFile(file, profileId);
   }
 
