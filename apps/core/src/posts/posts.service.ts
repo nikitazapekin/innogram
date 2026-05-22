@@ -57,7 +57,7 @@ export class PostsService {
       total,
       page,
       limit,
-      totalPages: totalPages,
+      totalPages,
     };
   }
 
@@ -67,8 +67,8 @@ export class PostsService {
     return this.toPostDto(post);
   }
 
-  async createPost(createPostDto: CreatePostDto, authorEmail: string): Promise<PostDto> {
-    const user = await this.usersRepository.findOneBy({ email: authorEmail });
+  async createPost(createPostDto: CreatePostDto, email: string): Promise<PostDto> {
+    const user = await this.usersRepository.findOneBy({ email });
 
     if (!user) {
       throw new UnauthorizedException('Authenticated user was not found.');
@@ -87,16 +87,7 @@ export class PostsService {
 
   async updatePost(id: number, updatePostDto: UpdatePostDto): Promise<PostDto> {
     const post = await this.findPostById(id);
-
-    if (updatePostDto.title !== undefined) {
-      post.title = updatePostDto.title;
-    }
-
-    if (updatePostDto.content !== undefined) {
-      post.content = updatePostDto.content;
-    }
-
-    const savedPost = await this.postsRepository.save(post);
+    const savedPost = await this.postsRepository.save(Object.assign(post, updatePostDto));
 
     return this.toPostDto(savedPost);
   }

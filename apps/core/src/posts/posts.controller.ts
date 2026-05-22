@@ -42,7 +42,7 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
     @Req() request: AuthenticatedRequest,
   ): Promise<PostDto> {
-    return this.postsService.createPost(createPostDto, request.user!.sub);
+    return this.postsService.createPost(createPostDto, request.user!.email);
   }
 
   @Patch(':id')

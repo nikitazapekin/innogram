@@ -1,5 +1,7 @@
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+
+const SORTABLE_COLUMNS = ['createdAt', 'updatedAt', 'title'] as const;
 
 export class QueryPostsDto {
   @IsOptional()
@@ -16,10 +18,12 @@ export class QueryPostsDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(SORTABLE_COLUMNS)
   sortBy?: string = 'createdAt';
 
   @IsOptional()
   @IsString()
+  @IsIn(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC' = 'DESC';
 
   @IsOptional()
