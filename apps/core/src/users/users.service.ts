@@ -15,8 +15,9 @@ export class UsersService {
     private readonly profilesRepository: Repository<Profile>,
   ) {}
 
-  async create(userDto: UpdateUserDto): Promise<UserDto> {
+  async create(userDto: UpdateUserDto & { userId: number }): Promise<UserDto> {
     const profile = this.profilesRepository.create({
+      userId: userDto.userId,
       displayName: userDto.displayName,
       bio: userDto.bio,
       avatarAssetId: userDto.avatarAssetId,
