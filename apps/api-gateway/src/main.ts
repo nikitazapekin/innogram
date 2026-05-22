@@ -42,6 +42,7 @@ const readApiGatewayPort = (): number => {
 };
 
 const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
+const readCoreServiceUrl = (): string => readRequiredEnv('CORE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -104,8 +105,19 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
   });
 };
 
+const AUTH_ROUTE_PREFIX = '/auth';
+
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  if (originalUrl?.startsWith(AUTH_ROUTE_PREFIX)) {
+    return buildUpstreamUrl(AUTH_SERVICE_URL, originalUrl);
+  }
+
+  return buildUpstreamUrl(CORE_URL, originalUrl);
+};
+
 const API_GATEWAY_PORT = readApiGatewayPort();
 const AUTH_SERVICE_URL = readAuthServiceUrl();
+const CORE_URL = readCoreServiceUrl();
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
@@ -127,10 +139,7 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
-      const upstreamResponse = await fetch(
-        buildUpstreamUrl(AUTH_SERVICE_URL, request.originalUrl),
-        fetchOptions,
-      );
+      const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
       response.status(upstreamResponse.status);
       applyUpstreamHeaders(response, upstreamResponse.headers);

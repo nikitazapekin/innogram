@@ -1,0 +1,107 @@
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import { Comment } from '../entities/comment.entity';
+import { CommentDto } from './dto/comment.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { UpdateCommentDto } from './dto/update-comment.dto';
+
+@Injectable()
+export class CommentsService {
+  private readonly logger = new Logger(CommentsService.name);
+
+  constructor(
+    @InjectRepository(Comment)
+    private readonly commentsRepository: Repository<Comment>,
+  ) {}
+
+  async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
+    const comment = this.commentsRepository.create({
+      postId,
+      authorProfileId: commentDto.authorProfileId,
+      content: commentDto.content,
+    });
+
+    const savedComment = await this.commentsRepository.save(comment);
+
+    this.logger.log(`Comment created: ${savedComment.id}`);
+
+    return this.toCommentDto(savedComment);
+  }
+
+  async findAll(): Promise<CommentDto[]> {
+    const comments = await this.commentsRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+
+    return comments.map((comment) => this.toCommentDto(comment));
+  }
+
+  async findOne(id: number): Promise<CommentDto> {
+    const comment = await this.findCommentById(id);
+
+    return this.toCommentDto(comment);
+  }
+
+  async update(id: number, updateCommentDto: UpdateCommentDto): Promise<CommentDto> {
+    const comment = await this.findCommentById(id);
+
+    this.updateCommentFieldsPartial(comment, updateCommentDto);
+    const savedComment = await this.commentsRepository.save(comment);
+
+    this.logger.log(`Comment updated: ${savedComment.id}`);
+
+    return this.toCommentDto(savedComment);
+  }
+
+  async put(id: number, updateCommentDto: UpdateCommentDto): Promise<CommentDto> {
+    const comment = await this.findCommentById(id);
+
+    this.updateCommentFieldsFull(comment, updateCommentDto);
+    const savedComment = await this.commentsRepository.save(comment);
+
+    this.logger.log(`Comment fully updated: ${savedComment.id}`);
+
+    return this.toCommentDto(savedComment);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.findCommentById(id);
+    await this.commentsRepository.delete(id);
+    this.logger.log(`Comment deleted: ${id}`);
+  }
+
+  private async findCommentById(id: number): Promise<Comment> {
+    const comment = await this.commentsRepository.findOneBy({ id });
+
+    if (!comment) {
+      throw new NotFoundException('Comment was not found.');
+    }
+
+    return comment;
+  }
+
+  private updateCommentFieldsPartial(comment: Comment, updateCommentDto: UpdateCommentDto): void {
+    if (updateCommentDto.content !== undefined) {
+      comment.content = updateCommentDto.content;
+    }
+  }
+
+  private updateCommentFieldsFull(comment: Comment, updateCommentDto: UpdateCommentDto): void {
+    if (updateCommentDto.content !== undefined) {
+      comment.content = updateCommentDto.content;
+    }
+  }
+
+  private toCommentDto(comment: Comment): CommentDto {
+    return {
+      id: comment.id,
+      postId: comment.postId,
+      authorProfileId: comment.authorProfileId,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    };
+  }
+}

@@ -15,11 +15,11 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'post', schema: 'main' })
 export class Post {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'int' })
+  authorProfileId: number;
 
   @Column({ type: 'varchar', length: 255 })
   title: string;
