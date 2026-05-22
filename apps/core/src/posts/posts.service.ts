@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 
@@ -92,14 +87,6 @@ export class PostsService {
       throw new UnauthorizedException('Authenticated user was not found.');
     }
 
-    if (!createPostDto.title) {
-      throw new BadRequestException('Title must not be empty or contain only whitespace.');
-    }
-
-    if (!createPostDto.content) {
-      throw new BadRequestException('Content must not be empty or contain only whitespace.');
-    }
-
     const post = this.postsRepository.create({
       authorProfileId: user.id,
       title: createPostDto.title,
@@ -114,27 +101,8 @@ export class PostsService {
   async updatePost(id: number, updatePostDto: UpdatePostDto): Promise<PostDto> {
     const post = await this.findPostById(id);
 
-    if (updatePostDto.title === undefined && updatePostDto.content === undefined) {
-      throw new BadRequestException(
-        'At least one field (title or content) must be provided for update.',
-      );
-    }
-
-    if (updatePostDto.title !== undefined) {
-      if (!updatePostDto.title) {
-        throw new BadRequestException('Title must not be empty or contain only whitespace.');
-      }
-
-      post.title = updatePostDto.title;
-    }
-
-    if (updatePostDto.content !== undefined) {
-      if (!updatePostDto.content) {
-        throw new BadRequestException('Content must not be empty or contain only whitespace.');
-      }
-
-      post.content = updatePostDto.content;
-    }
+    post.title = updatePostDto.title ?? post.title;
+    post.content = updatePostDto.content ?? post.content;
 
     const savedPost = await this.postsRepository.save(post);
 
