@@ -18,8 +18,8 @@ export class Asset {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'owner_profile_id', type: 'integer', nullable: true })
-  ownerProfileId!: number;
+  @Column({ name: 'owner_profile_id', type: 'integer' })
+  ownerProfileId: number;
 
   @Column({ name: 'file_name', type: 'varchar', length: 255 })
   fileName: string;
@@ -33,9 +33,9 @@ export class Asset {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @ManyToOne(() => Profile, { nullable: true })
+  @ManyToOne(() => Profile)
   @JoinColumn({ name: 'owner_profile_id' })
-  ownerProfile!: Profile;
+  ownerProfile: Profile;
 
   @ManyToMany(() => Post, (post) => post.assets)
   posts!: Post[];
