@@ -18,7 +18,17 @@ const REQUEST_HEADERS_TO_SKIP = new Set([
   'transfer-encoding',
 ]);
 
-const RESPONSE_HEADERS_TO_SKIP = new Set(['connection', 'content-length', 'transfer-encoding']);
+const RESPONSE_HEADERS_TO_SKIP = new Set([
+  'connection',
+  'content-length',
+  'transfer-encoding',
+  'access-control-allow-origin',
+  'access-control-expose-headers',
+  'access-control-max-age',
+  'access-control-allow-credentials',
+  'access-control-allow-methods',
+  'access-control-allow-headers',
+]);
 
 const readRequiredEnv = (envName: string): string => {
   const value = process.env[envName]?.trim();
@@ -110,6 +120,10 @@ const AUTH_SERVICE_URL = readAuthServiceUrl();
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
+    cors: {
+      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      credentials: true,
+    },
   });
 
   app.use(async (request: Request, response: Response) => {
