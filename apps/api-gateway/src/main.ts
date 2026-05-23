@@ -117,18 +117,42 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
 const API_GATEWAY_PORT = readApiGatewayPort();
 const AUTH_SERVICE_URL = readAuthServiceUrl();
 
+const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+const corsMiddleware = (request: Request, response: Response, next: () => void): void => {
+  const origin = request.header('origin');
+
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (request.method === 'OPTIONS') {
+    response.status(204).end();
+
+    return;
+  }
+
+  next();
+};
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
-    cors: {
-      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-      credentials: true,
-    },
   });
 
+  app.use(corsMiddleware);
   app.use(async (request: Request, response: Response) => {
     try {
       const method = request.method.toUpperCase();
+
+      if (method === 'OPTIONS') {
+        return;
+      }
+
       const proxyRequestHasBody = requestHasBody(method);
       const fetchOptions: RequestInit & { duplex?: 'half' } = {
         method,
@@ -146,8 +170,21 @@ async function bootstrap(): Promise<void> {
         fetchOptions,
       );
 
-      response.status(upstreamResponse.status);
+      const status = upstreamResponse.status;
+
+      if (status >= 300 && status < 400) {
+        const location = upstreamResponse.headers.get('location');
+
+        if (location) {
+          response.redirect(status, location);
+
+          return;
+        }
+      }
+
+      response.status(status);
       applyUpstreamHeaders(response, upstreamResponse.headers);
+      applyCorsHeaders(response, request.header('origin'));
 
       const responseBody = Buffer.from(await upstreamResponse.arrayBuffer());
 
@@ -162,5 +199,12 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(API_GATEWAY_PORT);
 }
+
+const applyCorsHeaders = (response: Response, origin: string | undefined): void => {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+};
 
 void bootstrap();
