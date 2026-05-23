@@ -3,10 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { RequestLoader } from '@/app/features/system-feedback';
 import { InputField } from '@/app/shared/ui/input';
 import styles from './AuthForm.module.scss';
 import { authSchema, type AuthFormValues } from '../../model/authSchema';
+import { loginUser, registerUser } from '@/app/shared/api/auth';
+import { setAccessToken } from '@/lib/auth';
 
 type AuthFormProps = {
   description: string;
@@ -28,8 +31,13 @@ export function AuthForm({
   switchHref,
   withProvider = false,
 }: AuthFormProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isLogin = pathname === '/login';
+
   const [values, setValues] = useState<AuthFormValues>(initialValues);
   const [errors, setErrors] = useState<Partial<Record<keyof AuthFormValues, string>>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFieldChange = (field: keyof AuthFormValues, value: string) => {
@@ -38,6 +46,7 @@ export function AuthForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setApiError(null);
 
     const result = authSchema.safeParse(values);
 
@@ -56,10 +65,30 @@ export function AuthForm({
     setIsSubmitting(true);
 
     try {
-      await Promise.resolve(values);
+      let response;
+
+      if (isLogin) {
+        response = await loginUser(values.email, values.password);
+      } else {
+        response = await registerUser(values.email, values.password);
+      }
+
+      setAccessToken(response.accessToken);
+      router.push('/profile');
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('Произошла ошибка');
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleGoogleAuth = () => {
+    const redirectUri = `${window.location.origin}/auth/callback`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/google?redirectUri=${encodeURIComponent(redirectUri)}`;
   };
 
   return (
@@ -68,6 +97,8 @@ export function AuthForm({
         <div className={styles.authIntro}>
           <h1 className={styles.title}>{description}</h1>
         </div>
+
+        {apiError && <p className={styles.apiError}>{apiError}</p>}
 
         <form className={styles.form} onSubmit={handleSubmit} noValidate>
           <InputField
@@ -102,6 +133,7 @@ export function AuthForm({
               className={styles.providerButton}
               type="button"
               aria-label="Продолжить с Google"
+              onClick={handleGoogleAuth}
             >
               <Image
                 alt="Google"
