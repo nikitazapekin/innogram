@@ -30,6 +30,7 @@ const RESPONSE_HEADERS_TO_SKIP = new Set([
   'access-control-allow-headers',
 ]);
 
+
 const readRequiredString = (value: string | undefined, name: string): string => {
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
@@ -148,6 +149,10 @@ const corsMiddleware = (request: Request, response: Response, next: () => void):
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
+    cors: {
+      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      credentials: true,
+    },
   });
 
   app.use(corsMiddleware);
