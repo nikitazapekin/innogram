@@ -17,6 +17,10 @@ export class CommentDto {
   content: string;
 
   @IsOptional()
+  @IsNumber()
+  likesCount?: number;
+
+  @IsOptional()
   @IsDate()
   @Type(() => Date)
   createdAt?: Date;
