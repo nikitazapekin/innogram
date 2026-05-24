@@ -72,6 +72,24 @@ export class CommentsService {
     this.logger.log(`Comment deleted: ${id}`);
   }
 
+  async like(commentId: number, profileId: number): Promise<void> {
+    await this.findCommentById(commentId);
+    await this.commentsRepository
+      .createQueryBuilder()
+      .relation(Comment, 'likes')
+      .of(commentId)
+      .add(profileId);
+  }
+
+  async unlike(commentId: number, profileId: number): Promise<void> {
+    await this.findCommentById(commentId);
+    await this.commentsRepository
+      .createQueryBuilder()
+      .relation(Comment, 'likes')
+      .of(commentId)
+      .remove(profileId);
+  }
+
   private async findCommentById(id: number): Promise<Comment> {
     const comment = await this.commentsRepository.findOneBy({ id });
 
@@ -100,6 +118,7 @@ export class CommentsService {
       postId: comment.postId,
       authorProfileId: comment.authorProfileId,
       content: comment.content,
+      likesCount: comment.likes?.length,
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt,
     };

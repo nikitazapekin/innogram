@@ -13,6 +13,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -103,5 +104,29 @@ export class CommentsController {
   @ApiNotFoundResponse({ description: 'Comment was not found.' })
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.commentsService.remove(id);
+  }
+
+  @Post('comments/:id/like/:profileId')
+  @ApiOperation({ summary: 'Like a comment' })
+  @ApiNoContentResponse({ description: 'Comment liked successfully.' })
+  @ApiBadRequestResponse({ description: 'The provided comment id or profile id is invalid.' })
+  @ApiNotFoundResponse({ description: 'Comment was not found.' })
+  async like(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('profileId', ParseIntPipe) profileId: number,
+  ): Promise<void> {
+    await this.commentsService.like(id, profileId);
+  }
+
+  @Delete('comments/:id/like/:profileId')
+  @ApiOperation({ summary: 'Unlike a comment' })
+  @ApiNoContentResponse({ description: 'Comment unliked successfully.' })
+  @ApiBadRequestResponse({ description: 'The provided comment id or profile id is invalid.' })
+  @ApiNotFoundResponse({ description: 'Comment was not found.' })
+  async unlike(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('profileId', ParseIntPipe) profileId: number,
+  ): Promise<void> {
+    await this.commentsService.unlike(id, profileId);
   }
 }
