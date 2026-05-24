@@ -3,10 +3,13 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
+  SubscribeMessage,
   WebSocketGateway,
 } from '@nestjs/websockets';
 import { Public } from '@innogram/shared';
 import { Socket } from 'socket.io';
+
+import { ChatsService } from './chats.service';
 
 @Public()
 @WebSocketGateway({
@@ -15,6 +18,8 @@ import { Socket } from 'socket.io';
 })
 export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ChatsGateway.name);
+
+  constructor(private readonly chatsService: ChatsService) {}
 
   afterInit(): void {
     this.logger.log('Socket.IO gateway initialized at ws://localhost:3001/chats');
@@ -26,5 +31,107 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
   handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  @SubscribeMessage('create_private_chat')
+  async handlePrivateChat(
+    client: Socket,
+    payload: { myProfileId: number; targetProfileId: number },
+  ): Promise<void> {
+    try {
+      const chat = await this.chatsService.createPrivateChat(
+        payload.myProfileId,
+        payload.targetProfileId,
+      );
+      client.join(chat.id);
+      client.emit('chat_created', chat);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('create_group_chat')
+  async handleGroupChat(
+    client: Socket,
+    payload: { creatorProfileId: number; participantIds: number[] },
+  ): Promise<void> {
+    try {
+      const chat = await this.chatsService.createGroupChat(payload.participantIds);
+      client.join(chat.id);
+      client.emit('chat_created', chat);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('join_chat')
+  async handleJoinChat(
+    client: Socket,
+    payload: { chatId: string; profileId: number },
+  ): Promise<void> {
+    try {
+      await this.chatsService.addParticipant(payload.chatId, payload.profileId);
+      client.join(payload.chatId);
+      client.emit('chat_joined', { chatId: payload.chatId });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('send_message')
+  async handleMessage(
+    client: Socket,
+    payload: { chatId: string; authorProfileId: number; content: string },
+  ): Promise<void> {
+    try {
+      const message = await this.chatsService.sendMessage(
+        payload.chatId,
+        payload.authorProfileId,
+        payload.content,
+      );
+      client.to(payload.chatId).emit('new_message', message);
+      client.emit('new_message', message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('get_chats')
+  async handleGetChats(client: Socket, payload: { profileId: number }): Promise<void> {
+    try {
+      const chats = await this.chatsService.getChats(payload.profileId);
+      client.emit('chats', chats);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('get_messages')
+  async handleGetMessages(
+    client: Socket,
+    payload: { chatId: string; offset?: number; limit?: number },
+  ): Promise<void> {
+    try {
+      const messages = await this.chatsService.getMessages(
+        payload.chatId,
+        payload.offset,
+        payload.limit,
+      );
+      client.emit('messages', messages);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('leave_chat')
+  async handleLeaveChat(client: Socket, payload: { chatId: string }): Promise<void> {
+    client.leave(payload.chatId);
+    client.emit('chat_left', { chatId: payload.chatId });
   }
 }
