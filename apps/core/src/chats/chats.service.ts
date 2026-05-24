@@ -88,7 +88,7 @@ export class ChatsService {
 
     const message = this.messageRepository.create({
       chatId,
-      authorProfileId: String(authorProfileId),
+      authorProfileId,
       content,
     }) as Message;
 

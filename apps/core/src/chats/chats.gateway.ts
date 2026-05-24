@@ -5,9 +5,10 @@ import {
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Public } from '@innogram/shared';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 import { ChatsService } from './chats.service';
 
@@ -17,7 +18,11 @@ import { ChatsService } from './chats.service';
   cors: { origin: '*' },
 })
 export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server: Server;
+
   private readonly logger = new Logger(ChatsGateway.name);
+  private readonly profileSockets = new Map<number, Set<string>>();
 
   constructor(private readonly chatsService: ChatsService) {}
 
@@ -30,6 +35,10 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   }
 
   handleDisconnect(client: Socket): void {
+    for (const [profileId, sockets] of this.profileSockets) {
+      sockets.delete(client.id);
+      if (sockets.size === 0) this.profileSockets.delete(profileId);
+    }
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
@@ -51,14 +60,41 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     }
   }
 
+  @SubscribeMessage('register')
+  handleRegister(client: Socket, payload: { profileId: number }): void {
+    if (!this.profileSockets.has(payload.profileId)) {
+      this.profileSockets.set(payload.profileId, new Set());
+    }
+    this.profileSockets.get(payload.profileId)!.add(client.id);
+    this.logger.log(`Profile ${payload.profileId} registered on socket ${client.id}`);
+  }
+
   @SubscribeMessage('create_group_chat')
   async handleGroupChat(
     client: Socket,
     payload: { creatorProfileId: number; participantIds: number[] },
   ): Promise<void> {
     try {
-      const chat = await this.chatsService.createGroupChat(payload.participantIds);
+      const allIds = [
+        payload.creatorProfileId,
+        ...payload.participantIds.filter((id) => id !== payload.creatorProfileId),
+      ];
+      const chat = await this.chatsService.createGroupChat(allIds);
       client.join(chat.id);
+
+      for (const pid of allIds) {
+        const sockets = this.profileSockets.get(pid);
+        if (sockets) {
+          for (const sid of sockets) {
+            const memberSocket = this.server?.sockets?.sockets?.get(sid);
+            if (memberSocket && memberSocket.id !== client.id) {
+              memberSocket.join(chat.id);
+              memberSocket.emit('chat_created', chat);
+            }
+          }
+        }
+      }
+
       client.emit('chat_created', chat);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
