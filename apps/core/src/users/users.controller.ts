@@ -77,6 +77,17 @@ export class UsersController {
     return this.usersService.findFollowingProfiles(id);
   }
 
+  @Get(':id/followers')
+  @ApiOperation({ summary: 'Get followers of profile id' })
+  @ApiOkResponse({
+    description: 'Followers have been retrieved successfully.',
+  })
+  @ApiBadRequestResponse({ description: 'The provided profile id is invalid.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  findFollowers(@Param('id', ParseIntPipe) id: number): Promise<UserDto[]> {
+    return this.usersService.findFollowers(id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update a profile' })
   @ApiOkResponse({
