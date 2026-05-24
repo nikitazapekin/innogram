@@ -110,4 +110,19 @@ export class ChatsService {
       throw new NotFoundException('Profile not found');
     }
   }
+
+  async getChat(chatId: string): Promise<Chat> {
+    const chat = await this.chatRepository.findOneByOrFail({ id: chatId });
+    return chat;
+  }
+
+  async isParticipant(chatId: string, profileId: number): Promise<boolean> {
+    const count = await this.chatRepository
+      .createQueryBuilder('chat')
+      .innerJoin('chat.participants', 'p')
+      .where('chat.id = :chatId', { chatId })
+      .andWhere('p.id = :profileId', { profileId })
+      .getCount();
+    return count > 0;
+  }
 }

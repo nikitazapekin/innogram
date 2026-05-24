@@ -108,9 +108,50 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     payload: { chatId: string; profileId: number },
   ): Promise<void> {
     try {
-      await this.chatsService.addParticipant(payload.chatId, payload.profileId);
+      const ok = await this.chatsService.isParticipant(payload.chatId, payload.profileId);
+      if (!ok) {
+        client.emit('error', { message: 'You are not a member of this chat' });
+        return;
+      }
       client.join(payload.chatId);
       client.emit('chat_joined', { chatId: payload.chatId });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('add_to_group')
+  async handleAddToGroup(
+    client: Socket,
+    payload: { chatId: string; requesterProfileId: number; newProfileId: number },
+  ): Promise<void> {
+    try {
+      const isMember = await this.chatsService.isParticipant(
+        payload.chatId,
+        payload.requesterProfileId,
+      );
+      if (!isMember) {
+        client.emit('error', { message: 'Only group members can add new participants' });
+        return;
+      }
+      await this.chatsService.addParticipant(payload.chatId, payload.newProfileId);
+
+      const sockets = this.profileSockets.get(payload.newProfileId);
+      if (sockets) {
+        for (const sid of sockets) {
+          const memberSocket = this.server?.sockets?.sockets?.get(sid);
+          if (memberSocket) {
+            memberSocket.join(payload.chatId);
+            memberSocket.emit('chat_created', await this.chatsService.getChat(payload.chatId));
+          }
+        }
+      }
+
+      client.emit('member_added', { chatId: payload.chatId, profileId: payload.newProfileId });
+      this.logger.log(
+        `Profile ${payload.newProfileId} added to chat ${payload.chatId} by ${payload.requesterProfileId}`,
+      );
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       client.emit('error', { message });
