@@ -70,6 +70,19 @@ export class UsersService {
     return followingProfiles.map((profile) => this.toUserDto(profile));
   }
 
+  async findFollowers(id: number): Promise<UserDto[]> {
+    await this.findProfileById(id);
+
+    const followers = await this.profilesRepository
+      .createQueryBuilder('profile')
+      .relation(Profile, 'followers')
+      .of(id)
+      .loadMany<Profile>();
+
+    const followersList = followers.map((profile) => this.toUserDto(profile));
+    return followersList;
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
     const profile = await this.findProfileById(id);
 
