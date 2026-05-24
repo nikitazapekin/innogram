@@ -2,15 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   JoinTable,
   ManyToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { UserEntity } from './user.entity';
 import { Chat } from './chat.entity';
 import { Comment } from './comment.entity';
 import { Post } from './post.entity';
@@ -20,8 +17,11 @@ export class Profile {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'user_id', type: 'integer', unique: true })
-  userId: number;
+  @Column({ name: 'user_id', type: 'integer', nullable: true })
+  userId: number | null;
+
+  @Column({ name: 'is_private', type: 'boolean', default: false })
+  isPrivate: boolean;
 
   @Column({ name: 'display_name', type: 'varchar', length: 120 })
   displayName: string;
@@ -37,10 +37,6 @@ export class Profile {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
-
-  @OneToOne(() => UserEntity, (user) => user.profile, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
 
   @ManyToMany(() => Chat, (chat) => chat.participants)
   chats: Chat[];

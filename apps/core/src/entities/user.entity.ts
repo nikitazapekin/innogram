@@ -3,13 +3,11 @@ import {
   CreateDateColumn,
   Entity,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { Account } from './account.entity';
-import { Profile } from './profile.entity';
 
 @Entity({ name: 'user', schema: 'auth' })
 export class UserEntity {
@@ -36,7 +34,4 @@ export class UserEntity {
 
   @OneToMany(() => Account, (account) => account.user)
   accounts: Account[];
-
-  @OneToOne(() => Profile, (profile) => profile.user)
-  profile: Profile;
 }

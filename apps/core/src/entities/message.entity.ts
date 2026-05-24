@@ -21,8 +21,8 @@ export class Message {
   @Column({ name: 'chat_id', type: 'uuid' })
   chatId: string;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'integer' })
+  authorProfileId: number;
 
   @Column({ type: 'text', nullable: true })
   content: string;
