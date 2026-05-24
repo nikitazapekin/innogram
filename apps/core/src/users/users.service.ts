@@ -1,8 +1,16 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { FollowRequest, FollowRequestStatus } from '../entities/follow-request.entity';
 import { Profile } from '../entities/profile.entity';
+import { FollowRequestDto } from './dto/follow-request.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 
@@ -13,6 +21,8 @@ export class UsersService {
   constructor(
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
+    @InjectRepository(FollowRequest)
+    private readonly followRequestRepository: Repository<FollowRequest>,
   ) {}
 
   async create(userDto: UpdateUserDto): Promise<UserDto> {
@@ -90,8 +100,32 @@ export class UsersService {
     return savedProfileResponse;
   }
 
-  async followProfile(followerId: number, followingId: number): Promise<void> {
+  async followProfile(followerId: number, followingId: number): Promise<FollowRequestDto | void> {
     this.ensureDifferentProfileIds(followerId, followingId);
+
+    const targetProfile = await this.findProfileById(followingId);
+
+    if (targetProfile.isPrivate) {
+      const existing = await this.followRequestRepository.findOneBy({
+        followerProfileId: followerId,
+        followingProfileId: followingId,
+        status: FollowRequestStatus.PENDING,
+      });
+
+      if (existing) {
+        throw new ConflictException('Follow request already exists.');
+      }
+
+      const request = this.followRequestRepository.create({
+        followerProfileId: followerId,
+        followingProfileId: followingId,
+        status: FollowRequestStatus.PENDING,
+      });
+
+      const saved = await this.followRequestRepository.save(request);
+
+      return this.toFollowRequestDto(saved);
+    }
 
     await this.profilesRepository
       .createQueryBuilder()
@@ -114,6 +148,53 @@ export class UsersService {
     this.logger.log(`Profile ${followerId} unfollowed profile ${followingId}`);
   }
 
+  async getPendingFollowRequests(profileId: number): Promise<FollowRequestDto[]> {
+    await this.findProfileById(profileId);
+
+    const requests = await this.followRequestRepository.find({
+      where: {
+        followingProfileId: profileId,
+        status: FollowRequestStatus.PENDING,
+      },
+      order: { createdAt: 'DESC' },
+    });
+    const pendingRequests = requests.map((r) => this.toFollowRequestDto(r));
+    return pendingRequests;
+  }
+
+  async respondToFollowRequest(
+    requestId: number,
+    profileId: number,
+    status: FollowRequestStatus.APPROVED | FollowRequestStatus.REJECTED,
+  ): Promise<FollowRequestDto> {
+    const request = await this.followRequestRepository.findOneBy({ id: requestId });
+
+    if (!request) {
+      throw new NotFoundException('Follow request was not found.');
+    }
+
+    if (request.followingProfileId !== profileId) {
+      throw new BadRequestException('You can only respond to your own follow requests.');
+    }
+
+    if (request.status !== FollowRequestStatus.PENDING) {
+      throw new BadRequestException('Follow request has already been processed.');
+    }
+
+    request.status = status;
+    const saved = await this.followRequestRepository.save(request);
+
+    if (status === FollowRequestStatus.APPROVED) {
+      await this.profilesRepository
+        .createQueryBuilder()
+        .relation(Profile, 'followingProfiles')
+        .of(request.followerProfileId)
+        .add(request.followingProfileId);
+    }
+
+    return this.toFollowRequestDto(saved);
+  }
+
   private async findProfileById(id: number): Promise<Profile> {
     const profile = await this.profilesRepository.findOneBy({ id });
 
@@ -131,21 +212,23 @@ export class UsersService {
   }
 
   private updateProfileFieldsPartial(profile: Profile, updateUserDto: UpdateUserDto): void {
-    const { displayName, bio, avatarAssetId } = updateUserDto;
+    const { displayName, bio, avatarAssetId, isPrivate } = updateUserDto;
 
-    if (!displayName && !bio && !avatarAssetId) {
+    if (!displayName && !bio && !avatarAssetId && isPrivate === undefined) {
       return;
     }
 
     profile.displayName = displayName ?? profile.displayName;
     profile.bio = bio ?? profile.bio;
     profile.avatarAssetId = avatarAssetId ?? profile.avatarAssetId;
+    profile.isPrivate = isPrivate ?? profile.isPrivate;
   }
 
   private updateProfileFieldsFull(profile: Profile, updateUserDto: UpdateUserDto): void {
     profile.displayName = updateUserDto.displayName;
     profile.bio = updateUserDto.bio ?? null;
     profile.avatarAssetId = updateUserDto.avatarAssetId ?? null;
+    profile.isPrivate = updateUserDto.isPrivate ?? false;
   }
 
   private toUserDto(profile: Profile): UserDto {
@@ -154,8 +237,20 @@ export class UsersService {
       displayName: profile.displayName,
       bio: profile.bio ?? undefined,
       avatarAssetId: profile.avatarAssetId,
+      isPrivate: profile.isPrivate,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
+    };
+  }
+
+  private toFollowRequestDto(request: FollowRequest): FollowRequestDto {
+    return {
+      id: request.id,
+      followerProfileId: request.followerProfileId,
+      followingProfileId: request.followingProfileId,
+      status: request.status,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
     };
   }
 }

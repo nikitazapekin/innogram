@@ -19,6 +19,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { FollowRequestDto } from './dto/follow-request.dto';
+import { RespondFollowRequestDto } from './dto/respond-follow-request.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UsersService } from './users.service';
@@ -104,8 +106,10 @@ export class UsersController {
   }
 
   @Post(':id/following/:targetId')
-  @ApiOperation({ summary: 'Follow a profile' })
-  @ApiCreatedResponse({ description: 'Follow relation has been created successfully.' })
+  @ApiOperation({ summary: 'Follow a profile (creates follow request if private)' })
+  @ApiCreatedResponse({
+    description: 'Follow relation has been created successfully.',
+  })
   @ApiBadRequestResponse({
     description: 'The provided profile ids are invalid or the profile tries to follow itself.',
   })
@@ -113,7 +117,7 @@ export class UsersController {
   follow(
     @Param('id', ParseIntPipe) id: number,
     @Param('targetId', ParseIntPipe) targetId: number,
-  ): Promise<void> {
+  ): Promise<FollowRequestDto | void> {
     return this.usersService.followProfile(id, targetId);
   }
 
@@ -129,6 +133,34 @@ export class UsersController {
     @Param('targetId', ParseIntPipe) targetId: number,
   ): Promise<void> {
     return this.usersService.unfollowProfile(id, targetId);
+  }
+
+  @Get(':id/follow-requests/pending')
+  @ApiOperation({ summary: 'Get pending follow requests for a profile' })
+  @ApiOkResponse({
+    description: 'Pending follow requests have been retrieved successfully.',
+    type: FollowRequestDto,
+    isArray: true,
+  })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  getPendingFollowRequests(@Param('id', ParseIntPipe) id: number): Promise<FollowRequestDto[]> {
+    return this.usersService.getPendingFollowRequests(id);
+  }
+
+  @Post(':id/follow-requests/:requestId/respond')
+  @ApiOperation({ summary: 'Approve or reject a follow request' })
+  @ApiOkResponse({
+    description: 'Follow request has been processed successfully.',
+    type: FollowRequestDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request or already processed.' })
+  @ApiNotFoundResponse({ description: 'Follow request was not found.' })
+  respondToFollowRequest(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('requestId', ParseIntPipe) requestId: number,
+    @Body() dto: RespondFollowRequestDto,
+  ): Promise<FollowRequestDto> {
+    return this.usersService.respondToFollowRequest(requestId, id, dto.status);
   }
 
   @Delete(':id')
