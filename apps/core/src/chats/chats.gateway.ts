@@ -37,8 +37,10 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   handleDisconnect(client: Socket): void {
     for (const [profileId, sockets] of this.profileSockets) {
       sockets.delete(client.id);
+
       if (sockets.size === 0) this.profileSockets.delete(profileId);
     }
+
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
@@ -52,15 +54,18 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         payload.myProfileId,
         payload.targetProfileId,
       );
+
       client.join(chat.id.toString());
       client.emit('chat_created', chat);
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }
@@ -70,6 +75,7 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     if (!this.profileSockets.has(payload.profileId)) {
       this.profileSockets.set(payload.profileId, new Set());
     }
+
     this.profileSockets.get(payload.profileId)!.add(client.id);
     this.logger.log(`Profile ${payload.profileId} registered on socket ${client.id}`);
   }
@@ -85,13 +91,16 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         ...payload.participantIds.filter((id) => id !== payload.creatorProfileId),
       ];
       const chat = await this.chatsService.createGroupChat(allIds);
+
       client.join(chat.id.toString());
 
       for (const pid of allIds) {
         const sockets = this.profileSockets.get(pid);
+
         if (sockets) {
           for (const sid of sockets) {
             const memberSocket = this.server?.sockets?.sockets?.get(sid);
+
             if (memberSocket && memberSocket.id !== client.id) {
               memberSocket.join(chat.id.toString());
               memberSocket.emit('chat_created', chat);
@@ -103,11 +112,13 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       client.emit('chat_created', chat);
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }
@@ -119,19 +130,24 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   ): Promise<void> {
     try {
       const ok = await this.chatsService.isParticipant(+payload.chatId, payload.profileId);
+
       if (!ok) {
         client.emit('error', { message: 'You are not a member of this chat' });
+
         return;
       }
+
       client.join(String(payload.chatId));
       client.emit('chat_joined', { chatId: payload.chatId });
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }
@@ -146,16 +162,21 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         +payload.chatId,
         payload.requesterProfileId,
       );
+
       if (!isMember) {
         client.emit('error', { message: 'Only group members can add new participants' });
+
         return;
       }
+
       await this.chatsService.addParticipant(+payload.chatId, payload.newProfileId);
 
       const sockets = this.profileSockets.get(payload.newProfileId);
+
       if (sockets) {
         for (const sid of sockets) {
           const memberSocket = this.server?.sockets?.sockets?.get(sid);
+
           if (memberSocket) {
             memberSocket.join(String(payload.chatId));
             memberSocket.emit('chat_created', await this.chatsService.getChat(+payload.chatId));
@@ -169,11 +190,13 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       );
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }
@@ -189,15 +212,18 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         payload.authorProfileId,
         payload.content,
       );
+
       client.to(String(payload.chatId)).emit('new_message', message);
       client.emit('new_message', message);
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }
@@ -206,14 +232,17 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   async handleGetChats(client: Socket, payload: { profileId: number }): Promise<void> {
     try {
       const chats = await this.chatsService.getChats(payload.profileId);
+
       client.emit('chats', chats);
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }
@@ -229,14 +258,17 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         payload.offset,
         payload.limit,
       );
+
       client.emit('messages', messages);
     } catch (error: unknown) {
       let message: string;
+
       if (error instanceof Error) {
         message = error.message;
       } else {
         message = 'Unknown error';
       }
+
       client.emit('error', { message });
     }
   }

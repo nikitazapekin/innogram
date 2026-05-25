@@ -19,8 +19,8 @@ export class UsersService {
     const profile = this.profilesRepository.create({
       userId: userDto.userId,
       displayName: userDto.displayName,
-      bio: userDto.bio,
-      avatarAssetId: userDto.avatarAssetId,
+      bio: userDto.bio ?? undefined,
+      avatarAssetId: userDto.avatarAssetId ?? undefined,
     });
 
     const savedProfile = await this.profilesRepository.save(profile);
@@ -103,8 +103,8 @@ export class UsersService {
 
   private updateProfileFieldsFull(profile: Profile, updateUserDto: UpdateUserDto): void {
     profile.displayName = updateUserDto.displayName;
-    profile.bio = updateUserDto.bio ?? null;
-    profile.avatarAssetId = updateUserDto.avatarAssetId ?? null;
+    Reflect.set(profile, 'bio', updateUserDto.bio ?? null);
+    Reflect.set(profile, 'avatarAssetId', updateUserDto.avatarAssetId ?? null);
   }
 
   private toUserDto(profile: Profile): UserDto {
