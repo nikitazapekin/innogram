@@ -29,6 +29,7 @@ export class ChatsService {
     }
 
     const chat = this.chatRepository.create();
+
     await this.chatRepository.save(chat);
 
     try {
@@ -39,6 +40,7 @@ export class ChatsService {
         .add([profileId1, profileId2]);
     } catch {
       await this.chatRepository.delete(chat.id);
+
       throw new NotFoundException('One or both profiles not found');
     }
 
@@ -47,6 +49,7 @@ export class ChatsService {
 
   async createGroupChat(participantIds: number[]): Promise<Chat> {
     const chat = this.chatRepository.create();
+
     await this.chatRepository.save(chat);
 
     try {
@@ -57,6 +60,7 @@ export class ChatsService {
         .add(participantIds);
     } catch {
       await this.chatRepository.delete(chat.id);
+
       throw new NotFoundException('One or more profiles not found');
     }
 
@@ -84,6 +88,7 @@ export class ChatsService {
 
   async sendMessage(chatId: number, authorProfileId: number, content: string): Promise<Message> {
     const chat = await this.chatRepository.findOneBy({ id: chatId });
+
     if (!chat) throw new NotFoundException('Chat not found');
 
     const message = this.messageRepository.create({
@@ -97,6 +102,7 @@ export class ChatsService {
 
   async addParticipant(chatId: number, profileId: number): Promise<void> {
     const chat = await this.chatRepository.findOneBy({ id: chatId });
+
     if (!chat) throw new NotFoundException('Chat not found');
 
     try {
@@ -105,14 +111,16 @@ export class ChatsService {
         .relation(Chat, 'participants')
         .of(chatId)
         .add(profileId);
-    } catch (error: any) {
-      if (error?.code === '23505') return;
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error) return;
+
       throw new NotFoundException('Profile not found');
     }
   }
 
   async getChat(chatId: number): Promise<Chat> {
     const chat = await this.chatRepository.findOneByOrFail({ id: chatId });
+
     return chat;
   }
 
@@ -123,6 +131,7 @@ export class ChatsService {
       .where('chat.id = :chatId', { chatId })
       .andWhere('p.id = :profileId', { profileId })
       .getCount();
+
     return count > 0;
   }
 }
