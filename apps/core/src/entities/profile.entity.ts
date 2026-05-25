@@ -19,7 +19,7 @@ export class Profile {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'user_id', type: 'integer', nullable: true })
+  @Column({ name: 'user_id', type: 'integer', unique: true })
   userId: number;
 
   @Column({ name: 'is_private', type: 'boolean', default: false })
