@@ -80,6 +80,7 @@ export class UsersService {
       .loadMany<Profile>();
 
     const followersList = followers.map((profile) => this.toUserDto(profile));
+
     return followersList;
   }
 
@@ -172,6 +173,7 @@ export class UsersService {
       order: { createdAt: 'DESC' },
     });
     const pendingRequests = requests.map((r) => this.toFollowRequestDto(r));
+
     return pendingRequests;
   }
 
