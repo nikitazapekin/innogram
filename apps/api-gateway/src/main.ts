@@ -42,6 +42,7 @@ const readApiGatewayPort = (): number => {
 };
 
 const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
+const readCoreServiceUrl = (): string => readRequiredEnv('CORE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -83,12 +84,14 @@ const requestHasBody = (method: string): boolean => {
   return true;
 };
 
-const buildUpstreamUrl = (serviceUrl: string, originalUrl: string | undefined): string => {
-  if (!originalUrl) {
-    return `${serviceUrl}/`;
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  const path = originalUrl ?? '/';
+
+  if (path.startsWith('/users') || path.startsWith('/auth/user')) {
+    return `${CORE_SERVICE_URL}${path}`;
   }
 
-  return `${serviceUrl}${originalUrl}`;
+  return `${AUTH_SERVICE_URL}${path}`;
 };
 
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>
@@ -106,6 +109,7 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
 
 const API_GATEWAY_PORT = readApiGatewayPort();
 const AUTH_SERVICE_URL = readAuthServiceUrl();
+const CORE_SERVICE_URL = readCoreServiceUrl();
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
@@ -155,10 +159,7 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
-      const upstreamResponse = await fetch(
-        buildUpstreamUrl(AUTH_SERVICE_URL, request.originalUrl),
-        fetchOptions,
-      );
+      const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
       const status = upstreamResponse.status;
 

@@ -52,10 +52,15 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         payload.myProfileId,
         payload.targetProfileId,
       );
-      client.join(chat.id);
+      client.join(chat.id.toString());
       client.emit('chat_created', chat);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
@@ -80,7 +85,7 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         ...payload.participantIds.filter((id) => id !== payload.creatorProfileId),
       ];
       const chat = await this.chatsService.createGroupChat(allIds);
-      client.join(chat.id);
+      client.join(chat.id.toString());
 
       for (const pid of allIds) {
         const sockets = this.profileSockets.get(pid);
@@ -88,7 +93,7 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
           for (const sid of sockets) {
             const memberSocket = this.server?.sockets?.sockets?.get(sid);
             if (memberSocket && memberSocket.id !== client.id) {
-              memberSocket.join(chat.id);
+              memberSocket.join(chat.id.toString());
               memberSocket.emit('chat_created', chat);
             }
           }
@@ -97,7 +102,12 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
       client.emit('chat_created', chat);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
@@ -108,15 +118,20 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     payload: { chatId: string; profileId: number },
   ): Promise<void> {
     try {
-      const ok = await this.chatsService.isParticipant(payload.chatId, payload.profileId);
+      const ok = await this.chatsService.isParticipant(+payload.chatId, payload.profileId);
       if (!ok) {
         client.emit('error', { message: 'You are not a member of this chat' });
         return;
       }
-      client.join(payload.chatId);
+      client.join(String(payload.chatId));
       client.emit('chat_joined', { chatId: payload.chatId });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
@@ -128,22 +143,22 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   ): Promise<void> {
     try {
       const isMember = await this.chatsService.isParticipant(
-        payload.chatId,
+        +payload.chatId,
         payload.requesterProfileId,
       );
       if (!isMember) {
         client.emit('error', { message: 'Only group members can add new participants' });
         return;
       }
-      await this.chatsService.addParticipant(payload.chatId, payload.newProfileId);
+      await this.chatsService.addParticipant(+payload.chatId, payload.newProfileId);
 
       const sockets = this.profileSockets.get(payload.newProfileId);
       if (sockets) {
         for (const sid of sockets) {
           const memberSocket = this.server?.sockets?.sockets?.get(sid);
           if (memberSocket) {
-            memberSocket.join(payload.chatId);
-            memberSocket.emit('chat_created', await this.chatsService.getChat(payload.chatId));
+            memberSocket.join(String(payload.chatId));
+            memberSocket.emit('chat_created', await this.chatsService.getChat(+payload.chatId));
           }
         }
       }
@@ -153,7 +168,12 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         `Profile ${payload.newProfileId} added to chat ${payload.chatId} by ${payload.requesterProfileId}`,
       );
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
@@ -165,14 +185,19 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   ): Promise<void> {
     try {
       const message = await this.chatsService.sendMessage(
-        payload.chatId,
+        +payload.chatId,
         payload.authorProfileId,
         payload.content,
       );
-      client.to(payload.chatId).emit('new_message', message);
+      client.to(String(payload.chatId)).emit('new_message', message);
       client.emit('new_message', message);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
@@ -183,7 +208,12 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       const chats = await this.chatsService.getChats(payload.profileId);
       client.emit('chats', chats);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
@@ -195,20 +225,25 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   ): Promise<void> {
     try {
       const messages = await this.chatsService.getMessages(
-        payload.chatId,
+        +payload.chatId,
         payload.offset,
         payload.limit,
       );
       client.emit('messages', messages);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      let message: string;
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
       client.emit('error', { message });
     }
   }
 
   @SubscribeMessage('leave_chat')
   async handleLeaveChat(client: Socket, payload: { chatId: string }): Promise<void> {
-    client.leave(payload.chatId);
+    client.leave(String(payload.chatId));
     client.emit('chat_left', { chatId: payload.chatId });
   }
 }

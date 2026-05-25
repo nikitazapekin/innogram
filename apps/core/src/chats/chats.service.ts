@@ -22,7 +22,7 @@ export class ChatsService {
       .where('p.id IN (:...ids)', { ids: [profileId1, profileId2] })
       .groupBy('chat.id')
       .having('COUNT(p.id) = 2')
-      .getRawOne<{ chat_id: string }>();
+      .getRawOne<{ chat_id: number }>();
 
     if (existing) {
       return this.chatRepository.findOneByOrFail({ id: existing.chat_id });
@@ -73,7 +73,7 @@ export class ChatsService {
       .getMany();
   }
 
-  async getMessages(chatId: string, offset = 0, limit = 50): Promise<Message[]> {
+  async getMessages(chatId: number, offset = 0, limit = 50): Promise<Message[]> {
     return this.messageRepository.find({
       where: { chatId },
       order: { createdAt: 'DESC' },
@@ -82,7 +82,7 @@ export class ChatsService {
     });
   }
 
-  async sendMessage(chatId: string, authorProfileId: number, content: string): Promise<Message> {
+  async sendMessage(chatId: number, authorProfileId: number, content: string): Promise<Message> {
     const chat = await this.chatRepository.findOneBy({ id: chatId });
     if (!chat) throw new NotFoundException('Chat not found');
 
@@ -90,12 +90,12 @@ export class ChatsService {
       chatId,
       authorProfileId,
       content,
-    }) as Message;
+    });
 
     return this.messageRepository.save(message);
   }
 
-  async addParticipant(chatId: string, profileId: number): Promise<void> {
+  async addParticipant(chatId: number, profileId: number): Promise<void> {
     const chat = await this.chatRepository.findOneBy({ id: chatId });
     if (!chat) throw new NotFoundException('Chat not found');
 
@@ -111,12 +111,12 @@ export class ChatsService {
     }
   }
 
-  async getChat(chatId: string): Promise<Chat> {
+  async getChat(chatId: number): Promise<Chat> {
     const chat = await this.chatRepository.findOneByOrFail({ id: chatId });
     return chat;
   }
 
-  async isParticipant(chatId: string, profileId: number): Promise<boolean> {
+  async isParticipant(chatId: number, profileId: number): Promise<boolean> {
     const count = await this.chatRepository
       .createQueryBuilder('chat')
       .innerJoin('chat.participants', 'p')
