@@ -20,7 +20,7 @@ export class Profile {
   id: number;
 
   @Column({ name: 'user_id', type: 'integer', nullable: true })
-  userId: number | null;
+  userId: number;
 
   @Column({ name: 'is_private', type: 'boolean', default: false })
   isPrivate: boolean;
@@ -29,10 +29,10 @@ export class Profile {
   displayName: string;
 
   @Column({ type: 'text', nullable: true })
-  bio: string | null;
+  bio: string;
 
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
-  avatarAssetId: number | null;
+  avatarAssetId: number;
 
   @Column({ name: 'is_private', type: 'boolean', default: false })
   isPrivate: boolean;
