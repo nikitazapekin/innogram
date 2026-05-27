@@ -1,0 +1,35 @@
+@use '../../styles' as *;
+
+.header {
+  background-color: $color-dark;
+  color: $color-white;
+  padding: $spacing-md $spacing-lg;
+}
+
+.inner {
+  max-width: $container-sm;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+}
+
+.nav {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.link {
+  color: $color-white;
+  font-size: $font-xs;
+  transition: opacity 200ms ease-in-out;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
