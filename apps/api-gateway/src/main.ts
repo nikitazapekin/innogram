@@ -18,31 +18,25 @@ const REQUEST_HEADERS_TO_SKIP = new Set([
   'transfer-encoding',
 ]);
 
-const RESPONSE_HEADERS_TO_SKIP = new Set(['connection', 'content-length', 'transfer-encoding']);
+const RESPONSE_HEADERS_TO_SKIP = new Set([
+  'connection',
+  'content-length',
+  'transfer-encoding',
+  'access-control-allow-origin',
+  'access-control-expose-headers',
+  'access-control-max-age',
+  'access-control-allow-credentials',
+  'access-control-allow-methods',
+  'access-control-allow-headers',
+]);
 
-const readRequiredEnv = (envName: string): string => {
-  const value = process.env[envName]?.trim();
-
+const readRequiredString = (value: string | undefined, name: string): string => {
   if (!value) {
-    throw new Error(`Missing required environment variable: ${envName}`);
+    throw new Error(`Missing required environment variable: ${name}`);
   }
 
   return value;
 };
-
-const readApiGatewayPort = (): number => {
-  const rawPort = readRequiredEnv('API_GATEWAY_PORT');
-  const parsedPort = Number(rawPort);
-
-  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
-    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
-  }
-
-  return parsedPort;
-};
-
-const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
-const readCoreServiceUrl = (): string => readRequiredEnv('CORE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -122,19 +116,60 @@ const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   return buildUpstreamUrl(CORE_URL, originalUrl);
 };
 
-const API_GATEWAY_PORT = readApiGatewayPort();
-const AUTH_SERVICE_URL = readAuthServiceUrl();
-const CORE_URL = readCoreServiceUrl();
-const NOTIFICATIONS_SERVICE_URL = readRequiredEnv('NOTIFICATIONS_SERVICE_URL');
+const API_GATEWAY_PORT = (() => {
+  const rawPort = readRequiredString(process.env.API_GATEWAY_PORT, 'API_GATEWAY_PORT');
+  const parsedPort = Number(rawPort);
+
+  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
+    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
+  }
+
+  return parsedPort;
+})();
+
+const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
+const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
+const NOTIFICATIONS_SERVICE_URL = readRequiredString(
+  process.env.NOTIFICATIONS_SERVICE_URL,
+  'NOTIFICATIONS_SERVICE_URL',
+);
+
+const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+const corsMiddleware = (request: Request, response: Response, next: () => void): void => {
+  const origin = request.header('origin');
+
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (request.method === 'OPTIONS') {
+    response.status(204).end();
+
+    return;
+  }
+
+  next();
+};
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
   });
 
+  app.use(corsMiddleware);
   app.use(async (request: Request, response: Response) => {
     try {
       const method = request.method.toUpperCase();
+
+      if (method === 'OPTIONS') {
+        return;
+      }
+
       const proxyRequestHasBody = requestHasBody(method);
       const fetchOptions: RequestInit & { duplex?: 'half' } = {
         method,
@@ -149,8 +184,21 @@ async function bootstrap(): Promise<void> {
 
       const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
-      response.status(upstreamResponse.status);
+      const status = upstreamResponse.status;
+
+      if (status >= 300 && status < 400) {
+        const location = upstreamResponse.headers.get('location');
+
+        if (location) {
+          response.redirect(status, location);
+
+          return;
+        }
+      }
+
+      response.status(status);
       applyUpstreamHeaders(response, upstreamResponse.headers);
+      applyCorsHeaders(response, request.header('origin'));
 
       const responseBody = Buffer.from(await upstreamResponse.arrayBuffer());
 
@@ -165,5 +213,12 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(API_GATEWAY_PORT);
 }
+
+const applyCorsHeaders = (response: Response, origin: string | undefined): void => {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+};
 
 void bootstrap();

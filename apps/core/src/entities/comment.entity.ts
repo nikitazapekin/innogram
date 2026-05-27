@@ -18,10 +18,10 @@ export class Comment {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'post_id', type: 'int' })
+  @Column({ name: 'post_id', type: 'integer' })
   postId: number;
 
-  @Column({ name: 'author_profile_id', type: 'int' })
+  @Column({ name: 'author_profile_id', type: 'integer' })
   authorProfileId: number;
 
   @Column({ type: 'text' })
