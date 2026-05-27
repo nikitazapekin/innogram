@@ -4,7 +4,7 @@ export class AddParentIdToComment1779900000000 implements MigrationInterface {
   name = 'AddParentIdToComment1779900000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "main"."comment" ADD "parent_id" integer`);
+    await queryRunner.query(`ALTER TABLE "main"."comment" ADD "parent_id" integer NOT NULL`);
     await queryRunner.query(
       `ALTER TABLE "main"."comment" ADD CONSTRAINT "FK_comment_parent" FOREIGN KEY ("parent_id") REFERENCES "main"."comment"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
