@@ -66,6 +66,22 @@ export class PostsController {
     return this.postsService.unarchivePost(id);
   }
 
+  @Post(':id/like/:profileId')
+  async like(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('profileId', ParseIntPipe) profileId: number,
+  ): Promise<void> {
+    await this.postsService.like(id, profileId);
+  }
+
+  @Delete(':id/like/:profileId')
+  async unlike(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('profileId', ParseIntPipe) profileId: number,
+  ): Promise<void> {
+    await this.postsService.unlike(id, profileId);
+  }
+
   @Delete(':id')
   deletePost(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.postsService.deletePost(id);
