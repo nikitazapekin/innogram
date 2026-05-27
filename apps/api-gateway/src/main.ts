@@ -42,6 +42,7 @@ const readApiGatewayPort = (): number => {
 };
 
 const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
+const readCoreServiceUrl = (): string => readRequiredEnv('CORE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -83,12 +84,14 @@ const requestHasBody = (method: string): boolean => {
   return true;
 };
 
-const buildUpstreamUrl = (serviceUrl: string, originalUrl: string | undefined): string => {
-  if (!originalUrl) {
-    return `${serviceUrl}/`;
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  const path = originalUrl ?? '/';
+
+  if (path.startsWith('/users') || path.startsWith('/auth/user')) {
+    return `${CORE_SERVICE_URL}${path}`;
   }
 
-  return `${serviceUrl}${originalUrl}`;
+  return `${AUTH_SERVICE_URL}${path}`;
 };
 
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>
@@ -106,15 +109,44 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
 
 const API_GATEWAY_PORT = readApiGatewayPort();
 const AUTH_SERVICE_URL = readAuthServiceUrl();
+const CORE_SERVICE_URL = readCoreServiceUrl();
+
+const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+const corsMiddleware = (request: Request, response: Response, next: () => void): void => {
+  const origin = request.header('origin');
+
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (request.method === 'OPTIONS') {
+    response.status(204).end();
+
+    return;
+  }
+
+  next();
+};
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
   });
 
+  app.use(corsMiddleware);
   app.use(async (request: Request, response: Response) => {
     try {
       const method = request.method.toUpperCase();
+
+      if (method === 'OPTIONS') {
+        return;
+      }
+
       const proxyRequestHasBody = requestHasBody(method);
       const fetchOptions: RequestInit & { duplex?: 'half' } = {
         method,
@@ -127,13 +159,23 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
-      const upstreamResponse = await fetch(
-        buildUpstreamUrl(AUTH_SERVICE_URL, request.originalUrl),
-        fetchOptions,
-      );
+      const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
-      response.status(upstreamResponse.status);
+      const status = upstreamResponse.status;
+
+      if (status >= 300 && status < 400) {
+        const location = upstreamResponse.headers.get('location');
+
+        if (location) {
+          response.redirect(status, location);
+
+          return;
+        }
+      }
+
+      response.status(status);
       applyUpstreamHeaders(response, upstreamResponse.headers);
+      applyCorsHeaders(response, request.header('origin'));
 
       const responseBody = Buffer.from(await upstreamResponse.arrayBuffer());
 
@@ -148,5 +190,12 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(API_GATEWAY_PORT);
 }
+
+const applyCorsHeaders = (response: Response, origin: string | undefined): void => {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+};
 
 void bootstrap();
