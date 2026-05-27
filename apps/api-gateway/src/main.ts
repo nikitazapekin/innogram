@@ -106,10 +106,17 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
 };
 
 const AUTH_ROUTE_PREFIX = '/auth';
+const NOTIFICATIONS_ROUTE_PREFIX = '/notifications';
 
 const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   if (originalUrl?.startsWith(AUTH_ROUTE_PREFIX)) {
     return buildUpstreamUrl(AUTH_SERVICE_URL, originalUrl);
+  }
+
+  if (originalUrl?.startsWith(NOTIFICATIONS_ROUTE_PREFIX)) {
+    const strippedUrl = originalUrl.replace(NOTIFICATIONS_ROUTE_PREFIX, '');
+
+    return buildUpstreamUrl(NOTIFICATIONS_SERVICE_URL, strippedUrl);
   }
 
   return buildUpstreamUrl(CORE_URL, originalUrl);
@@ -118,6 +125,7 @@ const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
 const API_GATEWAY_PORT = readApiGatewayPort();
 const AUTH_SERVICE_URL = readAuthServiceUrl();
 const CORE_URL = readCoreServiceUrl();
+const NOTIFICATIONS_SERVICE_URL = readRequiredEnv('NOTIFICATIONS_SERVICE_URL');
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
