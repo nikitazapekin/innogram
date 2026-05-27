@@ -20,28 +20,21 @@ const REQUEST_HEADERS_TO_SKIP = new Set([
 
 const RESPONSE_HEADERS_TO_SKIP = new Set(['connection', 'content-length', 'transfer-encoding']);
 
-const readRequiredEnv = (envName: string): string => {
-  const value = process.env[envName]?.trim();
-
+const readRequiredString = (value: string | undefined, name: string): string => {
   if (!value) {
-    throw new Error(`Missing required environment variable: ${envName}`);
+    throw new Error(`Missing required environment variable: ${name}`);
   }
 
   return value;
 };
 
-const readApiGatewayPort = (): number => {
-  const rawPort = readRequiredEnv('API_GATEWAY_PORT');
-  const parsedPort = Number(rawPort);
-
-  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
-    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
+const resolveUpstream = (url: string | undefined): string => {
+  if (url?.startsWith('/auth')) {
+    return AUTH_SERVICE_URL;
   }
 
-  return parsedPort;
+  return CORE_URL;
 };
-
-const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -104,8 +97,19 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
   });
 };
 
-const API_GATEWAY_PORT = readApiGatewayPort();
-const AUTH_SERVICE_URL = readAuthServiceUrl();
+const API_GATEWAY_PORT = (() => {
+  const rawPort = readRequiredString(process.env.API_GATEWAY_PORT, 'API_GATEWAY_PORT');
+  const parsedPort = Number(rawPort);
+
+  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
+    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
+  }
+
+  return parsedPort;
+})();
+
+const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
+const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
@@ -127,8 +131,10 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
+      const upstreamUrl = resolveUpstream(request.originalUrl);
+
       const upstreamResponse = await fetch(
-        buildUpstreamUrl(AUTH_SERVICE_URL, request.originalUrl),
+        buildUpstreamUrl(upstreamUrl, request.originalUrl),
         fetchOptions,
       );
 

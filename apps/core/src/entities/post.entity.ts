@@ -5,12 +5,14 @@ import {
   JoinTable,
   ManyToMany,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { Comment } from './comment.entity';
+import { ArchivedPost } from './archived-post.entity';
 import { Asset } from './asset.entity';
+import { Comment } from './comment.entity';
 import { Profile } from './profile.entity';
 
 @Entity({ name: 'post', schema: 'main' })
@@ -51,4 +53,7 @@ export class Post {
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
+
+  @OneToOne(() => ArchivedPost, (archivedPost) => archivedPost.post)
+  archivedPost: ArchivedPost;
 }

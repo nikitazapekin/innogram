@@ -25,4 +25,12 @@ export class PostDto {
   @IsDate()
   @Type(() => Date)
   updatedAt: Date;
+
+  @Type(() => Boolean)
+  isArchived: boolean;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  archivedAt: Date | null;
 }
