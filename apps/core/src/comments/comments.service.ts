@@ -25,6 +25,7 @@ export class CommentsService {
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
     const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
+
     if (!parent) {
       throw new NotFoundException('Parent comment was not found.');
     }
@@ -65,6 +66,7 @@ export class CommentsService {
     }
 
     const commentDto = this.toCommentDto(comment);
+
     commentDto.replies = await this.findReplies(id);
 
     return commentDto;
@@ -92,6 +94,7 @@ export class CommentsService {
         if (!parentDto.replies) {
           parentDto.replies = [];
         }
+
         parentDto.replies.push(commentDto);
       } else {
         rootComments.push(commentDto);
@@ -112,6 +115,7 @@ export class CommentsService {
 
     for (const reply of replies) {
       const replyDto = this.toCommentDto(reply);
+
       replyDto.replies = await this.findReplies(reply.id);
       result.push(replyDto);
     }
@@ -143,6 +147,7 @@ export class CommentsService {
 
   async remove(id: number): Promise<void> {
     const descendantIds = await this.collectDescendantIds(id);
+
     if (descendantIds.length > 0) {
       await this.commentsRepository.delete(descendantIds);
     }
@@ -160,6 +165,7 @@ export class CommentsService {
 
     for (const child of children) {
       const grandchildIds = await this.collectDescendantIds(child.id);
+
       ids.push(child.id, ...grandchildIds);
     }
 
