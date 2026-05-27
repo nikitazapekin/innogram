@@ -24,7 +24,7 @@ export class PostsService {
 
   async getPosts(): Promise<PostDto[]> {
     const posts = await this.postsRepository.find({
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'likes'],
       order: { createdAt: 'DESC' },
     });
 
@@ -48,7 +48,7 @@ export class PostsService {
 
     let [posts, total] = await this.postsRepository.findAndCount({
       where,
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'likes'],
       order,
       skip: (page - 1) * limit,
       take: limit,
@@ -132,6 +132,24 @@ export class PostsService {
     return this.toPostDto(post);
   }
 
+  async like(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .add(profileId);
+  }
+
+  async unlike(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .remove(profileId);
+  }
+
   async deletePost(id: number): Promise<void> {
     await this.archivedPostRepository.delete({ postId: id });
 
@@ -145,7 +163,7 @@ export class PostsService {
   private async findPostById(id: number): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'likes'],
     });
 
     if (!post) {
@@ -163,6 +181,7 @@ export class PostsService {
       authorProfileId: post.authorProfileId,
       title: post.title,
       content: post.content,
+      likesCount: post.likes?.length,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       isArchived: !!ap,
