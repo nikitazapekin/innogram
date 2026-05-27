@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from './dto/comment.dto';
@@ -17,18 +17,16 @@ export class CommentsService {
   ) {}
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
-    if (commentDto.parentId) {
-      const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
-      if (!parent) {
-        throw new NotFoundException('Parent comment was not found.');
-      }
+    const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
+    if (!parent) {
+      throw new NotFoundException('Parent comment was not found.');
     }
 
     const comment = this.commentsRepository.create({
       postId,
       authorProfileId: commentDto.authorProfileId,
       content: commentDto.content,
-      parentId: commentDto.parentId ?? null,
+      parentId: commentDto.parentId,
     });
 
     const savedComment = await this.commentsRepository.save(comment);
@@ -64,21 +62,34 @@ export class CommentsService {
   }
 
   async findByPost(postId: number): Promise<CommentDto[]> {
-    const comments = await this.commentsRepository.find({
-      where: { postId, parentId: IsNull() },
+    const postComments = await this.commentsRepository.find({
+      where: { postId },
       order: { createdAt: 'DESC' },
       relations: ['likes'],
     });
 
-    const result: CommentDto[] = [];
+    const commentsById = new Map<number, CommentDto>();
+    const rootComments: CommentDto[] = [];
 
-    for (const comment of comments) {
-      const dto = this.toCommentDto(comment);
-      dto.replies = await this.findReplies(comment.id);
-      result.push(dto);
+    for (const comment of postComments) {
+      commentsById.set(comment.id, this.toCommentDto(comment));
     }
 
-    return result;
+    for (const comment of postComments) {
+      const commentDto = commentsById.get(comment.id)!;
+      const parentDto = commentsById.get(comment.parentId);
+
+      if (parentDto) {
+        if (!parentDto.replies) {
+          parentDto.replies = [];
+        }
+        parentDto.replies.push(commentDto);
+      } else {
+        rootComments.push(commentDto);
+      }
+    }
+
+    return rootComments;
   }
 
   async findReplies(commentId: number): Promise<CommentDto[]> {
@@ -122,7 +133,7 @@ export class CommentsService {
   }
 
   async remove(id: number): Promise<void> {
-    const comment = await this.findCommentById(id);
+    await this.findCommentById(id);
     await this.commentsRepository.delete({ parentId: id });
     await this.commentsRepository.delete(id);
     this.logger.log(`Comment deleted: ${id}`);

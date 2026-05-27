@@ -13,9 +13,8 @@ export class CommentDto {
   @Type(() => Number)
   authorProfileId: number;
 
-  @IsOptional()
   @IsNumber()
-  parentId?: number | null;
+  parentId: number;
 
   @IsString()
   content: string;

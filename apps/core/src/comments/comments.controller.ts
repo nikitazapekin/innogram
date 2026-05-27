@@ -8,7 +8,6 @@ import {
   Patch,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -17,7 +16,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -25,7 +23,6 @@ import { CommentsService } from './comments.service';
 import { CommentDto } from './dto/comment.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { QueryCommentsDto } from './dto/query-comments.dto';
 
 @ApiTags('comments')
 @Controller()
@@ -34,9 +31,9 @@ export class CommentsController {
 
   @Post('/comments/:postId')
   @ApiOperation({
-    summary: 'Create a comment (top-level or reply)',
+    summary: 'Create a reply to an existing comment',
     description:
-      'Create a new comment on a post. Omit `parentId` for a top-level comment, or set it to reply to an existing comment.',
+      'Create a new comment that is a reply to an existing comment. `parentId` is required and must reference an existing comment.',
   })
   @ApiCreatedResponse({
     description: 'Comment has been created successfully.',
@@ -63,9 +60,9 @@ export class CommentsController {
 
   @Get('posts/:postId/comments')
   @ApiOperation({
-    summary: 'Get top-level comments for a post with nested replies',
+    summary: 'Get comment tree for a post',
     description:
-      'Returns all root comments for the given post. Each comment includes its nested `replies` (recursively).',
+      'Returns all comments for the given post structured as a tree. Root comments are those whose `parentId` points to a comment outside this post (e.g. from another post or deleted). Each comment includes nested `replies`.',
   })
   @ApiOkResponse({
     description: 'Comments retrieved successfully.',
