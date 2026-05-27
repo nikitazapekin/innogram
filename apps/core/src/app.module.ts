@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { SharedAuthGuard, SharedAuthModule } from '@innogram/shared';
 
+import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { readRequiredEnv } from './common/read-required-env';
 import { DatabaseConfigService } from './database.config';
@@ -46,6 +47,7 @@ import { UsersModule } from './users/users.module';
       Profile,
       UserEntity,
     ]),
+    AssetsModule,
     AuthModule,
     UsersModule,
     PostsModule,
