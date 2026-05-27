@@ -64,10 +64,10 @@ export class CommentsService {
       throw new NotFoundException('Comment was not found.');
     }
 
-    const dto = this.toCommentDto(comment);
-    dto.replies = await this.findReplies(id);
+    const commentDto = this.toCommentDto(comment);
+    commentDto.replies = await this.findReplies(id);
 
-    return dto;
+    return commentDto;
   }
 
   async findByPost(postId: number): Promise<CommentDto[]> {
@@ -111,9 +111,9 @@ export class CommentsService {
     const result: CommentDto[] = [];
 
     for (const reply of replies) {
-      const dto = this.toCommentDto(reply);
-      dto.replies = await this.findReplies(reply.id);
-      result.push(dto);
+      const replyDto = this.toCommentDto(reply);
+      replyDto.replies = await this.findReplies(reply.id);
+      result.push(replyDto);
     }
 
     return result;
@@ -142,14 +142,31 @@ export class CommentsService {
   }
 
   async remove(id: number): Promise<void> {
-    await this.findCommentById(id);
-    await this.commentsRepository.delete({ parentId: id });
+    const descendantIds = await this.collectDescendantIds(id);
+    if (descendantIds.length > 0) {
+      await this.commentsRepository.delete(descendantIds);
+    }
+
     await this.commentsRepository.delete(id);
     this.logger.log(`Comment deleted: ${id}`);
   }
 
+  private async collectDescendantIds(commentId: number): Promise<number[]> {
+    const ids: number[] = [];
+    const children = await this.commentsRepository.find({
+      where: { parentId: commentId },
+      select: ['id'],
+    });
+
+    for (const child of children) {
+      const grandchildIds = await this.collectDescendantIds(child.id);
+      ids.push(child.id, ...grandchildIds);
+    }
+
+    return ids;
+  }
+
   async like(commentId: number, profileId: number): Promise<void> {
-    await this.findCommentById(commentId);
     await this.commentsRepository
       .createQueryBuilder()
       .relation(Comment, 'likes')
@@ -158,7 +175,6 @@ export class CommentsService {
   }
 
   async unlike(commentId: number, profileId: number): Promise<void> {
-    await this.findCommentById(commentId);
     await this.commentsRepository
       .createQueryBuilder()
       .relation(Comment, 'likes')
