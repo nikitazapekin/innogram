@@ -17,6 +17,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -24,19 +25,25 @@ import { CommentsService } from './comments.service';
 import { CommentDto } from './dto/comment.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { QueryCommentsDto } from './dto/query-comments.dto';
 
 @ApiTags('comments')
 @Controller()
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
-  @ApiOperation({ summary: 'Create a comment' })
+  @Post('/comments/:postId')
+  @ApiOperation({
+    summary: 'Create a comment (top-level or reply)',
+    description:
+      'Create a new comment on a post. Omit `parentId` for a top-level comment, or set it to reply to an existing comment.',
+  })
   @ApiCreatedResponse({
     description: 'Comment has been created successfully.',
     type: CommentDto,
   })
   @ApiBadRequestResponse({ description: 'Request body validation failed.' })
-  @Post('/comments/:postId')
+  @ApiNotFoundResponse({ description: 'Specified parent comment was not found.' })
   create(
     @Param('postId', ParseIntPipe) postId: number,
     @Body() commentDto: CreateCommentDto,
@@ -54,8 +61,23 @@ export class CommentsController {
     return this.commentsService.findAll();
   }
 
+  @Get('posts/:postId/comments')
+  @ApiOperation({
+    summary: 'Get top-level comments for a post with nested replies',
+    description:
+      'Returns all root comments for the given post. Each comment includes its nested `replies` (recursively).',
+  })
+  @ApiOkResponse({
+    description: 'Comments retrieved successfully.',
+    type: CommentDto,
+  })
+  @ApiNotFoundResponse({ description: 'Post was not found.' })
+  findByPost(@Param('postId', ParseIntPipe) postId: number): Promise<CommentDto[]> {
+    return this.commentsService.findByPost(postId);
+  }
+
   @Get('comments/:id')
-  @ApiOperation({ summary: 'Get a comment by id' })
+  @ApiOperation({ summary: 'Get a comment by id (includes nested replies)' })
   @ApiOkResponse({
     description: 'Comment has been retrieved successfully.',
     type: CommentDto,
@@ -64,6 +86,21 @@ export class CommentsController {
   @ApiNotFoundResponse({ description: 'Comment was not found.' })
   findOne(@Param('id', ParseIntPipe) id: number): Promise<CommentDto> {
     return this.commentsService.findOne(id);
+  }
+
+  @Get('comments/:id/replies')
+  @ApiOperation({
+    summary: 'Get nested replies for a comment',
+    description:
+      'Returns all direct replies to the specified comment. Each reply includes its own nested `replies` recursively.',
+  })
+  @ApiOkResponse({
+    description: 'Replies retrieved successfully.',
+    type: CommentDto,
+  })
+  @ApiNotFoundResponse({ description: 'Comment was not found.' })
+  findReplies(@Param('id', ParseIntPipe) id: number): Promise<CommentDto[]> {
+    return this.commentsService.findReplies(id);
   }
 
   @Patch('comments/:id')
@@ -77,7 +114,6 @@ export class CommentsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Query('postId') _postId?: string,
   ): Promise<CommentDto> {
     return this.commentsService.update(id, updateCommentDto);
   }
@@ -93,13 +129,12 @@ export class CommentsController {
   put(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCommentDto: UpdateCommentDto,
-    @Query('postId') _postId?: string,
   ): Promise<CommentDto> {
     return this.commentsService.put(id, updateCommentDto);
   }
 
   @Delete('comments/:id')
-  @ApiOperation({ summary: 'Delete a comment' })
+  @ApiOperation({ summary: 'Delete a comment and its replies' })
   @ApiBadRequestResponse({ description: 'The provided comment id is invalid.' })
   @ApiNotFoundResponse({ description: 'Comment was not found.' })
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {

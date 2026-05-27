@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 
 import { Comment } from '../entities/comment.entity';
 import { Notification } from '../entities/notification.entity';
@@ -24,10 +24,18 @@ export class CommentsService {
   ) {}
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
+    if (commentDto.parentId) {
+      const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
+      if (!parent) {
+        throw new NotFoundException('Parent comment was not found.');
+      }
+    }
+
     const comment = this.commentsRepository.create({
       postId,
       authorProfileId: commentDto.authorProfileId,
       content: commentDto.content,
+      parentId: commentDto.parentId ?? null,
     });
 
     const savedComment = await this.commentsRepository.save(comment);
@@ -42,15 +50,62 @@ export class CommentsService {
   async findAll(): Promise<CommentDto[]> {
     const comments = await this.commentsRepository.find({
       order: { createdAt: 'DESC' },
+      relations: ['likes'],
     });
 
     return comments.map((comment) => this.toCommentDto(comment));
   }
 
   async findOne(id: number): Promise<CommentDto> {
-    const comment = await this.findCommentById(id);
+    const comment = await this.commentsRepository.findOne({
+      where: { id },
+      relations: ['likes'],
+    });
 
-    return this.toCommentDto(comment);
+    if (!comment) {
+      throw new NotFoundException('Comment was not found.');
+    }
+
+    const dto = this.toCommentDto(comment);
+    dto.replies = await this.findReplies(id);
+
+    return dto;
+  }
+
+  async findByPost(postId: number): Promise<CommentDto[]> {
+    const comments = await this.commentsRepository.find({
+      where: { postId, parentId: IsNull() },
+      order: { createdAt: 'DESC' },
+      relations: ['likes'],
+    });
+
+    const result: CommentDto[] = [];
+
+    for (const comment of comments) {
+      const dto = this.toCommentDto(comment);
+      dto.replies = await this.findReplies(comment.id);
+      result.push(dto);
+    }
+
+    return result;
+  }
+
+  async findReplies(commentId: number): Promise<CommentDto[]> {
+    const replies = await this.commentsRepository.find({
+      where: { parentId: commentId },
+      order: { createdAt: 'ASC' },
+      relations: ['likes'],
+    });
+
+    const result: CommentDto[] = [];
+
+    for (const reply of replies) {
+      const dto = this.toCommentDto(reply);
+      dto.replies = await this.findReplies(reply.id);
+      result.push(dto);
+    }
+
+    return result;
   }
 
   async update(id: number, updateCommentDto: UpdateCommentDto): Promise<CommentDto> {
@@ -76,7 +131,8 @@ export class CommentsService {
   }
 
   async remove(id: number): Promise<void> {
-    await this.findCommentById(id);
+    const comment = await this.findCommentById(id);
+    await this.commentsRepository.delete({ parentId: id });
     await this.commentsRepository.delete(id);
     this.logger.log(`Comment deleted: ${id}`);
   }
@@ -154,6 +210,7 @@ export class CommentsService {
       id: comment.id,
       postId: comment.postId,
       authorProfileId: comment.authorProfileId,
+      parentId: comment.parentId,
       content: comment.content,
       likesCount: comment.likes?.length,
       createdAt: comment.createdAt,
