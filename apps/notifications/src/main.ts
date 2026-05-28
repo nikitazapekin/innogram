@@ -6,10 +6,16 @@ import { Transport } from '@nestjs/microservices';
 
 import { AppModule } from './app.module';
 
-const NOTIFICATIONS_HTTP_PORT = Number(process.env.NOTIFICATIONS_HTTP_PORT ?? 3006);
+const readRequiredEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+  return value;
+};
+
+const NOTIFICATIONS_HTTP_PORT = Number(readRequiredEnv('NOTIFICATIONS_HTTP_PORT'));
 
 const readKafkaBrokers = (): string[] =>
-  (process.env.KAFKA_BROKERS ?? 'localhost:9092')
+  readRequiredEnv('KAFKA_BROKERS')
     .split(',')
     .map((broker) => broker.trim())
     .filter(Boolean);

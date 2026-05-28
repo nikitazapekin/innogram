@@ -6,7 +6,7 @@ export class NotificationsService {
   private readonly baseUrl: string;
 
   constructor(configService: ConfigService) {
-    this.baseUrl = `${configService.get('CORE_API_URL', 'http://localhost:3001')}/notifications`;
+    this.baseUrl = `${configService.getOrThrow('CORE_API_URL')}/notifications`;
   }
 
   private async request(path: string, options?: RequestInit) {

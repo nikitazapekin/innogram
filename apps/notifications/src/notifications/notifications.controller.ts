@@ -77,10 +77,10 @@ export class NotificationsController {
   update(
     @Param('profileId') profileId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: { read?: boolean },
+    @Body() body: { read?: boolean },
   ) {
-    if (dto.read === true) return this.service.markRead(id, Number(profileId));
-    if (dto.read === false) return this.service.markUnread(id, Number(profileId));
+    if (body.read === true) return this.service.markRead(id, Number(profileId));
+    if (body.read === false) return this.service.markUnread(id, Number(profileId));
     return this.service.findOne(id, Number(profileId));
   }
 

@@ -1,15 +1,14 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
 
+import { readRequiredEnv } from '../common/read-required-env';
+
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
   private client: ClientProxy;
 
   constructor() {
-    const brokers = (process.env.KAFKA_BROKERS ?? 'localhost:9092')
-      .split(',')
-      .map((b) => b.trim())
-      .filter(Boolean);
+    const brokers = readRequiredEnv('KAFKA_BROKERS').split(',').filter(Boolean);
 
     this.client = ClientProxyFactory.create({
       transport: Transport.KAFKA,

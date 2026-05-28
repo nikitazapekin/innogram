@@ -12,9 +12,13 @@ export class NotificationsService {
   ) {}
 
   create(recipientProfileId: number, type: string, payload: Record<string, unknown> | null) {
-    return this.repo.save(
-      this.repo.create({ recipientProfileId, type, ...(payload ? { payload } : {}) }),
-    );
+    const notification = this.repo.create({ recipientProfileId, type });
+
+    if (payload) {
+      notification.payload = payload;
+    }
+
+    return this.repo.save(notification);
   }
 
   async findByRecipient(profileId: number, page = 1, limit = 20) {

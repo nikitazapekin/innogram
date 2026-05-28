@@ -21,13 +21,13 @@ export class NotificationsController {
   @Post()
   create(
     @Body()
-    dto: {
+    body: {
       recipientProfileId: number;
       type: string;
       payload?: Record<string, unknown> | null;
     },
   ) {
-    return this.service.create(dto.recipientProfileId, dto.type, dto.payload ?? null);
+    return this.service.create(body.recipientProfileId, body.type, body.payload ?? null);
   }
 
   @Get(':profileId')
@@ -52,10 +52,10 @@ export class NotificationsController {
   update(
     @Param('profileId') profileId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: { read?: boolean },
+    @Body() body: { read?: boolean },
   ) {
-    if (dto.read === true) return this.service.markRead(id, Number(profileId));
-    if (dto.read === false) return this.service.markUnread(id, Number(profileId));
+    if (body.read === true) return this.service.markRead(id, Number(profileId));
+    if (body.read === false) return this.service.markUnread(id, Number(profileId));
     return this.service.findOne(id, Number(profileId));
   }
 
