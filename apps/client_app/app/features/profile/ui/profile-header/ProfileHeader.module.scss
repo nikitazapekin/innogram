@@ -7,45 +7,23 @@
 
 .avatar { justify-self: center; }
 
-.avatarImg, .avatarPlaceholder {
-  width: 96px; height: 96px; border-radius: $radius-circle; object-fit: cover;
-  border: 2px solid $color-black;
-}
-
 .avatarPlaceholder {
+  width: 96px; height: 96px; border-radius: $radius-circle;
   display: flex; align-items: center; justify-content: center;
   background: $color-white; font-size: 36px; font-weight: 700; color: $color-black;
+  border: 2px solid $color-black;
 }
 
 .info { display: grid; gap: $spacing-sm; text-align: center; }
 .name { margin: 0; font-size: $font-lg; color: $color-black; }
 .bio { margin: 0; font-size: $font-xs; color: rgba($color-black, 0.7); }
-
-.stats { display: flex; justify-content: center; gap: $spacing-lg; }
-
-.stat {
-  font-size: $font-xs; color: rgba($color-black, 0.6);
-  strong { color: $color-black; }
-}
+.email { margin: 0; font-size: $font-xs; color: rgba($color-black, 0.5); }
 
 .actions { display: flex; gap: $spacing-sm; justify-content: center; }
 
-.editButton, .followButton, .requestButton {
+.editButton {
   min-height: 40px; padding: $spacing-sm $spacing-lg; border-radius: $radius-circle;
   cursor: pointer; font-size: $font-xs; font-weight: 700;
-}
-
-.editButton {
   color: $color-black; background: transparent; border: 2px solid $color-black;
   &:hover { background: rgba($color-black, 0.06); }
-}
-
-.followButton {
-  color: $color-white; background: $color-black; border: 2px solid $color-black;
-  &:hover { opacity: 0.9; }
-}
-
-.requestButton {
-  color: $color-black; background: rgba($color-white, 0.5); border: 1px solid rgba($color-black, 0.2);
-  &:hover { background: rgba($color-white, 0.7); }
 }

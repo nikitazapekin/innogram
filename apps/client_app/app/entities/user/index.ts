@@ -1,1 +1,1 @@
-export type { User, FollowRequest } from './model/userSchema';
+export type { User } from './model/userSchema';

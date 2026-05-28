@@ -14,15 +14,6 @@ const demo: Post[] = [
     isLiked: false,
     createdAt: '2026-05-27',
   },
-  {
-    id: '2',
-    content: 'Отличный день!',
-    author: { id: 'u2', name: 'Максим Петров' },
-    likesCount: 24,
-    commentsCount: 7,
-    isLiked: true,
-    createdAt: '2026-05-26',
-  },
 ];
 
 export function PostList() {
