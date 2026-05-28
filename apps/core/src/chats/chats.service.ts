@@ -36,6 +36,7 @@ export class ChatsService {
     }
 
     const chat = this.chatRepository.create();
+
     await this.chatRepository.save(chat);
 
     try {
@@ -46,6 +47,7 @@ export class ChatsService {
         .add([profileId1, profileId2]);
     } catch {
       await this.chatRepository.delete(chat.id);
+
       throw new NotFoundException('One or both profiles not found');
     }
 
@@ -54,6 +56,7 @@ export class ChatsService {
 
   async createGroupChat(participantIds: number[]): Promise<Chat> {
     const chat = this.chatRepository.create();
+
     await this.chatRepository.save(chat);
 
     try {
@@ -64,6 +67,7 @@ export class ChatsService {
         .add(participantIds);
     } catch {
       await this.chatRepository.delete(chat.id);
+
       throw new NotFoundException('One or more profiles not found');
     }
 
@@ -97,9 +101,11 @@ export class ChatsService {
     assetIds?: number[],
   ): Promise<Message> {
     const chat = await this.chatRepository.findOneBy({ id: chatId });
+
     if (!chat) throw new NotFoundException('Chat not found');
 
     const message = new Message();
+
     message.chatId = chatId;
     message.authorProfileId = authorProfileId;
     (message as { content: string | null }).content = content || null;
@@ -108,6 +114,7 @@ export class ChatsService {
 
     if (assetIds && assetIds.length > 0) {
       const assets = await this.assetRepository.findBy({ id: In(assetIds) });
+
       saved.assets = assets;
       await this.messageRepository.save(saved);
     }
@@ -116,6 +123,7 @@ export class ChatsService {
       where: { id: saved.id },
       relations: ['assets'],
     });
+
     return result!;
   }
 
@@ -124,10 +132,13 @@ export class ChatsService {
       where: { id: messageId },
       relations: ['assets'],
     });
+
     if (!message) throw new NotFoundException('Message not found');
+
     if (message.authorProfileId !== profileId) throw new ForbiddenException('Not your message');
 
     message.content = content;
+
     return this.messageRepository.save(message);
   }
 
@@ -136,11 +147,15 @@ export class ChatsService {
       where: { id: messageId },
       relations: ['assets'],
     });
+
     if (!message) throw new NotFoundException('Message not found');
+
     if (message.authorProfileId !== profileId) throw new ForbiddenException('Not your message');
 
     const chatId = message.chatId;
+
     await this.messageRepository.remove(message);
+
     return { chatId };
   }
 
@@ -154,6 +169,7 @@ export class ChatsService {
 
     const safeName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const filePath = path.join(UPLOADS_DIR, safeName);
+
     fs.writeFileSync(filePath, file.buffer);
 
     const asset = this.assetRepository.create({
@@ -163,6 +179,7 @@ export class ChatsService {
     });
 
     const saved = await this.assetRepository.save(asset);
+
     return { ...saved, url: `/uploads/${safeName}` };
   }
 
@@ -171,17 +188,21 @@ export class ChatsService {
       where: { id: messageId },
       relations: ['assets'],
     });
+
     if (!message) throw new NotFoundException('Message not found');
 
     const asset = await this.assetRepository.findOneBy({ id: assetId });
+
     if (!asset) throw new NotFoundException('Asset not found');
 
     message.assets = [...(message.assets || []), asset];
+
     return this.messageRepository.save(message);
   }
 
   async addParticipant(chatId: number, profileId: number): Promise<void> {
     const chat = await this.chatRepository.findOneBy({ id: chatId });
+
     if (!chat) throw new NotFoundException('Chat not found');
 
     try {
@@ -192,12 +213,14 @@ export class ChatsService {
         .add(profileId);
     } catch (error: unknown) {
       if (error instanceof Error && 'code' in error) return;
+
       throw new NotFoundException('Profile not found');
     }
   }
 
   async getChat(chatId: number): Promise<Chat> {
     const chat = await this.chatRepository.findOneByOrFail({ id: chatId });
+
     return chat;
   }
 

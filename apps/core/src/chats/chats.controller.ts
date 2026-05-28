@@ -22,6 +22,7 @@ export class ChatsController {
     @Body('profileId') profileId: string,
   ) {
     const asset = await this.chatsService.saveFile(file, Number(profileId));
+
     return asset;
   }
 }
