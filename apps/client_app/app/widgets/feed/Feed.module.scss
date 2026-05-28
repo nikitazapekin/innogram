@@ -1,0 +1,39 @@
+@use '../../styles' as *;
+
+.feed {
+  display: grid;
+  gap: $spacing-lg;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+}
+
+.control {
+  min-height: 34px;
+  padding: $spacing-xs $spacing-md;
+  color: rgba($color-black, 0.6);
+  background: transparent;
+  border: 1px solid rgba($color-black, 0.15);
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+
+  &:hover { color: $color-black; border-color: rgba($color-black, 0.4); }
+
+  &_active {
+    color: $color-white;
+    background: $color-black;
+    border-color: $color-black;
+
+    &:hover {
+      color: $color-white;
+    }
+  }
+}
