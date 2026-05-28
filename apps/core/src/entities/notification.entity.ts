@@ -11,14 +11,14 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'recipient_profile_id', type: 'uuid' })
-  recipientProfileId: string;
+  @Column({ name: 'recipient_profile_id', type: 'integer' })
+  recipientProfileId: number;
 
   @Column({ type: 'varchar', length: 100 })
   type: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  payload: Record<string, unknown>;
+  payload: Record<string, unknown> | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
@@ -27,5 +27,5 @@ export class Notification {
   updatedAt: Date;
 
   @Column({ name: 'read_at', type: 'timestamptz', nullable: true })
-  readAt: Date;
+  readAt: Date | null;
 }

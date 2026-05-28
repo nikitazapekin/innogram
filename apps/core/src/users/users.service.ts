@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { KafkaService } from '../kafka/kafka.service';
 import { FollowRequest, FollowRequestStatus } from '../entities/follow-request.entity';
 import { Profile } from '../entities/profile.entity';
 import { FollowRequestDto } from './dto/follow-request.dto';
@@ -23,6 +24,7 @@ export class UsersService {
     private readonly profilesRepository: Repository<Profile>,
     @InjectRepository(FollowRequest)
     private readonly followRequestRepository: Repository<FollowRequest>,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   async create(userDto: UpdateUserDto): Promise<UserDto> {
@@ -138,6 +140,12 @@ export class UsersService {
 
       const saved = await this.followRequestRepository.save(request);
 
+      this.kafkaService.emit('friend-request.created', {
+        requestId: saved.id,
+        fromProfileId: followerId,
+        toProfileId: followingId,
+      });
+
       return this.toFollowRequestDto(saved);
     }
 
@@ -205,6 +213,18 @@ export class UsersService {
         .relation(Profile, 'followingProfiles')
         .of(request.followerProfileId)
         .add(request.followingProfileId);
+
+      this.kafkaService.emit('friend-request.approved', {
+        requestId: saved.id,
+        fromProfileId: request.followerProfileId,
+        toProfileId: request.followingProfileId,
+      });
+    } else {
+      this.kafkaService.emit('friend-request.rejected', {
+        requestId: saved.id,
+        fromProfileId: request.followerProfileId,
+        toProfileId: request.followingProfileId,
+      });
     }
 
     return this.toFollowRequestDto(saved);

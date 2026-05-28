@@ -1,4 +1,28 @@
 services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    restart: always
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - '2181:2181'
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
   minio:
     image: minio/minio:latest
     restart: always
@@ -29,6 +53,7 @@ services:
       dockerfile: apps/core/Dockerfile
     environment:
       CORE_HTTP_PORT: ${CORE_HTTP_PORT:-3001}
+      KAFKA_BROKERS: kafka:9092
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -40,6 +65,7 @@ services:
       - '${CORE_HTTP_PORT:-3001}:${CORE_HTTP_PORT:-3001}'
     depends_on:
       - postgres
+      - kafka
 
 volumes:
   minio-data:

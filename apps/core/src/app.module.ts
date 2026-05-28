@@ -20,6 +20,7 @@ import { Notification } from './entities/notification.entity';
 import { Post } from './entities/post.entity';
 import { Profile } from './entities/profile.entity';
 import { UserEntity } from './entities/user.entity';
+import { KafkaModule } from './kafka/kafka.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
@@ -49,6 +50,7 @@ import { UsersModule } from './users/users.module';
       Profile,
       UserEntity,
     ]),
+    KafkaModule,
     AssetsModule,
     AuthModule,
     UsersModule,
