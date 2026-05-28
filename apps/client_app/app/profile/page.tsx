@@ -1,20 +1,5 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { getAccessToken } from '@/lib/auth';
+import { Profile } from '@/app/widgets/profile';
 
 export default function ProfilePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = getAccessToken();
-
-    if (!token) {
-      router.replace('/login');
-      return;
-    }
-  }, [router]);
-
-  return <></>;
+  return <Profile />;
 }
