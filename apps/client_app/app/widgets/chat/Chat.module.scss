@@ -1,0 +1,141 @@
+@use '../../styles' as *;
+
+.chat {
+  display: grid;
+  gap: $spacing-lg;
+  max-width: $container-md;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+  flex: 1;
+  align-content: start;
+}
+
+.sidebar {
+  display: none;
+  flex-direction: column;
+  min-height: 500px;
+  grid-row: 1;
+  grid-column: 1;
+
+  &_visible {
+    display: flex;
+  }
+}
+
+.main {
+  display: none;
+  flex-direction: column;
+  min-height: 500px;
+  background: $color-blue;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
+  overflow: hidden;
+  grid-row: 1;
+  grid-column: 1;
+
+  &_visible {
+    display: flex;
+  }
+}
+
+.mainHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 2px solid $color-black;
+}
+
+.backButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px solid $color-black;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: $font-sm;
+  color: $color-black;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba($color-black, 0.06);
+  }
+}
+
+.mainHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.mainHeaderName {
+  font-size: $font-xs;
+  font-weight: 700;
+  color: $color-black;
+}
+
+.mainHeaderType {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba($color-black, 0.55);
+  padding: 2px $spacing-sm;
+  border: 1px solid rgba($color-black, 0.3);
+  border-radius: $radius-circle;
+}
+
+.sidebarRight {
+  display: none;
+}
+
+.noChat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: $spacing-xl;
+}
+
+.noChatText {
+  margin: 0;
+  font-size: $font-sm;
+  font-weight: 700;
+  color: $color-black;
+}
+
+.noChatHint {
+  margin: 0;
+  font-size: $font-xs;
+  color: rgba($color-black, 0.55);
+}
+
+@include breakpoint($breakpoint-xl) {
+  .chat {
+    grid-template-columns: 400px 1fr 260px;
+  }
+
+  .sidebar {
+    display: flex;
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .main {
+    display: flex;
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .sidebarRight {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .backButton {
+    display: none;
+  }
+}
