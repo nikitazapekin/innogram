@@ -8,7 +8,9 @@ import { AppModule } from './app.module';
 
 const readRequiredEnv = (name: string): string => {
   const value = process.env[name];
+
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
+
   return value;
 };
 

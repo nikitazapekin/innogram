@@ -80,7 +80,9 @@ export class NotificationsController {
     @Body() body: { read?: boolean },
   ) {
     if (body.read === true) return this.service.markRead(id, Number(profileId));
+
     if (body.read === false) return this.service.markUnread(id, Number(profileId));
+
     return this.service.findOne(id, Number(profileId));
   }
 

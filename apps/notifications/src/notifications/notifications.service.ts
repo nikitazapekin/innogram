@@ -14,8 +14,11 @@ export class NotificationsService {
       headers: { 'Content-Type': 'application/json' },
       ...options,
     });
+
     if (response.status === 404) throw new NotFoundException('Notification was not found.');
+
     if (!response.ok) throw new Error(`Core API error: ${response.status}`);
+
     return response.json();
   }
 
