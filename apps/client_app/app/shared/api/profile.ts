@@ -1,20 +1,65 @@
 import type { User } from '@/app/entities/user';
 
-const GATEWAY_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3004';
-const CORE_URL = 'http://localhost:3001';
+const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL!;
 
 const guestUser: User = { id: 0, displayName: 'Гость', email: '' };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseEmailFromTokenPayload(value: unknown): string | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const { email } = value;
+
+  return typeof email === 'string' ? email : undefined;
+}
+
 function decodeEmailFromToken(token: string): string | undefined {
   try {
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString()) as {
-      email?: string;
-    };
+    const tokenPart = token.split('.')[1];
 
-    return payload.email;
+    if (!tokenPart) {
+      return undefined;
+    }
+
+    const payload: unknown = JSON.parse(Buffer.from(tokenPart, 'base64url').toString());
+
+    return parseEmailFromTokenPayload(payload);
   } catch {
     return undefined;
   }
+}
+
+function parseUser(value: unknown): User | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const { id, displayName, email, bio, avatarAssetId } = value;
+
+  if (typeof id !== 'number' || typeof displayName !== 'string') {
+    return undefined;
+  }
+
+  const user: User = { id, displayName };
+
+  if (typeof email === 'string') {
+    user.email = email;
+  }
+
+  if (typeof bio === 'string') {
+    user.bio = bio;
+  }
+
+  if (avatarAssetId === null || typeof avatarAssetId === 'number') {
+    user.avatarAssetId = avatarAssetId;
+  }
+
+  return user;
 }
 
 function createFallbackUser(email: string): User {
@@ -30,46 +75,28 @@ export async function getCurrentProfileUser(accessToken: string | undefined): Pr
     return guestUser;
   }
 
+  try {
+    const profileRes = await fetch(`${API_GATEWAY_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    });
+
+    if (profileRes.ok) {
+      const user = parseUser(await profileRes.json());
+
+      if (user) {
+        return user;
+      }
+    }
+  } catch {
+    // gateway unavailable
+  }
+
   const email = decodeEmailFromToken(accessToken);
 
-  if (!email) {
-    return guestUser;
-  }
-
-  try {
-    const userRes = await fetch(`${CORE_URL}/auth/user?email=${encodeURIComponent(email)}`, {
-      cache: 'no-store',
-    });
-
-    if (!userRes.ok) {
-      return createFallbackUser(email);
-    }
-
-    const userEntity: { id: number; email: string } = await userRes.json();
-
-    const profileRes = await fetch(`${GATEWAY_URL}/users/${userEntity.id}`, {
-      cache: 'no-store',
-    });
-
-    if (!profileRes.ok) {
-      return createFallbackUser(email);
-    }
-
-    const profile: {
-      id: number;
-      displayName: string;
-      bio?: string;
-      avatarAssetId?: number | null;
-    } = await profileRes.json();
-
-    return {
-      id: profile.id,
-      displayName: profile.displayName,
-      email: userEntity.email,
-      bio: profile.bio,
-      avatarAssetId: profile.avatarAssetId,
-    };
-  } catch {
+  if (email) {
     return createFallbackUser(email);
   }
+
+  return guestUser;
 }
