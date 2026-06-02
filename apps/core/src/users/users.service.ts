@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 
 import { FollowRequest, FollowRequestStatus } from '../entities/follow-request.entity';
 import { Profile } from '../entities/profile.entity';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { FollowRequestDto } from './dto/follow-request.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
@@ -23,6 +24,7 @@ export class UsersService {
     private readonly profilesRepository: Repository<Profile>,
     @InjectRepository(FollowRequest)
     private readonly followRequestRepository: Repository<FollowRequest>,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async create(userDto: UpdateUserDto): Promise<UserDto> {
@@ -147,6 +149,11 @@ export class UsersService {
       .of(followerId)
       .add(followingId);
 
+    await this.notificationEventsProducer.emitUserSubscribed({
+      followerProfileId: followerId,
+      followingProfileId: followingId,
+    });
+
     this.logger.log(`Profile ${followerId} followed profile ${followingId}`);
   }
 
@@ -205,6 +212,11 @@ export class UsersService {
         .relation(Profile, 'followingProfiles')
         .of(request.followerProfileId)
         .add(request.followingProfileId);
+
+      await this.notificationEventsProducer.emitUserSubscribed({
+        followerProfileId: request.followerProfileId,
+        followingProfileId: request.followingProfileId,
+      });
     }
 
     return this.toFollowRequestDto(saved);
