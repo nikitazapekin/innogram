@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Patch,
@@ -21,6 +22,7 @@ import {
 
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { Public } from '@innogram/shared';
+import { SubscribeProfileDto } from './dto/subscribe-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UsersService } from './users.service';
@@ -93,6 +95,19 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserDto> {
     return this.usersService.put(id, updateUserDto);
+  }
+
+  @Post(':id/subscribe')
+  @ApiOperation({ summary: 'Subscribe to a profile' })
+  @ApiNoContentResponse({ description: 'Subscription has been created successfully.' })
+  @ApiBadRequestResponse({ description: 'Invalid subscription request.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  @HttpCode(204)
+  subscribe(
+    @Param('id', ParseIntPipe) followingProfileId: number,
+    @Body() body: SubscribeProfileDto,
+  ): Promise<void> {
+    return this.usersService.subscribe(body.followerProfileId, followingProfileId);
   }
 
   @Delete(':id')

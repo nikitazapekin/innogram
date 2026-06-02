@@ -43,6 +43,7 @@ const readApiGatewayPort = (): number => {
 
 const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
 const readCoreServiceUrl = (): string => readRequiredEnv('CORE_URL');
+const readNotificationsServiceUrl = (): string => readRequiredEnv('NOTIFICATIONS_SERVICE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -87,6 +88,10 @@ const requestHasBody = (method: string): boolean => {
 const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   const path = originalUrl ?? '/';
 
+  if (path.startsWith('/notifications')) {
+    return `${NOTIFICATIONS_SERVICE_URL}${path}`;
+  }
+
   if (path.startsWith('/users') || path.startsWith('/auth/user')) {
     return `${CORE_SERVICE_URL}${path}`;
   }
@@ -110,6 +115,7 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
 const API_GATEWAY_PORT = readApiGatewayPort();
 const AUTH_SERVICE_URL = readAuthServiceUrl();
 const CORE_SERVICE_URL = readCoreServiceUrl();
+const NOTIFICATIONS_SERVICE_URL = readNotificationsServiceUrl();
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 

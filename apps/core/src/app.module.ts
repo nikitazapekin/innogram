@@ -14,11 +14,9 @@ import { Asset } from './entities/asset.entity';
 import { Chat } from './entities/chat.entity';
 import { Comment } from './entities/comment.entity';
 import { Message } from './entities/message.entity';
-import { Notification } from './entities/notification.entity';
 import { Post } from './entities/post.entity';
 import { Profile } from './entities/profile.entity';
 import { UserEntity } from './entities/user.entity';
-import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 
@@ -35,23 +33,12 @@ import { UsersModule } from './users/users.module';
     TypeOrmModule.forRootAsync({
       useClass: DatabaseConfigService,
     }),
-    TypeOrmModule.forFeature([
-      Account,
-      Asset,
-      Chat,
-      Comment,
-      Message,
-      Notification,
-      Post,
-      Profile,
-      UserEntity,
-    ]),
+    TypeOrmModule.forFeature([Account, Asset, Chat, Comment, Message, Post, Profile, UserEntity]),
     AuthModule,
     UsersModule,
     PostsModule,
     CommentsModule,
     ChatsModule,
-    NotificationsModule,
   ],
   providers: [
     {

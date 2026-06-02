@@ -5,6 +5,7 @@
   "packageManager": "npm@10.9.4",
   "workspaces": [
     "apps/core",
+    "apps/notifications",
     "apps/auth",
     "apps/api-gateway",
     "apps/posts_microservice",

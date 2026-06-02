@@ -1,8 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Profile } from '../entities/profile.entity';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 
@@ -13,6 +14,7 @@ export class UsersService {
   constructor(
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async create(userDto: UpdateUserDto & { userId: number }): Promise<UserDto> {
@@ -65,6 +67,28 @@ export class UsersService {
     await this.findProfileById(id);
     await this.profilesRepository.delete(id);
     this.logger.log(`Profile deleted: ${id}`);
+  }
+
+  async subscribe(followerProfileId: number, followingProfileId: number): Promise<void> {
+    if (followerProfileId === followingProfileId) {
+      throw new BadRequestException('A profile cannot subscribe to itself.');
+    }
+
+    const follower = await this.findProfileById(followerProfileId);
+    const following = await this.findProfileById(followingProfileId);
+
+    await this.profilesRepository
+      .createQueryBuilder()
+      .relation(Profile, 'followingProfiles')
+      .of(follower)
+      .add(following);
+
+    await this.notificationEventsProducer.emitUserSubscribed({
+      followerProfileId,
+      followingProfileId,
+    });
+
+    this.logger.log(`Profile ${followerProfileId} subscribed to ${followingProfileId}`);
   }
 
   async put(id: number, updateUserDto: UpdateUserDto): Promise<UserDto> {
