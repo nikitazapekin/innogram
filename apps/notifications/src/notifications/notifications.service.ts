@@ -40,7 +40,9 @@ export class NotificationsService {
   async updateReadState(id: string, read: boolean): Promise<NotificationDto> {
     const notification = await this.findNotificationOrThrow(id);
 
-    notification.readAt = read ? new Date() : null;
+    if (read) {
+      notification.readAt = new Date();
+    }
 
     const saved = await this.notificationsRepository.save(notification);
 
