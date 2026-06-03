@@ -170,7 +170,6 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       }
 
       await this.chatsService.addParticipant(+payload.chatId, payload.newProfileId);
-
       const sockets = this.profileSockets.get(payload.newProfileId);
 
       if (sockets) {
@@ -204,17 +203,97 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   @SubscribeMessage('send_message')
   async handleMessage(
     client: Socket,
-    payload: { chatId: string; authorProfileId: number; content: string },
+    payload: { chatId: string; authorProfileId: number; content: string; assetIds?: number[] },
   ): Promise<void> {
     try {
       const message = await this.chatsService.sendMessage(
         +payload.chatId,
         payload.authorProfileId,
         payload.content,
+        payload.assetIds,
       );
 
       client.to(String(payload.chatId)).emit('new_message', message);
       client.emit('new_message', message);
+    } catch (error: unknown) {
+      let message: string;
+
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
+
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('edit_message')
+  async handleEditMessage(
+    client: Socket,
+    payload: { messageId: number; authorProfileId: number; content: string },
+  ): Promise<void> {
+    try {
+      const message = await this.chatsService.editMessage(
+        payload.messageId,
+        payload.authorProfileId,
+        payload.content,
+      );
+
+      client.to(String(message.chatId)).emit('message_edited', message);
+      client.emit('message_edited', message);
+    } catch (error: unknown) {
+      let message: string;
+
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
+
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('delete_message')
+  async handleDeleteMessage(
+    client: Socket,
+    payload: { messageId: number; authorProfileId: number },
+  ): Promise<void> {
+    try {
+      const { chatId } = await this.chatsService.deleteMessage(
+        payload.messageId,
+        payload.authorProfileId,
+      );
+
+      client.to(String(chatId)).emit('message_deleted', { messageId: payload.messageId });
+      client.emit('message_deleted', { messageId: payload.messageId });
+    } catch (error: unknown) {
+      let message: string;
+
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = 'Unknown error';
+      }
+
+      client.emit('error', { message });
+    }
+  }
+
+  @SubscribeMessage('attach_file')
+  async handleAttachFile(
+    client: Socket,
+    payload: { messageId: number; authorProfileId: number; assetId: number },
+  ): Promise<void> {
+    try {
+      const message = await this.chatsService.attachFileToMessage(
+        payload.messageId,
+        payload.assetId,
+      );
+
+      client.to(String(message.chatId)).emit('message_edited', message);
+      client.emit('message_edited', message);
     } catch (error: unknown) {
       let message: string;
 
@@ -274,7 +353,7 @@ export class ChatsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   }
 
   @SubscribeMessage('leave_chat')
-  async handleLeaveChat(client: Socket, payload: { chatId: string }): Promise<void> {
+  handleLeaveChat(client: Socket, payload: { chatId: string }): void {
     client.leave(String(payload.chatId));
     client.emit('chat_left', { chatId: payload.chatId });
   }
