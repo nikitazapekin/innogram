@@ -22,6 +22,7 @@ export class MentionsService {
 
   async extractMentions(text: string): Promise<MentionResult[]> {
     const matches = [...text.matchAll(MENTION_REGEX)];
+
     if (matches.length === 0) return [];
 
     const names = [...new Set(matches.map((m) => m[1].toLowerCase()))];
