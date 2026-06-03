@@ -1,0 +1,29 @@
+@use '../../../../styles' as *;
+
+.header {
+  display: grid; gap: $spacing-lg; padding: $spacing-xl $spacing-lg;
+  background: $color-blue; border: 2px solid $color-black; border-radius: $radius-large;
+}
+
+.avatar { justify-self: center; }
+
+.avatarPlaceholder {
+  width: 96px; height: 96px; border-radius: $radius-circle;
+  display: flex; align-items: center; justify-content: center;
+  background: $color-white; font-size: 36px; font-weight: 700; color: $color-black;
+  border: 2px solid $color-black;
+}
+
+.info { display: grid; gap: $spacing-sm; text-align: center; }
+.name { margin: 0; font-size: $font-lg; color: $color-black; }
+.bio { margin: 0; font-size: $font-xs; color: rgba($color-black, 0.7); }
+.email { margin: 0; font-size: $font-xs; color: rgba($color-black, 0.5); }
+
+.actions { display: flex; gap: $spacing-sm; justify-content: center; }
+
+.editButton {
+  min-height: 40px; padding: $spacing-sm $spacing-lg; border-radius: $radius-circle;
+  cursor: pointer; font-size: $font-xs; font-weight: 700;
+  color: $color-black; background: transparent; border: 2px solid $color-black;
+  &:hover { background: rgba($color-black, 0.06); }
+}
