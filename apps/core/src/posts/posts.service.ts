@@ -6,7 +6,7 @@ import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { ArchivedPost } from '../entities/archived-post.entity';
 import { Notification } from '../entities/notification.entity';
-import { KafkaService } from '../kafka/kafka.service';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { MentionsService } from '../mentions/mentions.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostDto } from './dto/post.dto';
@@ -26,7 +26,7 @@ export class PostsService {
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
     private readonly mentionsService: MentionsService,
-    private readonly kafkaService: KafkaService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
@@ -176,7 +176,7 @@ export class PostsService {
       if (mention.mentionedProfileId === post.authorProfileId) continue;
 
       const notification = this.notificationRepository.create({
-        recipientProfileId: String(mention.mentionedProfileId),
+        recipientProfileId: mention.mentionedProfileId,
         type: 'mention',
         payload: {
           sourceType: 'post',
@@ -187,7 +187,7 @@ export class PostsService {
 
       await this.notificationRepository.save(notification);
 
-      await this.kafkaService.emitMentionEvent({
+      await this.notificationEventsProducer.emitMention({
         sourceType: 'post',
         sourceId: post.id,
         authorProfileId: post.authorProfileId,

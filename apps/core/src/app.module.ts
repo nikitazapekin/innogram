@@ -16,11 +16,9 @@ import { Chat } from './entities/chat.entity';
 import { Comment } from './entities/comment.entity';
 import { FollowRequest } from './entities/follow-request.entity';
 import { Message } from './entities/message.entity';
-import { Notification } from './entities/notification.entity';
 import { Post } from './entities/post.entity';
 import { Profile } from './entities/profile.entity';
 import { UserEntity } from './entities/user.entity';
-import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 
@@ -44,7 +42,6 @@ import { UsersModule } from './users/users.module';
       Comment,
       FollowRequest,
       Message,
-      Notification,
       Post,
       Profile,
       UserEntity,
@@ -55,7 +52,6 @@ import { UsersModule } from './users/users.module';
     PostsModule,
     CommentsModule,
     ChatsModule,
-    NotificationsModule,
   ],
   providers: [
     {

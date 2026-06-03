@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 
 import { Comment } from '../entities/comment.entity';
 import { Notification } from '../entities/notification.entity';
-import { KafkaService } from '../kafka/kafka.service';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { MentionsService } from '../mentions/mentions.service';
 import { CommentDto } from './dto/comment.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -20,14 +20,21 @@ export class CommentsService {
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
     private readonly mentionsService: MentionsService,
-    private readonly kafkaService: KafkaService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
+    const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
+
+    if (!parent) {
+      throw new NotFoundException('Parent comment was not found.');
+    }
+
     const comment = this.commentsRepository.create({
       postId,
       authorProfileId: commentDto.authorProfileId,
       content: commentDto.content,
+      parentId: commentDto.parentId,
     });
 
     const savedComment = await this.commentsRepository.save(comment);
@@ -42,15 +49,78 @@ export class CommentsService {
   async findAll(): Promise<CommentDto[]> {
     const comments = await this.commentsRepository.find({
       order: { createdAt: 'DESC' },
+      relations: ['likes'],
     });
 
     return comments.map((comment) => this.toCommentDto(comment));
   }
 
   async findOne(id: number): Promise<CommentDto> {
-    const comment = await this.findCommentById(id);
+    const comment = await this.commentsRepository.findOne({
+      where: { id },
+      relations: ['likes'],
+    });
 
-    return this.toCommentDto(comment);
+    if (!comment) {
+      throw new NotFoundException('Comment was not found.');
+    }
+
+    const commentDto = this.toCommentDto(comment);
+
+    commentDto.replies = await this.findReplies(id);
+
+    return commentDto;
+  }
+
+  async findByPost(postId: number): Promise<CommentDto[]> {
+    const postComments = await this.commentsRepository.find({
+      where: { postId },
+      order: { createdAt: 'DESC' },
+      relations: ['likes'],
+    });
+
+    const commentsById = new Map<number, CommentDto>();
+    const rootComments: CommentDto[] = [];
+
+    for (const comment of postComments) {
+      commentsById.set(comment.id, this.toCommentDto(comment));
+    }
+
+    for (const comment of postComments) {
+      const commentDto = commentsById.get(comment.id)!;
+      const parentDto = commentsById.get(comment.parentId);
+
+      if (parentDto) {
+        if (!parentDto.replies) {
+          parentDto.replies = [];
+        }
+
+        parentDto.replies.push(commentDto);
+      } else {
+        rootComments.push(commentDto);
+      }
+    }
+
+    return rootComments;
+  }
+
+  async findReplies(commentId: number): Promise<CommentDto[]> {
+    const replies = await this.commentsRepository.find({
+      where: { parentId: commentId },
+      order: { createdAt: 'ASC' },
+      relations: ['likes'],
+    });
+
+    const result: CommentDto[] = [];
+
+    for (const reply of replies) {
+      const replyDto = this.toCommentDto(reply);
+
+      replyDto.replies = await this.findReplies(reply.id);
+      result.push(replyDto);
+    }
+
+    return result;
   }
 
   async update(id: number, updateCommentDto: UpdateCommentDto): Promise<CommentDto> {
@@ -76,13 +146,33 @@ export class CommentsService {
   }
 
   async remove(id: number): Promise<void> {
-    await this.findCommentById(id);
+    const descendantIds = await this.collectDescendantIds(id);
+
+    if (descendantIds.length > 0) {
+      await this.commentsRepository.delete(descendantIds);
+    }
+
     await this.commentsRepository.delete(id);
     this.logger.log(`Comment deleted: ${id}`);
   }
 
+  private async collectDescendantIds(commentId: number): Promise<number[]> {
+    const ids: number[] = [];
+    const children = await this.commentsRepository.find({
+      where: { parentId: commentId },
+      select: ['id'],
+    });
+
+    for (const child of children) {
+      const grandchildIds = await this.collectDescendantIds(child.id);
+
+      ids.push(child.id, ...grandchildIds);
+    }
+
+    return ids;
+  }
+
   async like(commentId: number, profileId: number): Promise<void> {
-    await this.findCommentById(commentId);
     await this.commentsRepository
       .createQueryBuilder()
       .relation(Comment, 'likes')
@@ -91,7 +181,6 @@ export class CommentsService {
   }
 
   async unlike(commentId: number, profileId: number): Promise<void> {
-    await this.findCommentById(commentId);
     await this.commentsRepository
       .createQueryBuilder()
       .relation(Comment, 'likes')
@@ -106,7 +195,7 @@ export class CommentsService {
       if (mention.mentionedProfileId === comment.authorProfileId) continue;
 
       const notification = this.notificationRepository.create({
-        recipientProfileId: String(mention.mentionedProfileId),
+        recipientProfileId: mention.mentionedProfileId,
         type: 'mention',
         payload: {
           sourceType: 'comment' as const,
@@ -118,7 +207,7 @@ export class CommentsService {
 
       await this.notificationRepository.save(notification);
 
-      await this.kafkaService.emitMentionEvent({
+      await this.notificationEventsProducer.emitMention({
         sourceType: 'comment',
         sourceId: comment.id,
         authorProfileId: comment.authorProfileId,
@@ -154,6 +243,7 @@ export class CommentsService {
       id: comment.id,
       postId: comment.postId,
       authorProfileId: comment.authorProfileId,
+      parentId: comment.parentId,
       content: comment.content,
       likesCount: comment.likes?.length,
       createdAt: comment.createdAt,

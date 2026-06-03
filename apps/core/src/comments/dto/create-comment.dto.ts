@@ -8,4 +8,8 @@ export class CreateCommentDto {
 
   @IsString()
   content: string;
+
+  @IsNumber()
+  @Type(() => Number)
+  parentId: number;
 }

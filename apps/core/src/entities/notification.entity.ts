@@ -11,8 +11,8 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'recipient_profile_id', type: 'varchar', length: 50 })
-  recipientProfileId: string;
+  @Column({ name: 'recipient_profile_id', type: 'integer' })
+  recipientProfileId: number;
 
   @Column({ type: 'varchar', length: 100 })
   type: string;

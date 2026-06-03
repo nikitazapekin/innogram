@@ -108,9 +108,7 @@ const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   }
 
   if (originalUrl?.startsWith(NOTIFICATIONS_ROUTE_PREFIX)) {
-    const strippedUrl = originalUrl.replace(NOTIFICATIONS_ROUTE_PREFIX, '');
-
-    return buildUpstreamUrl(NOTIFICATIONS_SERVICE_URL, strippedUrl);
+    return buildUpstreamUrl(NOTIFICATIONS_SERVICE_URL, originalUrl);
   }
 
   return buildUpstreamUrl(CORE_URL, originalUrl);
