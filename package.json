@@ -24,7 +24,8 @@
     "start:all": "turbo run start:dev --parallel --filter=@innogram/core-microservice --filter=@innogram/auth-microservice --filter=@innogram/api-gateway",
     "build:shared": "npm --prefix packages/shared run build",
     "build:core": "npm --prefix apps/core run build",
-    "start:core:prod": "node apps/core/dist/main.js"
+    "start:core:prod": "node apps/core/dist/main.js",
+    "start:all:prod": "concurrently -n gateway,auth,core,notif,client -c blue,green,yellow,magenta,cyan \"npm --prefix apps/api-gateway run build && npm --prefix apps/api-gateway run start\" \"npm --prefix apps/auth run build && npm --prefix apps/auth run start\" \"npm --prefix apps/core run build && npm --prefix apps/core run start\" \"npm --prefix apps/notifications run build && npm --prefix apps/notifications run start\" \"npm --prefix apps/client_app run build && npm --prefix apps/client_app run dev\""
   },
   "devDependencies": {
     "@types/multer": "^2.1.0",
@@ -38,6 +39,7 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
     "turbo": "^2.5.0",
+    "concurrently": "^9.1.2",
     "typescript": "^5.8.3"
   },
   "lint-staged": {
