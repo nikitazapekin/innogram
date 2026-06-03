@@ -18,31 +18,25 @@ const REQUEST_HEADERS_TO_SKIP = new Set([
   'transfer-encoding',
 ]);
 
-const RESPONSE_HEADERS_TO_SKIP = new Set(['connection', 'content-length', 'transfer-encoding']);
+const RESPONSE_HEADERS_TO_SKIP = new Set([
+  'connection',
+  'content-length',
+  'transfer-encoding',
+  'access-control-allow-origin',
+  'access-control-expose-headers',
+  'access-control-max-age',
+  'access-control-allow-credentials',
+  'access-control-allow-methods',
+  'access-control-allow-headers',
+]);
 
-const readRequiredEnv = (envName: string): string => {
-  const value = process.env[envName]?.trim();
-
+const readRequiredString = (value: string | undefined, name: string): string => {
   if (!value) {
-    throw new Error(`Missing required environment variable: ${envName}`);
+    throw new Error(`Missing required environment variable: ${name}`);
   }
 
   return value;
 };
-
-const readApiGatewayPort = (): number => {
-  const rawPort = readRequiredEnv('API_GATEWAY_PORT');
-  const parsedPort = Number(rawPort);
-
-  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
-    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
-  }
-
-  return parsedPort;
-};
-
-const readAuthServiceUrl = (): string => readRequiredEnv('AUTH_SERVICE_URL');
-const readCoreServiceUrl = (): string => readRequiredEnv('CORE_URL');
 
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
@@ -88,7 +82,7 @@ const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   const path = originalUrl ?? '/';
 
   if (path.startsWith('/users') || path.startsWith('/auth/user')) {
-    return `${CORE_SERVICE_URL}${path}`;
+    return `${CORE_URL}${path}`;
   }
 
   return `${AUTH_SERVICE_URL}${path}`;
@@ -107,9 +101,19 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
   });
 };
 
-const API_GATEWAY_PORT = readApiGatewayPort();
-const AUTH_SERVICE_URL = readAuthServiceUrl();
-const CORE_SERVICE_URL = readCoreServiceUrl();
+const API_GATEWAY_PORT = (() => {
+  const rawPort = readRequiredString(process.env.API_GATEWAY_PORT, 'API_GATEWAY_PORT');
+  const parsedPort = Number(rawPort);
+
+  if (!Number.isInteger(parsedPort) || parsedPort <= 0) {
+    throw new Error('Variable API_GATEWAY_PORT must be a positive integer.');
+  }
+
+  return parsedPort;
+})();
+
+const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
+const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 

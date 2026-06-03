@@ -1,0 +1,12 @@
+@use '../../styles' as *;
+
+.footer {
+  background-color: $color-dark;
+  color: $color-white;
+  padding: $spacing-md $spacing-lg;
+  text-align: center;
+}
+
+.text {
+  font-size: $font-xs;
+}

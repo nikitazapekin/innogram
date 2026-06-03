@@ -1,0 +1,6 @@
+@use '../../../../styles' as *;
+
+.list {
+  display: grid;
+  gap: $spacing-lg;
+}
