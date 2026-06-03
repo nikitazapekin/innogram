@@ -38,14 +38,6 @@ const readRequiredString = (value: string | undefined, name: string): string => 
   return value;
 };
 
-const resolveUpstream = (url: string | undefined): string => {
-  if (url?.startsWith('/auth')) {
-    return AUTH_SERVICE_URL;
-  }
-
-  return CORE_URL;
-};
-
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
 
@@ -86,12 +78,14 @@ const requestHasBody = (method: string): boolean => {
   return true;
 };
 
-const buildUpstreamUrl = (serviceUrl: string, originalUrl: string | undefined): string => {
-  if (!originalUrl) {
-    return `${serviceUrl}/`;
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  const path = originalUrl ?? '/';
+
+  if (path.startsWith('/users') || path.startsWith('/auth/user')) {
+    return `${CORE_URL}${path}`;
   }
 
-  return `${serviceUrl}${originalUrl}`;
+  return `${AUTH_SERVICE_URL}${path}`;
 };
 
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>
@@ -169,12 +163,7 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
-      const upstreamUrl = resolveUpstream(request.originalUrl);
-
-      const upstreamResponse = await fetch(
-        buildUpstreamUrl(upstreamUrl, request.originalUrl),
-        fetchOptions,
-      );
+      const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
       const status = upstreamResponse.status;
 

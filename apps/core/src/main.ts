@@ -3,6 +3,9 @@ import 'dotenv/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import * as path from 'node:path';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -19,12 +22,16 @@ type SecurityHeadersResponse = {
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   app.enableCors({
     origin: [CLIENT_ORIGIN, 'http://127.0.0.1:3000'],
     credentials: true,
   });
+
+  app.useStaticAssets(path.resolve('uploads'), { prefix: '/uploads' });
 
   app.useGlobalPipes(new ValidationPipe());
 

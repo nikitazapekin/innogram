@@ -13,8 +13,8 @@ import { Profile } from './profile.entity';
 
 @Entity({ name: 'chat', schema: 'main' })
 export class Chat {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

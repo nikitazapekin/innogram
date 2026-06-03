@@ -15,14 +15,14 @@ import { Asset } from './asset.entity';
 
 @Entity({ name: 'message', schema: 'main' })
 export class Message {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column({ name: 'chat_id', type: 'uuid' })
-  chatId: string;
+  @Column({ name: 'chat_id', type: 'integer' })
+  chatId: number;
 
-  @Column({ name: 'author_profile_id', type: 'uuid' })
-  authorProfileId: string;
+  @Column({ name: 'author_profile_id', type: 'integer' })
+  authorProfileId: number;
 
   @Column({ type: 'text', nullable: true })
   content: string;
