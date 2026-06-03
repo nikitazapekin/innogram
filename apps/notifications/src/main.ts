@@ -1,3 +1,8 @@
+import { config as dotenvConfig } from 'dotenv';
+import { resolve } from 'path';
+
+dotenvConfig({ path: resolve(__dirname, '../../../.env') });
+
 import 'reflect-metadata';
 
 import { Logger } from '@nestjs/common';
