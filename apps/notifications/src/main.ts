@@ -1,19 +1,46 @@
-import 'reflect-metadata';
+import './config/load-environment';
 
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 import { AppModule } from './app.module';
+import { readRequiredEnv } from './common/read-required-env';
 
-const NOTIFICATIONS_HTTP_PORT = Number(process.env.NOTIFICATIONS_HTTP_PORT ?? 3006);
+const readKafkaBrokers = (): string[] =>
+  readRequiredEnv('KAFKA_BROKERS').split(',').filter(Boolean);
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
+  const httpPort = Number(readRequiredEnv('NOTIFICATIONS_HTTP_PORT'));
 
   const app = await NestFactory.create(AppModule);
 
-  await app.listen(NOTIFICATIONS_HTTP_PORT);
-  logger.log(`HTTP server started on port ${NOTIFICATIONS_HTTP_PORT}`);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        brokers: readKafkaBrokers(),
+        clientId: 'notifications-microservice',
+      },
+      consumer: {
+        groupId: 'notifications-consumer',
+      },
+    },
+  });
+
+  await app.startAllMicroservices();
+  await app.listen(httpPort);
+
+  logger.log(`HTTP server started on port ${httpPort}`);
+  logger.log('Kafka consumer started');
 }
 
 void bootstrap();
