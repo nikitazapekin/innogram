@@ -1,0 +1,65 @@
+@use '../../../../styles' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($color-black, 0.88);
+  backdrop-filter: blur(8px);
+}
+
+.content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(90vw, 1000px);
+  height: min(85vh, 800px);
+}
+
+.close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  color: $color-white;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 36px;
+  opacity: 0.7;
+
+  &:hover { opacity: 1; }
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  color: $color-white;
+  background: rgba($color-white, 0.12);
+  border: 1px solid rgba($color-white, 0.2);
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: 24px;
+
+  &:hover { background: rgba($color-white, 0.25); }
+  &_prev { left: $spacing-md; }
+  &_next { right: $spacing-md; }
+}
+
+.media { max-width: 100%; max-height: 100%; border-radius: $radius-medium; }
+
+.counter {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba($color-white, 0.6);
+  font-size: $font-xs;
+  font-weight: 600;
+}

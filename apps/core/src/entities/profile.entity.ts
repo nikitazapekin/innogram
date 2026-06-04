@@ -19,14 +19,20 @@ export class Profile {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
+  @Column({ name: 'user_id', type: 'integer', unique: true })
+  userId: number;
+
+  @Column({ name: 'is_private', type: 'boolean', default: false })
+  isPrivate: boolean;
+
   @Column({ name: 'display_name', type: 'varchar', length: 120 })
   displayName: string;
 
   @Column({ type: 'text', nullable: true })
-  bio: string | null;
+  bio: string;
 
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
-  avatarAssetId: number | null;
+  avatarAssetId: number;
 
   @Column({ name: 'is_private', type: 'boolean', default: false })
   isPrivate: boolean;

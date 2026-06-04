@@ -9,9 +9,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { FollowRequest, FollowRequestStatus } from '../entities/follow-request.entity';
+import { Post } from '../entities/post.entity';
 import { Profile } from '../entities/profile.entity';
+import { UserEntity } from '../entities/user.entity';
 import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { FollowRequestDto } from './dto/follow-request.dto';
+import { PostDto } from '../posts/dto/post.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 
@@ -24,14 +27,19 @@ export class UsersService {
     private readonly profilesRepository: Repository<Profile>,
     @InjectRepository(FollowRequest)
     private readonly followRequestRepository: Repository<FollowRequest>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(Post)
+    private readonly postsRepository: Repository<Post>,
     private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async create(userDto: UpdateUserDto): Promise<UserDto> {
     const profile = this.profilesRepository.create({
+      userId: userDto.userId!,
       displayName: userDto.displayName,
-      bio: userDto.bio,
-      avatarAssetId: userDto.avatarAssetId,
+      bio: userDto.bio ?? undefined,
+      avatarAssetId: userDto.avatarAssetId ?? undefined,
     });
 
     const savedProfile = await this.profilesRepository.save(profile);
@@ -40,6 +48,53 @@ export class UsersService {
     const savedProfileResponse = this.toUserDto(savedProfile);
 
     return savedProfileResponse;
+  }
+
+  async findByEmail(email: string): Promise<UserDto> {
+    const user = await this.usersRepository.findOneBy({ email });
+
+    if (!user) {
+      throw new NotFoundException('User was not found.');
+    }
+
+    let profile = await this.profilesRepository.findOneBy({ userId: user.id });
+
+    if (!profile) {
+      profile = this.profilesRepository.create({
+        userId: user.id,
+        displayName: email.split('@')[0],
+      });
+
+      profile = await this.profilesRepository.save(profile);
+
+      this.logger.log(`Profile auto-created for user: ${email}`);
+    }
+
+    return this.toUserDto(profile);
+  }
+
+  async getPostsByProfileId(profileId: number): Promise<PostDto[]> {
+    const profile = await this.profilesRepository.findOneBy({ id: profileId });
+
+    if (!profile) {
+      throw new NotFoundException('Profile was not found.');
+    }
+
+    const posts = await this.postsRepository.find({
+      where: { authorProfileId: profile.userId },
+      order: { createdAt: 'DESC' },
+    });
+
+    return posts.map((post) => ({
+      id: post.id,
+      authorProfileId: post.authorProfileId,
+      title: post.title,
+      content: post.content,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      isArchived: false,
+      archivedAt: null,
+    }));
   }
 
   async findAll(): Promise<UserDto[]> {

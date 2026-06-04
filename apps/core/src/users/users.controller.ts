@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -19,20 +20,21 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { Public } from '@innogram/shared';
+import { Public, AuthenticatedRequest } from '@innogram/shared';
 import { FollowRequestDto } from './dto/follow-request.dto';
 import { RespondFollowRequestDto } from './dto/respond-follow-request.dto';
 import { SubscribeProfileDto } from './dto/subscribe-profile.dto';
+import { PostDto } from '../posts/dto/post.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UsersService } from './users.service';
 
-@Public()
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Public()
   @ApiOperation({ summary: 'Create a profile' })
   @ApiCreatedResponse({
     description: 'Profile has been created successfully.',
@@ -44,6 +46,7 @@ export class UsersController {
     return this.usersService.create(userDto);
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all profiles' })
   @ApiOkResponse({
@@ -55,6 +58,18 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('profile')
+  @ApiOperation({ summary: 'Get the current user profile' })
+  @ApiOkResponse({
+    description: 'Profile has been retrieved successfully.',
+    type: UserDto,
+  })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  getProfile(@Req() request: AuthenticatedRequest): Promise<UserDto> {
+    return this.usersService.findByEmail(request.user!.email);
+  }
+
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a profile by id' })
   @ApiOkResponse({
@@ -87,6 +102,18 @@ export class UsersController {
   @ApiNotFoundResponse({ description: 'Profile was not found.' })
   findFollowers(@Param('id', ParseIntPipe) id: number): Promise<UserDto[]> {
     return this.usersService.findFollowers(id);
+  }
+
+  @Public()
+  @Get(':id/posts')
+  @ApiOperation({ summary: 'Get posts by profile id' })
+  @ApiOkResponse({
+    description: 'Posts have been retrieved successfully.',
+    type: PostDto,
+    isArray: true,
+  })
+  getPostsByProfileId(@Param('id', ParseIntPipe) id: number): Promise<PostDto[]> {
+    return this.usersService.getPostsByProfileId(id);
   }
 
   @Patch(':id')

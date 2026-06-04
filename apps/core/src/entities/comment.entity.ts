@@ -24,7 +24,6 @@ export class Comment {
 
   @Column({ name: 'author_profile_id', type: 'integer' })
   authorProfileId: number;
-
   @Column({ name: 'parent_id', type: 'integer' })
   parentId: number;
 

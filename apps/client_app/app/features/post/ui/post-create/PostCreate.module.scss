@@ -1,0 +1,59 @@
+@use '../../../../styles' as *;
+
+.form {
+  display: grid;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-blue;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
+}
+
+.title {
+  margin: 0;
+  font-size: $font-md;
+  color: $color-black;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: $spacing-md;
+  color: $color-black;
+  background: $color-white;
+  border: 2px solid $color-black;
+  border-radius: $radius-medium;
+  outline: none;
+  font-family: $font-primary;
+  font-size: $font-xs;
+  line-height: 1.5;
+  resize: vertical;
+
+  &::placeholder { color: rgba($color-black, 0.35); }
+}
+
+.fileButton {
+  min-height: 36px;
+  padding: $spacing-sm $spacing-md;
+  color: $color-black;
+  background: rgba($color-white, 0.5);
+  border: 1px solid rgba($color-black, 0.2);
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+
+  &:hover { background: rgba($color-white, 0.7); }
+}
+
+.submit {
+  width: 100%;
+  min-height: 44px;
+  color: $color-white;
+  background: $color-black;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: $font-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+}
