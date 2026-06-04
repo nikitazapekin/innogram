@@ -166,7 +166,7 @@ export class PostsService {
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       isArchived: !!ap,
-      archivedAt: ap.archivedAt,
+      archivedAt: ap?.archivedAt,
     };
   }
 }

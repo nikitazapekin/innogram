@@ -4,3 +4,10 @@
   display: grid;
   gap: $spacing-lg;
 }
+
+.empty {
+  text-align: center;
+  color: rgba($color-black, 0.45);
+  font-size: $font-xs;
+  padding: $spacing-xxl 0;
+}

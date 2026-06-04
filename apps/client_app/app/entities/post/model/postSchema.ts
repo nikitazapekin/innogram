@@ -20,6 +20,7 @@ export type Post = {
   isLiked: boolean;
   createdAt: string;
   updatedAt?: string;
+  authorProfileId?: number;
 };
 
 export type Comment = {
