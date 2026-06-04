@@ -4,12 +4,14 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { Chat } from './chat.entity';
 import { Comment } from './comment.entity';
+import { FollowRequest } from './follow-request.entity';
 import { Post } from './post.entity';
 
 @Entity({ name: 'profile', schema: 'main' })
@@ -27,10 +29,10 @@ export class Profile {
   displayName: string;
 
   @Column({ type: 'text', nullable: true })
-  bio: string;
+  bio: string | null;
 
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
-  avatarAssetId: number;
+  avatarAssetId: number | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
@@ -63,8 +65,17 @@ export class Profile {
   @ManyToMany(() => Profile, (profile) => profile.outgoingConfigurations)
   incomingConfigurations: Profile[];
 
+  @OneToMany(() => FollowRequest, (req) => req.followerProfile)
+  outgoingFollowRequests: FollowRequest[];
+
+  @OneToMany(() => FollowRequest, (req) => req.followingProfile)
+  incomingFollowRequests: FollowRequest[];
+
   @ManyToMany(() => Post, (post) => post.likes)
   likedPosts: Post[];
+
+  @ManyToMany(() => Post, (post) => post.dislikes)
+  dislikedPosts: Post[];
 
   @ManyToMany(() => Comment, (comment) => comment.likes)
   likedComments: Comment[];

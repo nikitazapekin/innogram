@@ -7,11 +7,12 @@ import styles from './PostCard.module.scss';
 type PostCardProps = {
   post: Post;
   onLike?: (id: string) => void;
+  onDislike?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
 };
 
-export function PostCard({ post, onLike, onEdit, onDelete }: PostCardProps) {
+export function PostCard({ post, onLike, onDislike, onEdit, onDelete }: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
 
@@ -75,12 +76,16 @@ export function PostCard({ post, onLike, onEdit, onDelete }: PostCardProps) {
 
       <div className={styles.stats}>
         <span>{post.likesCount} лайков</span>
+        <span>{post.dislikesCount} дизлайков</span>
         <span>{post.commentsCount} комментариев</span>
       </div>
 
       <div className={styles.actions}>
         <button className={styles.action} type="button" onClick={() => onLike?.(post.id)}>
-          Нравится
+          {post.isLiked ? '✓ Нравится' : 'Нравится'}
+        </button>
+        <button className={styles.action} type="button" onClick={() => onDislike?.(post.id)}>
+          {post.isDisliked ? '✗ Не нравится' : 'Не нравится'}
         </button>
         <button className={styles.action} type="button">
           Комментировать

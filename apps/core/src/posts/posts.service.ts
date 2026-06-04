@@ -5,7 +5,10 @@ import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { ArchivedPost } from '../entities/archived-post.entity';
+import { Notification } from '../entities/notification.entity';
 import { AssetsService } from '../assets/assets.service';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
+import { MentionsService } from '../mentions/mentions.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostDto, MediaDto } from './dto/post.dto';
 import { PaginatedPostsDto } from './dto/paginated-posts.dto';
@@ -22,11 +25,15 @@ export class PostsService {
     @InjectRepository(ArchivedPost)
     private readonly archivedPostRepository: Repository<ArchivedPost>,
     private readonly assetsService: AssetsService,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
+    private readonly mentionsService: MentionsService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
     const posts = await this.postsRepository.find({
-      relations: ['archivedPost', 'assets'],
+      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
       order: { createdAt: 'DESC' },
     });
 
@@ -52,7 +59,7 @@ export class PostsService {
 
     let [posts, total] = await this.postsRepository.findAndCount({
       where,
-      relations: ['archivedPost', 'assets'],
+      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
       order,
       skip: (page - 1) * limit,
       take: limit,
@@ -107,12 +114,14 @@ export class PostsService {
         .add(createPostDto.assetIds);
     }
 
-    const postWithAssets = await this.postsRepository.findOne({
+    await this.handleMentions(savedPost);
+
+    const postWithRelations = await this.postsRepository.findOne({
       where: { id: savedPost.id },
-      relations: ['archivedPost', 'assets'],
+      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
     });
 
-    return await this.toPostDto(postWithAssets!);
+    return await this.toPostDto(postWithRelations!);
   }
 
   async updatePost(id: number, updatePostDto: UpdatePostDto): Promise<PostDto> {
@@ -149,6 +158,42 @@ export class PostsService {
     return await this.toPostDto(post);
   }
 
+  async like(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .add(profileId);
+  }
+
+  async unlike(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .remove(profileId);
+  }
+
+  async dislike(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'dislikes')
+      .of(postId)
+      .add(profileId);
+  }
+
+  async undislike(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'dislikes')
+      .of(postId)
+      .remove(profileId);
+  }
+
   async deletePost(id: number): Promise<void> {
     await this.archivedPostRepository.delete({ postId: id });
 
@@ -159,10 +204,37 @@ export class PostsService {
     }
   }
 
+  private async handleMentions(post: Post): Promise<void> {
+    const mentions = await this.mentionsService.extractMentions(post.content);
+
+    for (const mention of mentions) {
+      if (mention.mentionedProfileId === post.authorProfileId) continue;
+
+      const notification = this.notificationRepository.create({
+        recipientProfileId: mention.mentionedProfileId,
+        type: 'mention',
+        payload: {
+          sourceType: 'post',
+          sourceId: post.id,
+          authorProfileId: post.authorProfileId,
+        },
+      });
+
+      await this.notificationRepository.save(notification);
+
+      await this.notificationEventsProducer.emitMention({
+        sourceType: 'post',
+        sourceId: post.id,
+        authorProfileId: post.authorProfileId,
+        mentionedProfileId: mention.mentionedProfileId,
+      });
+    }
+  }
+
   private async findPostById(id: number): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['archivedPost', 'assets'],
+      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
     });
 
     if (!post) {
@@ -192,10 +264,12 @@ export class PostsService {
       authorProfileId: post.authorProfileId,
       title: post.title,
       content: post.content,
+      likesCount: post.likes?.length ?? 0,
+      dislikesCount: post.dislikes?.length ?? 0,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       isArchived: !!ap,
-      archivedAt: ap?.archivedAt,
+      archivedAt: ap?.archivedAt ?? null,
       media,
     };
   }

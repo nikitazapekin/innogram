@@ -30,9 +30,11 @@ function mapPost(p: any): Post {
         url: m.url,
         type: m.type,
       })) ?? undefined,
-    likesCount: 0,
+    likesCount: p.likesCount ?? 0,
+    dislikesCount: p.dislikesCount ?? 0,
     commentsCount: 0,
     isLiked: false,
+    isDisliked: false,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
   };
@@ -75,4 +77,20 @@ export async function updatePost(id: number, content: string): Promise<Post> {
 
 export async function deletePost(id: number): Promise<void> {
   await authFetch(`${BASE}/posts/${id}`, { method: 'DELETE' });
+}
+
+export async function likePost(postId: number, profileId: number): Promise<void> {
+  await authFetch(`${BASE}/posts/${postId}/like/${profileId}`, { method: 'POST' });
+}
+
+export async function unlikePost(postId: number, profileId: number): Promise<void> {
+  await authFetch(`${BASE}/posts/${postId}/like/${profileId}`, { method: 'DELETE' });
+}
+
+export async function dislikePost(postId: number, profileId: number): Promise<void> {
+  await authFetch(`${BASE}/posts/${postId}/dislike/${profileId}`, { method: 'POST' });
+}
+
+export async function undislikePost(postId: number, profileId: number): Promise<void> {
+  await authFetch(`${BASE}/posts/${postId}/dislike/${profileId}`, { method: 'DELETE' });
 }

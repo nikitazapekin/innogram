@@ -6,6 +6,8 @@
   "workspaces": [
     "apps/api-gateway",
     "apps/auth",
+    "apps/posts_microservice",
+    "apps/notifications",
     "apps/client_app",
     "apps/core",
     "packages/shared"

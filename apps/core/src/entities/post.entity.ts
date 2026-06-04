@@ -51,6 +51,14 @@ export class Post {
   })
   likes: Profile[];
 
+  @ManyToMany(() => Profile, (profile) => profile.dislikedPosts)
+  @JoinTable({
+    name: 'post_dislike',
+    joinColumn: { name: 'post_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'profile_id', referencedColumnName: 'id' },
+  })
+  dislikes: Profile[];
+
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
 
