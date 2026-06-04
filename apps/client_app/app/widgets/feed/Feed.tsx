@@ -30,11 +30,11 @@ export function Feed() {
 
   useEffect(() => {
     getProfile()
-      .then((p) => setProfileId(p.id))
+      .then((profile) => setProfileId(profile.id))
       .catch(() => {});
   }, []);
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = async () => {
     try {
       const query: Record<string, string> = {};
       if (sort === 'newest') {
@@ -52,11 +52,11 @@ export function Feed() {
     } catch {
       setPosts([]);
     }
-  }, [sort, search]);
+  };
 
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+  }, []);
 
   const handleCreate = async (content: string, file?: File) => {
     const created = await createPost(content, file);
@@ -65,56 +65,90 @@ export function Feed() {
 
   const handleLike = async (id: string) => {
     if (!profileId) return;
-    const post = posts.find((p) => p.id === id);
-    if (!post) return;
-    if (post.isLiked) {
+
+    const target = posts.find((post) => post.id === id);
+    if (!target) return;
+
+    if (target.isLiked) {
       await unlikePost(Number(id), profileId);
+
       setPosts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, isLiked: false, likesCount: p.likesCount - 1 } : p)),
+        prev.map((post) => {
+          if (post.id !== id) {
+            return post;
+          }
+
+          return { ...post, isLiked: false, likesCount: post.likesCount - 1 };
+        }),
       );
     } else {
       await likePost(Number(id), profileId);
+
       setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                isLiked: true,
-                likesCount: p.likesCount + 1,
-                isDisliked: false,
-                dislikesCount: p.isDisliked ? p.dislikesCount - 1 : p.dislikesCount,
-              }
-            : p,
-        ),
+        prev.map((post) => {
+          if (post.id !== id) {
+            return post;
+          }
+
+          const updated = {
+            ...post,
+            isLiked: true,
+            likesCount: post.likesCount + 1,
+            isDisliked: false,
+            dislikesCount: post.dislikesCount,
+          };
+
+          if (post.isDisliked) {
+            updated.dislikesCount = post.dislikesCount - 1;
+          }
+
+          return updated;
+        }),
       );
     }
   };
 
   const handleDislike = async (id: string) => {
     if (!profileId) return;
-    const post = posts.find((p) => p.id === id);
-    if (!post) return;
-    if (post.isDisliked) {
+
+    const target = posts.find((post) => post.id === id);
+    if (!target) return;
+
+    if (target.isDisliked) {
       await undislikePost(Number(id), profileId);
+
       setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, isDisliked: false, dislikesCount: p.dislikesCount - 1 } : p,
-        ),
+        prev.map((post) => {
+          if (post.id !== id) {
+            return post;
+          }
+
+          return { ...post, isDisliked: false, dislikesCount: post.dislikesCount - 1 };
+        }),
       );
     } else {
       await dislikePost(Number(id), profileId);
+
       setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                isDisliked: true,
-                dislikesCount: p.dislikesCount + 1,
-                isLiked: false,
-                likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount,
-              }
-            : p,
-        ),
+        prev.map((post) => {
+          if (post.id !== id) {
+            return post;
+          }
+
+          const updated = {
+            ...post,
+            isDisliked: true,
+            dislikesCount: post.dislikesCount + 1,
+            isLiked: false,
+            likesCount: post.likesCount,
+          };
+
+          if (post.isLiked) {
+            updated.likesCount = post.likesCount - 1;
+          }
+
+          return updated;
+        }),
       );
     }
   };
@@ -152,11 +186,19 @@ export function Feed() {
         onDislike={handleDislike}
         onEdit={async (id, content) => {
           await updatePost(Number(id), content);
-          setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
+          setPosts((prev) =>
+            prev.map((post) => {
+              if (post.id !== id) {
+                return post;
+              }
+
+              return { ...post, content };
+            }),
+          );
         }}
         onDelete={async (id) => {
           await deletePost(Number(id));
-          setPosts((prev) => prev.filter((p) => p.id !== id));
+          setPosts((prev) => prev.filter((post) => post.id !== id));
         }}
       />
     </div>

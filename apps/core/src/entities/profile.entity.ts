@@ -29,10 +29,10 @@ export class Profile {
   displayName: string;
 
   @Column({ type: 'text', nullable: true })
-  bio: string | null;
+  bio: string;
 
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
-  avatarAssetId: number | null;
+  avatarAssetId: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

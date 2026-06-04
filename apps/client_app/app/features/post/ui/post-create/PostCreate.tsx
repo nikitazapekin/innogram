@@ -12,15 +12,13 @@ export function PostCreate({ onSubmit }: PostCreateProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
-    if (!text.trim()) return;
+    if (!text) return;
     setLoading(true);
-    try {
-      await onSubmit(text, file ?? undefined);
-      setText('');
-      setFile(null);
-    } catch {
-      /* ignore */
-    }
+
+    await onSubmit(text, file ?? undefined);
+    setText('');
+    setFile(null);
+
     setLoading(false);
   };
 

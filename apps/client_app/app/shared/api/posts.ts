@@ -1,7 +1,19 @@
 import { getAccessToken } from '@/lib/auth';
 import type { Post } from '@/app/entities/post';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';
+const BASE = process.env.NEXT_PUBLIC_API_URL;
+
+interface BackendPost {
+  id: number;
+  content: string;
+  title?: string;
+  authorProfileId: number;
+  media?: { id: number; url: string; type: 'image' | 'video' }[];
+  likesCount?: number;
+  dislikesCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
 
 async function authFetch(url: string, opts?: RequestInit) {
   const token = getAccessToken();
@@ -18,25 +30,28 @@ async function authFetch(url: string, opts?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapPost(p: any): Post {
+function mapPost(backendPost: BackendPost): Post {
+  const mediaItems = backendPost.media?.map((mediaItem) => ({
+    id: String(mediaItem.id),
+    url: mediaItem.url,
+    type: mediaItem.type,
+  }));
+
   return {
-    id: String(p.id),
-    content: p.content,
-    author: { id: String(p.authorProfileId), name: p.title || 'User' },
-    media:
-      p.media?.map((m: { id: number; url: string; type: string }) => ({
-        id: String(m.id),
-        url: m.url,
-        type: m.type,
-      })) ?? undefined,
-    likesCount: p.likesCount ?? 0,
-    dislikesCount: p.dislikesCount ?? 0,
+    id: String(backendPost.id),
+    content: backendPost.content,
+    author: {
+      id: String(backendPost.authorProfileId),
+      name: backendPost.title || 'User',
+    },
+    media: mediaItems ?? undefined,
+    likesCount: backendPost.likesCount ?? 0,
+    dislikesCount: backendPost.dislikesCount ?? 0,
     commentsCount: 0,
     isLiked: false,
     isDisliked: false,
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
+    createdAt: backendPost.createdAt,
+    updatedAt: backendPost.updatedAt,
   };
 }
 
@@ -54,10 +69,24 @@ async function uploadAsset(file: File): Promise<number> {
 }
 
 export async function getPosts(query?: Record<string, string>): Promise<Post[]> {
-  const qs = query ? '?' + new URLSearchParams(query) : '';
-  const data = await authFetch(`${BASE}/posts${qs}`);
-  const list = Array.isArray(data) ? data : (data.data ?? []);
-  return list.map(mapPost);
+  let url = `${BASE}/posts`;
+
+  if (query) {
+    const queryString = new URLSearchParams(query).toString();
+    url += '?' + queryString;
+  }
+
+  const data = await authFetch(url);
+
+  let posts: BackendPost[];
+
+  if (Array.isArray(data)) {
+    posts = data;
+  } else {
+    posts = data.data ?? [];
+  }
+
+  return posts.map(mapPost);
 }
 
 export async function createPost(content: string, file?: File): Promise<Post> {
