@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Comment } from '../entities/comment.entity';
+import { Notification } from '../entities/notification.entity';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
+import { MentionsService } from '../mentions/mentions.service';
 import { CommentDto } from './dto/comment.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -14,6 +17,10 @@ export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private readonly commentsRepository: Repository<Comment>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
+    private readonly mentionsService: MentionsService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
@@ -31,6 +38,8 @@ export class CommentsService {
     });
 
     const savedComment = await this.commentsRepository.save(comment);
+
+    await this.handleMentions(savedComment);
 
     this.logger.log(`Comment created: ${savedComment.id}`);
 
@@ -177,6 +186,34 @@ export class CommentsService {
       .relation(Comment, 'likes')
       .of(commentId)
       .remove(profileId);
+  }
+
+  private async handleMentions(comment: Comment): Promise<void> {
+    const mentions = await this.mentionsService.extractMentions(comment.content);
+
+    for (const mention of mentions) {
+      if (mention.mentionedProfileId === comment.authorProfileId) continue;
+
+      const notification = this.notificationRepository.create({
+        recipientProfileId: mention.mentionedProfileId,
+        type: 'mention',
+        payload: {
+          sourceType: 'comment' as const,
+          sourceId: comment.id,
+          postId: comment.postId,
+          authorProfileId: comment.authorProfileId,
+        },
+      });
+
+      await this.notificationRepository.save(notification);
+
+      await this.notificationEventsProducer.emitMention({
+        sourceType: 'comment',
+        sourceId: comment.id,
+        authorProfileId: comment.authorProfileId,
+        mentionedProfileId: mention.mentionedProfileId,
+      });
+    }
   }
 
   private async findCommentById(id: number): Promise<Comment> {

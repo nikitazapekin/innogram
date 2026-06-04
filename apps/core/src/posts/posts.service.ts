@@ -5,6 +5,9 @@ import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { ArchivedPost } from '../entities/archived-post.entity';
+import { Notification } from '../entities/notification.entity';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
+import { MentionsService } from '../mentions/mentions.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostDto } from './dto/post.dto';
 import { PaginatedPostsDto } from './dto/paginated-posts.dto';
@@ -20,6 +23,10 @@ export class PostsService {
     private readonly usersRepository: Repository<UserEntity>,
     @InjectRepository(ArchivedPost)
     private readonly archivedPostRepository: Repository<ArchivedPost>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
+    private readonly mentionsService: MentionsService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
@@ -95,6 +102,8 @@ export class PostsService {
 
     const savedPost = await this.postsRepository.save(post);
 
+    await this.handleMentions(savedPost);
+
     return this.toPostDto(savedPost);
   }
 
@@ -160,6 +169,33 @@ export class PostsService {
     }
   }
 
+  private async handleMentions(post: Post): Promise<void> {
+    const mentions = await this.mentionsService.extractMentions(post.content);
+
+    for (const mention of mentions) {
+      if (mention.mentionedProfileId === post.authorProfileId) continue;
+
+      const notification = this.notificationRepository.create({
+        recipientProfileId: mention.mentionedProfileId,
+        type: 'mention',
+        payload: {
+          sourceType: 'post',
+          sourceId: post.id,
+          authorProfileId: post.authorProfileId,
+        },
+      });
+
+      await this.notificationRepository.save(notification);
+
+      await this.notificationEventsProducer.emitMention({
+        sourceType: 'post',
+        sourceId: post.id,
+        authorProfileId: post.authorProfileId,
+        mentionedProfileId: mention.mentionedProfileId,
+      });
+    }
+  }
+
   private async findPostById(id: number): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },
@@ -185,7 +221,7 @@ export class PostsService {
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       isArchived: !!ap,
-      archivedAt: ap.archivedAt,
+      archivedAt: ap?.archivedAt ?? null,
     };
   }
 }
