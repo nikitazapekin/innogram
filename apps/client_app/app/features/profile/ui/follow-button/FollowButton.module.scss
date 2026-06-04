@@ -1,0 +1,21 @@
+@use '../../../../styles' as *;
+
+.button, .request {
+  min-height: 36px; padding: $spacing-xs $spacing-lg; border-radius: $radius-circle;
+  cursor: pointer; font-size: 12px; font-weight: 700;
+}
+
+.button {
+  color: $color-white; background: $color-black; border: 2px solid $color-black;
+  &:hover { opacity: 0.9; }
+
+  &_active {
+    color: $color-black; background: transparent;
+    &:hover { background: rgba($color-black, 0.06); }
+  }
+}
+
+.request {
+  color: $color-black; background: rgba($color-white, 0.5); border: 1px solid rgba($color-black, 0.2);
+  &:hover { background: rgba($color-white, 0.7); }
+}

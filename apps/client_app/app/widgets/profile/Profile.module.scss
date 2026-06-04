@@ -1,0 +1,10 @@
+@use '../../styles' as *;
+
+.profile {
+  display: grid;
+  gap: $spacing-lg;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+}
+
