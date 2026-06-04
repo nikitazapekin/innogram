@@ -157,25 +157,25 @@ export function Feed() {
     <div className={styles.feed}>
       <PostSearch onSearch={setSearch} />
       <div className={styles.controls}>
-        {(['newest', 'oldest', 'title'] as const).map((s) => (
+        {(['newest', 'oldest', 'title'] as SortMode[]).map((mode) => (
           <button
-            key={s}
-            className={`${styles.control} ${sort === s ? styles.control_active : ''}`}
+            key={mode}
+            className={`${styles.control} ${sort === mode ? styles.control_active : ''}`}
             type="button"
-            onClick={() => setSort(s)}
+            onClick={() => setSort(mode)}
           >
-            {s === 'newest' ? 'Новые' : s === 'oldest' ? 'Старые' : 'По заголовку'}
+            {mode === 'newest' ? 'Новые' : mode === 'oldest' ? 'Старые' : 'По заголовку'}
           </button>
         ))}
         <div className={styles.divider} />
-        {(['all', 'mine'] as const).map((f) => (
+        {(['all', 'mine'] as FilterMode[]).map((mode) => (
           <button
-            key={f}
-            className={`${styles.control} ${filter === f ? styles.control_active : ''}`}
+            key={mode}
+            className={`${styles.control} ${filter === mode ? styles.control_active : ''}`}
             type="button"
-            onClick={() => setFilter(f)}
+            onClick={() => setFilter(mode)}
           >
-            {f === 'all' ? 'Все' : 'Мои'}
+            {mode === 'all' ? 'Все' : 'Мои'}
           </button>
         ))}
       </div>
