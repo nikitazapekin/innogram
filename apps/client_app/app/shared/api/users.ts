@@ -1,6 +1,6 @@
 import { getAccessToken } from '@/lib/auth';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL;
+const BASE = process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3004';
 
 async function authFetch(url: string, opts?: RequestInit) {
   const token = getAccessToken();

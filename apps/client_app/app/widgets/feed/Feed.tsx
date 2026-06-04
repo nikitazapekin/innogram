@@ -56,7 +56,7 @@ export function Feed() {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [sort, search]);
 
   const handleCreate = async (content: string, file?: File) => {
     const created = await createPost(content, file);

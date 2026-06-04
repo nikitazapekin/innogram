@@ -5,14 +5,14 @@ import type { Post } from '@/app/entities/post';
 import styles from './PostList.module.scss';
 
 type PostListProps = {
-  posts: Post[];
+  posts?: Post[];
   onLike?: (id: string) => void;
   onDislike?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
 };
 
-export function PostList({ posts, onLike, onDislike, onEdit, onDelete }: PostListProps) {
+export function PostList({ posts = [], onLike, onDislike, onEdit, onDelete }: PostListProps) {
   if (!posts.length) {
     return (
       <div className={styles.list}>
