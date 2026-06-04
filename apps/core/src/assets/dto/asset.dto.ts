@@ -8,7 +8,7 @@ export class AssetDto {
 
   @IsNumber()
   @Type(() => Number)
-  ownerProfileId: number;
+  ownerProfileId: number | null;
 
   @IsString()
   @MaxLength(255)

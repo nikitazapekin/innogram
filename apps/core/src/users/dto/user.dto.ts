@@ -12,6 +12,9 @@ export class UserDto {
   displayName?: string;
 
   @IsOptional()
+  isPrivate?: boolean;
+
+  @IsOptional()
   @IsString()
   bio?: string;
 
