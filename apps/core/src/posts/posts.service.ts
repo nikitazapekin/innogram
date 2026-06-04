@@ -5,6 +5,9 @@ import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { ArchivedPost } from '../entities/archived-post.entity';
+import { Notification } from '../entities/notification.entity';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
+import { MentionsService } from '../mentions/mentions.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostDto } from './dto/post.dto';
 import { PaginatedPostsDto } from './dto/paginated-posts.dto';
@@ -20,11 +23,15 @@ export class PostsService {
     private readonly usersRepository: Repository<UserEntity>,
     @InjectRepository(ArchivedPost)
     private readonly archivedPostRepository: Repository<ArchivedPost>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
+    private readonly mentionsService: MentionsService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
     const posts = await this.postsRepository.find({
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'likes'],
       order: { createdAt: 'DESC' },
     });
 
@@ -48,7 +55,7 @@ export class PostsService {
 
     let [posts, total] = await this.postsRepository.findAndCount({
       where,
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'likes'],
       order,
       skip: (page - 1) * limit,
       take: limit,
@@ -95,6 +102,8 @@ export class PostsService {
 
     const savedPost = await this.postsRepository.save(post);
 
+    await this.handleMentions(savedPost);
+
     return this.toPostDto(savedPost);
   }
 
@@ -132,6 +141,24 @@ export class PostsService {
     return this.toPostDto(post);
   }
 
+  async like(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .add(profileId);
+  }
+
+  async unlike(postId: number, profileId: number): Promise<void> {
+    await this.findPostById(postId);
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .remove(profileId);
+  }
+
   async deletePost(id: number): Promise<void> {
     await this.archivedPostRepository.delete({ postId: id });
 
@@ -142,10 +169,37 @@ export class PostsService {
     }
   }
 
+  private async handleMentions(post: Post): Promise<void> {
+    const mentions = await this.mentionsService.extractMentions(post.content);
+
+    for (const mention of mentions) {
+      if (mention.mentionedProfileId === post.authorProfileId) continue;
+
+      const notification = this.notificationRepository.create({
+        recipientProfileId: mention.mentionedProfileId,
+        type: 'mention',
+        payload: {
+          sourceType: 'post',
+          sourceId: post.id,
+          authorProfileId: post.authorProfileId,
+        },
+      });
+
+      await this.notificationRepository.save(notification);
+
+      await this.notificationEventsProducer.emitMention({
+        sourceType: 'post',
+        sourceId: post.id,
+        authorProfileId: post.authorProfileId,
+        mentionedProfileId: mention.mentionedProfileId,
+      });
+    }
+  }
+
   private async findPostById(id: number): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'likes'],
     });
 
     if (!post) {
@@ -163,10 +217,11 @@ export class PostsService {
       authorProfileId: post.authorProfileId,
       title: post.title,
       content: post.content,
+      likesCount: post.likes?.length,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       isArchived: !!ap,
-      archivedAt: ap.archivedAt,
+      archivedAt: ap?.archivedAt ?? null,
     };
   }
 }

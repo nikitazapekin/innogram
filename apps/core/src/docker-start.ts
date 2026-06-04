@@ -1,3 +1,5 @@
+import './config/load-environment';
+
 import { AppDataSource } from './data-source';
 
 const SHOULD_RUN_MIGRATIONS = process.env.RUN_MIGRATIONS?.toLowerCase() === 'true';

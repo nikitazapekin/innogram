@@ -1,37 +1,95 @@
 @use '../../../../styles' as *;
 
 .card {
-  display: grid; gap: $spacing-md; padding: $spacing-lg;
-  background: $color-blue; border: 2px solid $color-black; border-radius: $radius-large;
+  display: grid;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-blue;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
 }
 
-.author { display: flex; align-items: center; gap: $spacing-md; }
-
-.avatar {
-  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-  border-radius: $radius-circle; background: $color-white; border: 2px solid $color-black;
-  font-weight: 700; color: $color-black;
+.author {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
 }
 
-.name { font-size: $font-xs; font-weight: 700; color: $color-black; }
-.time { font-size: 12px; color: rgba($color-black, 0.55); }
+.avatarPlaceholder {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-circle;
+  background: $color-white;
+  border: 2px solid $color-black;
+  font-weight: 700;
+  color: $color-black;
+}
+
+.authorName {
+  font-size: $font-xs;
+  font-weight: 700;
+  color: $color-black;
+}
+
+.time {
+  font-size: 12px;
+  color: rgba($color-black, 0.55);
+}
 
 .content {
-  margin: 0; font-size: $font-xs; line-height: 1.6; color: $color-black;
+  margin: 0;
+  font-size: $font-xs;
+  line-height: 1.6;
+  color: $color-black;
+  white-space: pre-wrap;
 }
 
+.mediaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-sm;
+}
+
+.mediaItem {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 2px solid $color-black;
+  border-radius: $radius-medium;
+}
+
+.media { width: 100%; height: 100%; object-fit: cover; }
+
 .stats {
-  display: flex; gap: $spacing-lg; padding-top: $spacing-sm;
-  border-top: 1px solid rgba($color-black, 0.12); font-size: 12px; color: rgba($color-black, 0.6);
+  display: flex;
+  gap: $spacing-lg;
+  padding-top: $spacing-sm;
+  border-top: 1px solid rgba($color-black, 0.12);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba($color-black, 0.6);
 }
 
 .actions {
-  display: flex; gap: $spacing-xs; padding-top: $spacing-sm;
+  display: flex;
+  gap: $spacing-xs;
+  padding-top: $spacing-sm;
   border-top: 1px solid rgba($color-black, 0.12);
 }
 
 .action {
-  flex: 1; min-height: 40px; color: $color-black; background: transparent; border: 0;
-  border-radius: $radius-medium; cursor: pointer; font-size: $font-xs; font-weight: 600;
+  flex: 1;
+  min-height: 40px;
+  padding: $spacing-sm;
+  border-radius: $radius-medium;
+  cursor: pointer;
+  font-size: $font-xs;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: $color-black;
+
   &:hover { background: rgba($color-black, 0.06); }
 }

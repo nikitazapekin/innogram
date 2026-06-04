@@ -38,14 +38,6 @@ const readRequiredString = (value: string | undefined, name: string): string => 
   return value;
 };
 
-const resolveUpstream = (url: string | undefined): string => {
-  if (url?.startsWith('/auth')) {
-    return AUTH_SERVICE_URL;
-  }
-
-  return CORE_URL;
-};
-
 const buildProxyRequestHeaders = (headers: IncomingHttpHeaders): Headers => {
   const result = new Headers();
 
@@ -86,12 +78,14 @@ const requestHasBody = (method: string): boolean => {
   return true;
 };
 
-const buildUpstreamUrl = (serviceUrl: string, originalUrl: string | undefined): string => {
-  if (!originalUrl) {
-    return `${serviceUrl}/`;
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  const path = originalUrl ?? '/';
+
+  if (path.startsWith('/users') || path.startsWith('/auth/user')) {
+    return `${CORE_URL}${path}`;
   }
 
-  return `${serviceUrl}${originalUrl}`;
+  return `${AUTH_SERVICE_URL}${path}`;
 };
 
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>
@@ -107,6 +101,21 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
   });
 };
 
+const AUTH_ROUTE_PREFIX = '/auth';
+const NOTIFICATIONS_ROUTE_PREFIX = '/notifications';
+
+const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
+  if (originalUrl?.startsWith(AUTH_ROUTE_PREFIX)) {
+    return buildUpstreamUrl(AUTH_SERVICE_URL, originalUrl);
+  }
+
+  if (originalUrl?.startsWith(NOTIFICATIONS_ROUTE_PREFIX)) {
+    return buildUpstreamUrl(NOTIFICATIONS_SERVICE_URL, originalUrl);
+  }
+
+  return buildUpstreamUrl(CORE_URL, originalUrl);
+};
+
 const API_GATEWAY_PORT = (() => {
   const rawPort = readRequiredString(process.env.API_GATEWAY_PORT, 'API_GATEWAY_PORT');
   const parsedPort = Number(rawPort);
@@ -120,6 +129,10 @@ const API_GATEWAY_PORT = (() => {
 
 const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
 const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
+const NOTIFICATIONS_SERVICE_URL = readRequiredString(
+  process.env.NOTIFICATIONS_SERVICE_URL,
+  'NOTIFICATIONS_SERVICE_URL',
+);
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
@@ -169,12 +182,7 @@ async function bootstrap(): Promise<void> {
         fetchOptions.duplex = 'half';
       }
 
-      const upstreamUrl = resolveUpstream(request.originalUrl);
-
-      const upstreamResponse = await fetch(
-        buildUpstreamUrl(upstreamUrl, request.originalUrl),
-        fetchOptions,
-      );
+      const upstreamResponse = await fetch(resolveUpstreamUrl(request.originalUrl), fetchOptions);
 
       const status = upstreamResponse.status;
 

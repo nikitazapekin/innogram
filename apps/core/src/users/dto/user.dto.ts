@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UserDto {
   @IsOptional()
@@ -12,6 +12,9 @@ export class UserDto {
   displayName?: string;
 
   @IsOptional()
+  isPrivate?: boolean;
+
+  @IsOptional()
   @IsString()
   bio?: string;
 
@@ -19,6 +22,10 @@ export class UserDto {
   @IsNumber()
   @Type(() => Number)
   avatarAssetId?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrivate?: boolean;
 
   @IsOptional()
   @IsDate()

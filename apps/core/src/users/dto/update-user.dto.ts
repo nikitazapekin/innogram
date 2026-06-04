@@ -1,7 +1,12 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateUserDto {
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  userId?: number;
+
   @IsString()
   displayName: string;
 
@@ -13,4 +18,8 @@ export class UpdateUserDto {
   @IsNumber()
   @Type(() => Number)
   avatarAssetId?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrivate?: boolean;
 }

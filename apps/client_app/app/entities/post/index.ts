@@ -1,1 +1,1 @@
-export type { Post } from './model/postSchema';
+export type { Post, MediaItem, Author, Comment } from './model/postSchema';
