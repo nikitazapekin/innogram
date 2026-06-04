@@ -41,8 +41,8 @@ export function Feed() {
     fetchPosts();
   }, [fetchPosts]);
 
-  const handleCreate = async (content: string) => {
-    const created = await createPost(content);
+  const handleCreate = async (content: string, file?: File) => {
+    const created = await createPost(content, file);
     setPosts((prev) => [created, ...prev]);
   };
 

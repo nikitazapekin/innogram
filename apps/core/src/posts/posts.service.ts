@@ -5,8 +5,9 @@ import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { ArchivedPost } from '../entities/archived-post.entity';
+import { AssetsService } from '../assets/assets.service';
 import { CreatePostDto } from './dto/create-post.dto';
-import { PostDto } from './dto/post.dto';
+import { PostDto, MediaDto } from './dto/post.dto';
 import { PaginatedPostsDto } from './dto/paginated-posts.dto';
 import { QueryPostsDto } from './dto/query-posts.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -20,15 +21,18 @@ export class PostsService {
     private readonly usersRepository: Repository<UserEntity>,
     @InjectRepository(ArchivedPost)
     private readonly archivedPostRepository: Repository<ArchivedPost>,
+    private readonly assetsService: AssetsService,
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
     const posts = await this.postsRepository.find({
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'assets'],
       order: { createdAt: 'DESC' },
     });
 
-    return posts.filter((post) => !post.archivedPost).map((post) => this.toPostDto(post));
+    return Promise.all(
+      posts.filter((post) => !post.archivedPost).map((post) => this.toPostDto(post)),
+    );
   }
 
   async getPostsByQuery(query: QueryPostsDto): Promise<PaginatedPostsDto> {
@@ -48,7 +52,7 @@ export class PostsService {
 
     let [posts, total] = await this.postsRepository.findAndCount({
       where,
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'assets'],
       order,
       skip: (page - 1) * limit,
       take: limit,
@@ -62,7 +66,7 @@ export class PostsService {
       total = posts.length;
     }
 
-    const postsDto = posts.map((post) => this.toPostDto(post));
+    const postsDto = await Promise.all(posts.map((post) => this.toPostDto(post)));
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -77,7 +81,7 @@ export class PostsService {
   async getPost(id: number): Promise<PostDto> {
     const post = await this.findPostById(id);
 
-    return this.toPostDto(post);
+    return await this.toPostDto(post);
   }
 
   async createPost(createPostDto: CreatePostDto, email: string): Promise<PostDto> {
@@ -95,7 +99,20 @@ export class PostsService {
 
     const savedPost = await this.postsRepository.save(post);
 
-    return this.toPostDto(savedPost);
+    if (createPostDto.assetIds?.length) {
+      await this.postsRepository
+        .createQueryBuilder()
+        .relation(Post, 'assets')
+        .of(savedPost.id)
+        .add(createPostDto.assetIds);
+    }
+
+    const postWithAssets = await this.postsRepository.findOne({
+      where: { id: savedPost.id },
+      relations: ['archivedPost', 'assets'],
+    });
+
+    return await this.toPostDto(postWithAssets!);
   }
 
   async updatePost(id: number, updatePostDto: UpdatePostDto): Promise<PostDto> {
@@ -106,7 +123,7 @@ export class PostsService {
 
     const savedPost = await this.postsRepository.save(post);
 
-    return this.toPostDto(savedPost);
+    return await this.toPostDto(savedPost);
   }
 
   async archivePost(id: number): Promise<PostDto> {
@@ -119,7 +136,7 @@ export class PostsService {
       await this.archivedPostRepository.save(archived);
     }
 
-    return this.toPostDto(post, archived);
+    return await this.toPostDto(post, archived);
   }
 
   async unarchivePost(id: number): Promise<PostDto> {
@@ -129,7 +146,7 @@ export class PostsService {
       await this.archivedPostRepository.delete({ postId: id });
     }
 
-    return this.toPostDto(post);
+    return await this.toPostDto(post);
   }
 
   async deletePost(id: number): Promise<void> {
@@ -145,7 +162,7 @@ export class PostsService {
   private async findPostById(id: number): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['archivedPost'],
+      relations: ['archivedPost', 'assets'],
     });
 
     if (!post) {
@@ -155,8 +172,20 @@ export class PostsService {
     return post;
   }
 
-  private toPostDto(post: Post, archived?: ArchivedPost | null): PostDto {
+  private async toPostDto(post: Post, archived?: ArchivedPost | null): Promise<PostDto> {
     const ap = archived ?? post.archivedPost;
+
+    let media: MediaDto[] | undefined;
+
+    if (post.assets?.length) {
+      media = await Promise.all(
+        post.assets.map(async (asset) => ({
+          id: asset.id,
+          type: asset.mimeType.startsWith('video/') ? ('video' as const) : ('image' as const),
+          url: await this.assetsService.getAssetUrl(asset.id),
+        })),
+      );
+    }
 
     return {
       id: post.id,
@@ -167,6 +196,7 @@ export class PostsService {
       updatedAt: post.updatedAt,
       isArchived: !!ap,
       archivedAt: ap?.archivedAt,
+      media,
     };
   }
 }

@@ -24,12 +24,31 @@ function mapPost(p: any): Post {
     id: String(p.id),
     content: p.content,
     author: { id: String(p.authorProfileId), name: p.title || 'User' },
+    media:
+      p.media?.map((m: { id: number; url: string; type: string }) => ({
+        id: String(m.id),
+        url: m.url,
+        type: m.type,
+      })) ?? undefined,
     likesCount: 0,
     commentsCount: 0,
     isLiked: false,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
   };
+}
+
+async function uploadAsset(file: File): Promise<number> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE}/assets/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getAccessToken()}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error('File upload failed');
+  const asset: { id: number } = await res.json();
+  return asset.id;
 }
 
 export async function getPosts(query?: Record<string, string>): Promise<Post[]> {
@@ -40,17 +59,12 @@ export async function getPosts(query?: Record<string, string>): Promise<Post[]> 
 }
 
 export async function createPost(content: string, file?: File): Promise<Post> {
-  const body = JSON.stringify({ title: content.slice(0, 50), content });
+  const body: Record<string, unknown> = { title: content.slice(0, 50), content };
   if (file) {
-    const form = new FormData();
-    form.append('file', file);
-    await fetch(`${BASE}/assets/upload`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${getAccessToken()}` },
-      body: form,
-    });
+    const assetId = await uploadAsset(file);
+    body.assetIds = [assetId];
   }
-  return mapPost(await authFetch(`${BASE}/posts`, { method: 'POST', body }));
+  return mapPost(await authFetch(`${BASE}/posts`, { method: 'POST', body: JSON.stringify(body) }));
 }
 
 export async function updatePost(id: number, content: string): Promise<Post> {

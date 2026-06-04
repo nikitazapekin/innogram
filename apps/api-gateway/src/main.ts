@@ -81,7 +81,14 @@ const requestHasBody = (method: string): boolean => {
 const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   const path = originalUrl ?? '/';
 
-  if (path.startsWith('/users') || path.startsWith('/auth/user')) {
+  if (
+    path.startsWith('/assets') ||
+    path.startsWith('/chats') ||
+    path.startsWith('/comments') ||
+    path.startsWith('/posts') ||
+    path.startsWith('/users') ||
+    path.startsWith('/auth/user')
+  ) {
     return `${CORE_URL}${path}`;
   }
 
