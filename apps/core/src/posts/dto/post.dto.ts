@@ -26,6 +26,11 @@ export class PostDto {
   @Type(() => Date)
   updatedAt: Date;
 
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  likesCount?: number;
+
   @Type(() => Boolean)
   isArchived: boolean;
 
