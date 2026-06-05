@@ -182,7 +182,12 @@ export class CommentsService {
         .of(commentId)
         .add(profileId);
     } catch (error: unknown) {
-      if (error instanceof QueryFailedError && error.driverError?.code === '23505') return;
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
+      )
+        return;
+
       throw error;
     }
   }

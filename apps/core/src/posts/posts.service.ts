@@ -160,6 +160,7 @@ export class PostsService {
 
   async like(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     try {
       await this.postsRepository
         .createQueryBuilder()
@@ -167,7 +168,12 @@ export class PostsService {
         .of(postId)
         .add(profileId);
     } catch (error: unknown) {
-      if (error instanceof QueryFailedError && error.driverError?.code === '23505') return;
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
+      )
+        return;
+
       throw error;
     }
   }
@@ -183,6 +189,7 @@ export class PostsService {
 
   async dislike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     try {
       await this.postsRepository
         .createQueryBuilder()
@@ -190,7 +197,12 @@ export class PostsService {
         .of(postId)
         .add(profileId);
     } catch (error: unknown) {
-      if (error instanceof QueryFailedError && error.driverError?.code === '23505') return;
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
+      )
+        return;
+
       throw error;
     }
   }
