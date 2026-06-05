@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { Comment } from '../entities/comment.entity';
 import { Notification } from '../entities/notification.entity';
@@ -175,11 +175,16 @@ export class CommentsService {
   }
 
   async like(commentId: number, profileId: number): Promise<void> {
-    await this.commentsRepository
-      .createQueryBuilder()
-      .relation(Comment, 'likes')
-      .of(commentId)
-      .add(profileId);
+    try {
+      await this.commentsRepository
+        .createQueryBuilder()
+        .relation(Comment, 'likes')
+        .of(commentId)
+        .add(profileId);
+    } catch (error: unknown) {
+      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
+        throw error;
+    }
   }
 
   async unlike(commentId: number, profileId: number): Promise<void> {
