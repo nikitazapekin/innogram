@@ -93,6 +93,11 @@
 }
 
 
+.comments {
+  padding-top: $spacing-sm;
+  border-top: 1px solid rgba($color-black, 0.12);
+}
+
 .action {
   flex: 1;
   min-height: 40px;

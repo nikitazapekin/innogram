@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Post } from '@/app/entities/post';
+import type { Post, Comment } from '@/app/entities/post';
+import { CommentSection } from '@/app/features/comment/ui/comment-section/CommentSection';
 import styles from './PostCard.module.scss';
 
 type PostCardProps = {
@@ -10,14 +11,41 @@ type PostCardProps = {
   onDislike?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
+  comments?: Comment[];
+  profileId?: number | null;
+  onToggleComments?: (postId: string) => void;
+  onAddComment?: (postId: string, content: string) => Promise<void>;
+  onLikeComment?: (id: string) => void;
+  onEditComment?: (id: string, content: string) => void;
+  onDeleteComment?: (id: string) => void;
+  onReplyComment?: (postId: string, parentId: string, content: string) => Promise<void>;
 };
 
-export function PostCard({ post, onLike, onDislike, onEdit, onDelete }: PostCardProps) {
+export function PostCard({
+  post,
+  onLike,
+  onDislike,
+  onEdit,
+  onDelete,
+  comments,
+  profileId,
+  onToggleComments,
+  onAddComment,
+  onLikeComment,
+  onEditComment,
+  onDeleteComment,
+  onReplyComment,
+}: PostCardProps) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
+  const [showComments, setShowComments] = useState(false);
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.origin + '/posts/' + post.id);
+  };
+
+  const handleReply = async (parentId: string, content: string) => {
+    await onReplyComment?.(post.id, parentId, content);
   };
 
   if (editing) {
@@ -87,8 +115,15 @@ export function PostCard({ post, onLike, onDislike, onEdit, onDelete }: PostCard
         <button className={styles.action} type="button" onClick={() => onDislike?.(post.id)}>
           {post.isDisliked ? '✗ Не нравится' : 'Не нравится'}
         </button>
-        <button className={styles.action} type="button">
-          Комментировать
+        <button
+          className={styles.action}
+          type="button"
+          onClick={() => {
+            onToggleComments?.(post.id);
+            setShowComments((p) => !p);
+          }}
+        >
+          Комментировать {post.commentsCount > 0 ? `(${post.commentsCount})` : ''}
         </button>
         <button className={styles.action} type="button" onClick={handleShare}>
           Поделиться
@@ -100,6 +135,26 @@ export function PostCard({ post, onLike, onDislike, onEdit, onDelete }: PostCard
           Удалить
         </button>
       </div>
+
+      {showComments &&
+        comments &&
+        onAddComment &&
+        onLikeComment &&
+        onEditComment &&
+        onDeleteComment &&
+        onReplyComment && (
+          <div className={styles.comments}>
+            <CommentSection
+              comments={comments}
+              profileId={profileId ?? null}
+              onAddComment={async (content) => onAddComment(post.id, content)}
+              onLikeComment={onLikeComment}
+              onEditComment={onEditComment}
+              onDeleteComment={onDeleteComment}
+              onReplyComment={handleReply}
+            />
+          </div>
+        )}
     </article>
   );
 }
