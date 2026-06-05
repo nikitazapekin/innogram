@@ -1,6 +1,14 @@
+import { CORE_API_URL } from '@/app/shared/config/api';
 import { getAccessToken } from '@/lib/auth';
 
 const BASE = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
+
+export type ProfileDto = {
+  id?: number;
+  displayName?: string;
+  bio?: string;
+  avatarAssetId?: number | null;
+};
 
 async function authFetch(url: string, opts?: RequestInit) {
   const token = getAccessToken();
@@ -22,4 +30,32 @@ export async function getProfile() {
 
 export async function getUserPosts(profileId: number) {
   return authFetch(`${BASE}/users/${profileId}/posts`);
+}
+
+export async function fetchProfiles(): Promise<ProfileDto[]> {
+  const response = await fetch(`${CORE_API_URL}/users`);
+
+  if (!response.ok) {
+    throw new Error('Не удалось загрузить профили');
+  }
+
+  return response.json();
+}
+
+export async function fetchCurrentProfile(): Promise<ProfileDto | null> {
+  const token = getAccessToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const response = await fetch(`${CORE_API_URL}/users/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
 }
