@@ -30,9 +30,4 @@ export type Comment = {
   content: string;
   author: Author;
   createdAt: string;
-  updatedAt?: string;
-  parentId?: string;
-  likesCount: number;
-  isLiked: boolean;
-  children?: Comment[];
 };
