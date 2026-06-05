@@ -194,24 +194,6 @@ export class PostsService {
       .remove(profileId);
   }
 
-  async like(postId: number, profileId: number): Promise<void> {
-    await this.findPostById(postId);
-    await this.postsRepository
-      .createQueryBuilder()
-      .relation(Post, 'likes')
-      .of(postId)
-      .add(profileId);
-  }
-
-  async unlike(postId: number, profileId: number): Promise<void> {
-    await this.findPostById(postId);
-    await this.postsRepository
-      .createQueryBuilder()
-      .relation(Post, 'likes')
-      .of(postId)
-      .remove(profileId);
-  }
-
   async deletePost(id: number): Promise<void> {
     await this.archivedPostRepository.delete({ postId: id });
 

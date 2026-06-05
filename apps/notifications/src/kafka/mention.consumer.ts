@@ -62,7 +62,7 @@ export class MentionConsumer implements OnModuleInit {
       );
 
       const notification = this.notificationRepository.create({
-        recipientProfileId: String(event.mentionedProfileId),
+        recipientProfileId: event.mentionedProfileId,
         type: 'mention',
         payload: {
           sourceType: event.sourceType,

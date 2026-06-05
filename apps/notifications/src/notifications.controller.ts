@@ -16,7 +16,7 @@ export class NotificationsController {
     @Param('profileId', ParseIntPipe) profileId: number,
   ): Promise<Notification[]> {
     return this.notificationRepository.find({
-      where: { recipientProfileId: String(profileId) },
+      where: { recipientProfileId: profileId },
       order: { createdAt: 'DESC' },
     });
   }
