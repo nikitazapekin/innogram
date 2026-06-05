@@ -1,0 +1,203 @@
+@use '../../styles' as *;
+
+.profile {
+  display: grid;
+  gap: $spacing-lg;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+}
+
+.loading {
+  text-align: center;
+  padding: $spacing-xxl;
+  color: rgba($color-black, 0.5);
+  font-size: $font-xs;
+}
+
+.header {
+  display: grid;
+  gap: $spacing-lg;
+  padding: $spacing-xl $spacing-lg;
+  background: $color-blue;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
+}
+
+.avatar { justify-self: center; }
+
+.avatarPlaceholder {
+  width: 96px;
+  height: 96px;
+  border-radius: $radius-circle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-white;
+  font-size: 36px;
+  font-weight: 700;
+  color: $color-black;
+  border: 2px solid $color-black;
+}
+
+.info {
+  display: grid;
+  gap: $spacing-sm;
+  text-align: center;
+}
+
+.name {
+  margin: 0;
+  font-size: $font-lg;
+  color: $color-black;
+}
+
+.bio {
+  margin: 0;
+  font-size: $font-xs;
+  color: rgba($color-black, 0.7);
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: center;
+}
+
+.followBtn, .unfollowBtn {
+  min-height: 40px;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: $font-xs;
+  font-weight: 700;
+}
+
+.followBtn {
+  color: $color-white;
+  background: $color-black;
+  border: 2px solid $color-black;
+
+  &:hover { opacity: 0.9; }
+}
+
+.unfollowBtn {
+  color: $color-black;
+  background: transparent;
+  border: 2px solid $color-black;
+
+  &:hover { background: rgba($color-black, 0.06); }
+}
+
+.stats {
+  display: flex;
+  gap: $spacing-lg;
+  justify-content: center;
+}
+
+.statBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: $font-xs;
+  color: $color-black;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-small;
+  transition:  150ms;
+
+  &:hover { background: rgba($color-black, 0.06); }
+
+  strong { font-size: $font-sm; }
+}
+
+.sectionTitle {
+  font-size: $font-sm;
+  font-weight: 700;
+  color: $color-black;
+  margin-top: $spacing-md;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: $color-white;
+  border-radius: $radius-large;
+  width: 90%;
+  max-width: 400px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $color-gray;
+
+  h2 {
+    margin: 0;
+    font-size: $font-sm;
+  }
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: rgba($color-black, 0.5);
+  padding: $spacing-xs;
+
+  &:hover { color: $color-black; }
+}
+
+.modalList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.modalItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-sm $spacing-lg;
+  cursor: pointer;
+  transition:  150ms;
+  font-size: $font-xs;
+
+  &:hover { background: rgba($color-black, 0.06); }
+}
+
+.modalAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-circle;
+  background: $color-blue;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: $font-xs;
+  color: $color-black;
+  flex-shrink: 0;
+}
+
+.modalEmpty {
+  padding: $spacing-lg;
+  text-align: center;
+  color: rgba($color-black, 0.5);
+  font-size: $font-xs;
+}

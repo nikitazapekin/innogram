@@ -30,7 +30,10 @@ export function Feed() {
 
   useEffect(() => {
     getProfile()
-      .then((profile) => setProfileId(profile.id))
+      .then((profile) => {
+        const pid = profile?.id;
+        if (pid) setProfileId(pid);
+      })
       .catch(() => {});
   }, []);
 
