@@ -36,6 +36,9 @@ export function Feed() {
   const [search, setSearch] = useState('');
   const [profileId, setProfileId] = useState<number | null>(null);
   const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({});
+  const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
+  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
+  const [dislikedPosts, setDislikedPosts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     getProfile().then((profile) => {
@@ -76,29 +79,27 @@ export function Feed() {
   const handleLike = async (id: string) => {
     if (!profileId) return;
 
-    const target = posts.find((post) => post.id === id);
-    if (!target) return;
+    const isLiked = likedPosts[id] ?? false;
+    const isDisliked = dislikedPosts[id] ?? false;
 
-    if (target.isLiked) {
+    if (isLiked) {
       await unlikePost(Number(id), profileId);
 
+      setLikedPosts((prev) => ({ ...prev, [id]: false }));
       setPosts((prev) =>
         prev.map((post) => {
-          if (post.id !== id) {
-            return post;
-          }
-
+          if (post.id !== id) return post;
           return { ...post, isLiked: false, likesCount: post.likesCount - 1 };
         }),
       );
     } else {
       await likePost(Number(id), profileId);
 
+      setLikedPosts((prev) => ({ ...prev, [id]: true }));
+      if (isDisliked) setDislikedPosts((prev) => ({ ...prev, [id]: false }));
       setPosts((prev) =>
         prev.map((post) => {
-          if (post.id !== id) {
-            return post;
-          }
+          if (post.id !== id) return post;
 
           const updated = {
             ...post,
@@ -108,7 +109,7 @@ export function Feed() {
             dislikesCount: post.dislikesCount,
           };
 
-          if (post.isDisliked) {
+          if (isDisliked) {
             updated.dislikesCount = post.dislikesCount - 1;
           }
 
@@ -121,29 +122,27 @@ export function Feed() {
   const handleDislike = async (id: string) => {
     if (!profileId) return;
 
-    const target = posts.find((post) => post.id === id);
-    if (!target) return;
+    const isDisliked = dislikedPosts[id] ?? false;
+    const isLiked = likedPosts[id] ?? false;
 
-    if (target.isDisliked) {
+    if (isDisliked) {
       await undislikePost(Number(id), profileId);
 
+      setDislikedPosts((prev) => ({ ...prev, [id]: false }));
       setPosts((prev) =>
         prev.map((post) => {
-          if (post.id !== id) {
-            return post;
-          }
-
+          if (post.id !== id) return post;
           return { ...post, isDisliked: false, dislikesCount: post.dislikesCount - 1 };
         }),
       );
     } else {
       await dislikePost(Number(id), profileId);
 
+      setDislikedPosts((prev) => ({ ...prev, [id]: true }));
+      if (isLiked) setLikedPosts((prev) => ({ ...prev, [id]: false }));
       setPosts((prev) =>
         prev.map((post) => {
-          if (post.id !== id) {
-            return post;
-          }
+          if (post.id !== id) return post;
 
           const updated = {
             ...post,
@@ -153,7 +152,7 @@ export function Feed() {
             likesCount: post.likesCount,
           };
 
-          if (post.isLiked) {
+          if (isLiked) {
             updated.likesCount = post.likesCount - 1;
           }
 
@@ -189,21 +188,25 @@ export function Feed() {
 
   const handleLikeComment = async (id: string) => {
     if (!profileId) return;
-    const comment = Object.values(commentsByPost)
-      .flat()
-      .find((c) => c.id === id);
-    if (!comment) return;
 
-    const toggle = comment.isLiked ? unlikeComment : likeComment;
-    await toggle(Number(id), profileId);
+    const isLiked = likedComments[id] ?? false;
+    const toggle = isLiked ? unlikeComment : likeComment;
+
+    try {
+      await toggle(Number(id), profileId);
+    } catch {
+      return;
+    }
+
+    setLikedComments((prev) => ({ ...prev, [id]: !isLiked }));
 
     const updateInTree = (list: Comment[]): Comment[] =>
       list.map((c) => {
         if (c.id === id) {
           return {
             ...c,
-            isLiked: !c.isLiked,
-            likesCount: c.isLiked ? c.likesCount - 1 : c.likesCount + 1,
+            isLiked: !isLiked,
+            likesCount: isLiked ? c.likesCount - 1 : c.likesCount + 1,
           };
         }
         if (c.children) return { ...c, children: updateInTree(c.children) };

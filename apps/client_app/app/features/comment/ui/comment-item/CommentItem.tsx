@@ -61,7 +61,7 @@ export function CommentItem({
 
       <div className={styles.actions}>
         <button className={styles.action} type="button" onClick={() => onLike(comment.id)}>
-          {comment.isLiked ? '✓' : ''} {comment.likesCount}
+          {comment.isLiked ? '✓ Лайк' : 'Лайк'} {comment.likesCount}
         </button>
         <button className={styles.action} type="button" onClick={() => setShowReplyForm((p) => !p)}>
           Ответить
