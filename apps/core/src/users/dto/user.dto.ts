@@ -16,13 +16,13 @@ export class UserDto {
   bio?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isPrivate?: boolean;
-
-  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   avatarAssetId?: number | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrivate?: boolean;
 
   @IsOptional()
   @IsDate()

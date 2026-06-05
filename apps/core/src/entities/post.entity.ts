@@ -18,9 +18,9 @@ import { Profile } from './profile.entity';
 @Entity({ name: 'post', schema: 'main' })
 export class Post {
   @PrimaryGeneratedColumn('increment')
-  id!: number;
+  id: number;
 
-  @Column({ name: 'author_profile_id', type: 'integer' })
+  @Column({ name: 'author_profile_id', type: 'int' })
   authorProfileId: number;
 
   @Column({ type: 'varchar', length: 255 })

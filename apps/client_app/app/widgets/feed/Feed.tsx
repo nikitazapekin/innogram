@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './Feed.module.scss';
 import { PostSearch } from '@/app/features/post/ui/post-search/PostSearch';
 import { PostCreate } from '@/app/features/post/ui/post-create/PostCreate';

@@ -78,10 +78,6 @@ const requestHasBody = (method: string): boolean => {
   return true;
 };
 
-const buildUpstreamUrl = (baseUrl: string, path: string | undefined): string => {
-  return `${baseUrl}${path ?? '/'}`;
-};
-
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>
   Readable.toWeb(stream);
 
@@ -93,6 +89,10 @@ const applyUpstreamHeaders = (response: Response, headers: Headers): void => {
 
     response.setHeader(headerName, headerValue);
   });
+};
+
+const buildUpstreamUrl = (baseUrl: string, path: string | undefined): string => {
+  return `${baseUrl}${path ?? '/'}`;
 };
 
 const AUTH_ROUTE_PREFIX = '/auth';

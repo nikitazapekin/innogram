@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Comment } from '../entities/comment.entity';
 import { Notification } from '../entities/notification.entity';
+
 import { MentionsModule } from '../mentions/mentions.module';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';

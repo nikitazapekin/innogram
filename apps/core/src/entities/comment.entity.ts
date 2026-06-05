@@ -19,11 +19,12 @@ export class Comment {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'post_id', type: 'integer' })
+  @Column({ name: 'post_id', type: 'int' })
   postId: number;
 
   @Column({ name: 'author_profile_id', type: 'integer' })
   authorProfileId: number;
+
   @Column({ name: 'parent_id', type: 'integer' })
   parentId: number;
 
