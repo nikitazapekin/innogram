@@ -79,6 +79,19 @@
   border-top: 1px solid rgba($color-black, 0.12);
 }
 
+.textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: $spacing-md;
+  border: 2px solid $color-black;
+  border-radius: $radius-medium;
+  font-family: $font-primary;
+  font-size: $font-xs;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
 .action {
   flex: 1;
   min-height: 40px;

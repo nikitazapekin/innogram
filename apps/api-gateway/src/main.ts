@@ -78,14 +78,8 @@ const requestHasBody = (method: string): boolean => {
   return true;
 };
 
-const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
-  const path = originalUrl ?? '/';
-
-  if (path.startsWith('/users') || path.startsWith('/auth/user')) {
-    return `${CORE_URL}${path}`;
-  }
-
-  return `${AUTH_SERVICE_URL}${path}`;
+const buildUpstreamUrl = (baseUrl: string, path: string | undefined): string => {
+  return `${baseUrl}${path ?? '/'}`;
 };
 
 const toRequestBodyStream = (stream: Readable): ReadableStream<Uint8Array> =>

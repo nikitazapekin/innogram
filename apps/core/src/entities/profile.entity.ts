@@ -34,9 +34,6 @@ export class Profile {
   @Column({ name: 'avatar_asset_id', type: 'integer', nullable: true })
   avatarAssetId: number;
 
-  @Column({ name: 'is_private', type: 'boolean', default: false })
-  isPrivate: boolean;
-
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
@@ -76,6 +73,9 @@ export class Profile {
 
   @ManyToMany(() => Post, (post) => post.likes)
   likedPosts: Post[];
+
+  @ManyToMany(() => Post, (post) => post.dislikes)
+  dislikedPosts: Post[];
 
   @ManyToMany(() => Comment, (comment) => comment.likes)
   likedComments: Comment[];

@@ -308,8 +308,8 @@ export class UsersService {
 
   private updateProfileFieldsFull(profile: Profile, updateUserDto: UpdateUserDto): void {
     profile.displayName = updateUserDto.displayName;
-    profile.bio = updateUserDto.bio ?? null;
-    profile.avatarAssetId = updateUserDto.avatarAssetId ?? null;
+    profile.bio = updateUserDto.bio ?? '';
+    profile.avatarAssetId = updateUserDto.avatarAssetId ?? 0;
     profile.isPrivate = updateUserDto.isPrivate ?? false;
   }
 

@@ -12,6 +12,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: $spacing-xs;
+  align-items: center;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: rgba($color-black, 0.15);
+  margin: 0 $spacing-xs;
 }
 
 .control {
