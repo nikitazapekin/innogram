@@ -59,6 +59,7 @@ export class UsersController {
     if (searchTerm) {
       return this.usersService.search(searchTerm);
     }
+
     return this.usersService.findAll();
   }
 
