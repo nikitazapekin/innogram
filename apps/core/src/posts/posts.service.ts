@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
+import { Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
 
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
@@ -160,16 +160,11 @@ export class PostsService {
 
   async like(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
-    try {
-      await this.postsRepository
-        .createQueryBuilder()
-        .relation(Post, 'likes')
-        .of(postId)
-        .add(profileId);
-    } catch (error: unknown) {
-      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
-        throw error;
-    }
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'likes')
+      .of(postId)
+      .add(profileId);
   }
 
   async unlike(postId: number, profileId: number): Promise<void> {
@@ -183,16 +178,11 @@ export class PostsService {
 
   async dislike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
-    try {
-      await this.postsRepository
-        .createQueryBuilder()
-        .relation(Post, 'dislikes')
-        .of(postId)
-        .add(profileId);
-    } catch (error: unknown) {
-      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
-        throw error;
-    }
+    await this.postsRepository
+      .createQueryBuilder()
+      .relation(Post, 'dislikes')
+      .of(postId)
+      .add(profileId);
   }
 
   async undislike(postId: number, profileId: number): Promise<void> {
