@@ -171,13 +171,46 @@ export function Feed() {
     }
   };
 
+  function updateCommentLists(transform: (list: Comment[]) => Comment[]) {
+    setCommentsByPost((prev) => {
+      const result: Record<string, Comment[]> = {};
+      for (const postId of Object.keys(prev)) {
+        result[postId] = transform(prev[postId]);
+      }
+      return result;
+    });
+  }
+
+  function mapTree(
+    list: Comment[],
+    matchId: string,
+    update: (comment: Comment) => Comment,
+  ): Comment[] {
+    return list.map((comment) => {
+      if (comment.id === matchId) return update(comment);
+      if (comment.children)
+        return { ...comment, children: mapTree(comment.children, matchId, update) };
+      return comment;
+    });
+  }
+
+  function filterTree(list: Comment[], matchId: string): Comment[] {
+    return list
+      .filter((comment) => comment.id !== matchId)
+      .map((comment) => {
+        if (comment.children)
+          return { ...comment, children: filterTree(comment.children, matchId) };
+        return comment;
+      });
+  }
+
   const handleAddComment = async (postId: string, content: string) => {
     if (!profileId) return;
     const created = await createComment(Number(postId), profileId, content);
-    setCommentsByPost((prev) => {
-      const existing = prev[postId] ?? [];
-      return { ...prev, [postId]: [...existing, created] };
-    });
+    setCommentsByPost((prev) => ({
+      ...prev,
+      [postId]: [...(prev[postId] ?? []), created],
+    }));
     setPosts((prev) =>
       prev.map((post) =>
         post.id === postId ? { ...post, commentsCount: post.commentsCount + 1 } : post,
@@ -199,87 +232,34 @@ export function Feed() {
 
     setLikedComments((prev) => ({ ...prev, [id]: !isLiked }));
 
-    const updateInTree = (list: Comment[]): Comment[] =>
-      list.map((c) => {
-        if (c.id === id) {
-          return {
-            ...c,
-            isLiked: !isLiked,
-            likesCount: isLiked ? c.likesCount - 1 : c.likesCount + 1,
-          };
-        }
-        if (c.children) return { ...c, children: updateInTree(c.children) };
-        return c;
-      });
-
-    setCommentsByPost((prev) => {
-      const next: Record<string, Comment[]> = {};
-      for (const key of Object.keys(prev)) {
-        next[key] = updateInTree(prev[key]);
-      }
-      return next;
-    });
+    updateCommentLists((list) =>
+      mapTree(list, id, (comment) => ({
+        ...comment,
+        isLiked: !isLiked,
+        likesCount: isLiked ? comment.likesCount - 1 : comment.likesCount + 1,
+      })),
+    );
   };
 
   const handleEditComment = async (id: string, content: string) => {
     await updateComment(Number(id), content);
-
-    const updateInTree = (list: Comment[]): Comment[] =>
-      list.map((c) => {
-        if (c.id === id) return { ...c, content };
-        if (c.children) return { ...c, children: updateInTree(c.children) };
-        return c;
-      });
-
-    setCommentsByPost((prev) => {
-      const next: Record<string, Comment[]> = {};
-      for (const key of Object.keys(prev)) {
-        next[key] = updateInTree(prev[key]);
-      }
-      return next;
-    });
+    updateCommentLists((list) => mapTree(list, id, (comment) => ({ ...comment, content })));
   };
 
   const handleDeleteComment = async (id: string) => {
     await deleteComment(Number(id));
-
-    const removeFromTree = (list: Comment[]): Comment[] =>
-      list
-        .filter((c) => c.id !== id)
-        .map((c) => {
-          if (c.children) return { ...c, children: removeFromTree(c.children) };
-          return c;
-        });
-
-    setCommentsByPost((prev) => {
-      const next: Record<string, Comment[]> = {};
-      for (const key of Object.keys(prev)) {
-        next[key] = removeFromTree(prev[key]);
-      }
-      return next;
-    });
+    updateCommentLists((list) => filterTree(list, id));
   };
 
   const handleReplyComment = async (postId: string, parentId: string, content: string) => {
     if (!profileId) return;
     const created = await createComment(Number(postId), profileId, content, Number(parentId));
-
-    const addChild = (list: Comment[]): Comment[] =>
-      list.map((c) => {
-        if (c.id === parentId) {
-          return { ...c, children: [...(c.children ?? []), created] };
-        }
-        if (c.children) return { ...c, children: addChild(c.children) };
-        return c;
-      });
-
-    setCommentsByPost((prev) => {
-      const next: Record<string, Comment[]> = {};
-      for (const key of Object.keys(prev)) {
-        next[key] = addChild(prev[key]);
-      }
-      return next;
-    });
+    updateCommentLists((list) =>
+      mapTree(list, parentId, (comment) => ({
+        ...comment,
+        children: [...(comment.children ?? []), created],
+      })),
+    );
   };
 
   return (
@@ -317,10 +297,7 @@ export function Feed() {
           await updatePost(Number(id), content);
           setPosts((prev) =>
             prev.map((post) => {
-              if (post.id !== id) {
-                return post;
-              }
-
+              if (post.id !== id) return post;
               return { ...post, content };
             }),
           );

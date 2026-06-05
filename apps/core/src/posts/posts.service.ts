@@ -167,8 +167,8 @@ export class PostsService {
         .of(postId)
         .add(profileId);
     } catch (error: unknown) {
-      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
-        throw error;
+      if (error instanceof QueryFailedError && error.driverError?.code === '23505') return;
+      throw error;
     }
   }
 
@@ -190,8 +190,8 @@ export class PostsService {
         .of(postId)
         .add(profileId);
     } catch (error: unknown) {
-      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
-        throw error;
+      if (error instanceof QueryFailedError && error.driverError?.code === '23505') return;
+      throw error;
     }
   }
 
