@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import type { Message } from '@/app/entities/chat';
 import styles from './ChatMessages.module.scss';
 
@@ -9,6 +10,12 @@ type ChatMessagesProps = {
 };
 
 export function ChatMessages({ messages = [], currentProfileId }: ChatMessagesProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   if (messages.length === 0) {
     return (
       <div className={styles.empty}>
@@ -65,6 +72,7 @@ export function ChatMessages({ messages = [], currentProfileId }: ChatMessagesPr
           </div>
         );
       })}
+      <div ref={bottomRef} />
     </div>
   );
 }

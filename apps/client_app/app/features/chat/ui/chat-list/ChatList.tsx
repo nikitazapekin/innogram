@@ -7,7 +7,10 @@ import styles from './ChatList.module.scss';
 type ChatListProps = {
   chats: Chat[];
   activeChatId: number | null;
+  connected?: boolean;
   onSelect: (chat: Chat) => void;
+  onCreatePrivate?: () => void;
+  onCreateGroup?: () => void;
 };
 
 function ChatItem({
@@ -45,14 +48,24 @@ function ChatItem({
           )}
         </div>
         <div className={styles.bottom}>
-          <span className={styles.preview}>{chat.lastMessage?.content ?? 'Нет сообщений'}</span>
+          <span className={styles.preview}>
+            {chat.lastMessage?.content ??
+              (chat.lastMessage?.assets?.length ? 'Вложение' : 'Нет сообщений')}
+          </span>
         </div>
       </div>
     </button>
   );
 }
 
-export function ChatList({ chats = [], activeChatId = null, onSelect = () => {} }: ChatListProps) {
+export function ChatList({
+  chats = [],
+  activeChatId = null,
+  connected = false,
+  onSelect = () => {},
+  onCreatePrivate,
+  onCreateGroup,
+}: ChatListProps) {
   const [query, setQuery] = useState('');
 
   const filtered = chats.filter((chat) =>
@@ -66,7 +79,25 @@ export function ChatList({ chats = [], activeChatId = null, onSelect = () => {} 
     <aside className={styles.list}>
       <div className={styles.header}>
         <h2 className={styles.title}>Каталог</h2>
+        <div className={styles.actions}>
+          {onCreatePrivate && (
+            <button className={styles.actionButton} onClick={onCreatePrivate} type="button">
+              +
+            </button>
+          )}
+          {onCreateGroup && (
+            <button
+              className={styles.actionButton}
+              onClick={onCreateGroup}
+              title="Создать группу"
+              type="button"
+            >
+              G
+            </button>
+          )}
+        </div>
       </div>
+      {!connected && <p className={styles.status}>Подключение…</p>}
       <div className={styles.search}>
         <input
           className={styles.searchInput}
@@ -77,6 +108,9 @@ export function ChatList({ chats = [], activeChatId = null, onSelect = () => {} 
         />
       </div>
       <div className={styles.items}>
+        {filtered.length === 0 && (
+          <p className={styles.empty}>Чатов пока нет. Создайте новый чат.</p>
+        )}
         {privateChats.length > 0 && (
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Сообщения</h3>

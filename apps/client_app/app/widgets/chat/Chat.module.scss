@@ -10,6 +10,17 @@
   align-content: start;
 }
 
+.error {
+  margin: 0;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-black, 0.08);
+  border: 2px solid $color-black;
+  border-radius: $radius-medium;
+  font-size: $font-xs;
+  color: $color-black;
+  grid-column: 1 / -1;
+}
+
 .sidebar {
   display: none;
   flex-direction: column;
