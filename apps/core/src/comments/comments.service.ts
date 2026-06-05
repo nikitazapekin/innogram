@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 
 import { Comment } from '../entities/comment.entity';
 import { Notification } from '../entities/notification.entity';
-import { KafkaService } from '../kafka/kafka.service';
+import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { MentionsService } from '../mentions/mentions.service';
 import { CommentDto } from './dto/comment.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -20,7 +20,7 @@ export class CommentsService {
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
     private readonly mentionsService: MentionsService,
-    private readonly kafkaService: KafkaService,
+    private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
@@ -195,7 +195,7 @@ export class CommentsService {
       if (mention.mentionedProfileId === comment.authorProfileId) continue;
 
       const notification = this.notificationRepository.create({
-        recipientProfileId: String(mention.mentionedProfileId),
+        recipientProfileId: mention.mentionedProfileId,
         type: 'mention',
         payload: {
           sourceType: 'comment' as const,
@@ -207,7 +207,7 @@ export class CommentsService {
 
       await this.notificationRepository.save(notification);
 
-      await this.kafkaService.emitMentionEvent({
+      await this.notificationEventsProducer.emitMention({
         sourceType: 'comment',
         sourceId: comment.id,
         authorProfileId: comment.authorProfileId,

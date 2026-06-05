@@ -1,7 +1,12 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 
-import { USER_SUBSCRIBED_EVENT, UserSubscribedEventPayload } from '../kafka/kafka.constants';
+import {
+  MENTION_EVENT,
+  MentionEventPayload,
+  USER_SUBSCRIBED_EVENT,
+  UserSubscribedEventPayload,
+} from '../kafka/kafka.constants';
 import { NotificationsService } from './notifications.service';
 
 @Controller()
@@ -14,5 +19,11 @@ export class NotificationsKafkaController {
   async handleUserSubscribed(@Payload() payload: UserSubscribedEventPayload): Promise<void> {
     this.logger.log(`Received ${USER_SUBSCRIBED_EVENT} event`);
     await this.notificationsService.handleUserSubscribed(payload);
+  }
+
+  @EventPattern(MENTION_EVENT)
+  async handleMention(@Payload() payload: MentionEventPayload): Promise<void> {
+    this.logger.log(`Received ${MENTION_EVENT} event`);
+    await this.notificationsService.handleMention(payload);
   }
 }

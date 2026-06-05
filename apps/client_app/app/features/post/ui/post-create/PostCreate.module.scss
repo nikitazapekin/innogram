@@ -46,6 +46,15 @@
   &:hover { background: rgba($color-white, 0.7); }
 }
 
+.fileName {
+  font-size: 12px;
+  color: rgba($color-black, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
 .submit {
   width: 100%;
   min-height: 44px;

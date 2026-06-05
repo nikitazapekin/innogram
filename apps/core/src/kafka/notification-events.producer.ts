@@ -3,7 +3,12 @@ import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservice
 import { firstValueFrom } from 'rxjs';
 
 import { readRequiredEnv } from '../common/read-required-env';
-import { USER_SUBSCRIBED_EVENT, UserSubscribedEventPayload } from './kafka.constants';
+import {
+  MENTION_EVENT,
+  MentionEventPayload,
+  USER_SUBSCRIBED_EVENT,
+  UserSubscribedEventPayload,
+} from './kafka.constants';
 
 const readKafkaBrokers = (): string[] =>
   readRequiredEnv('KAFKA_BROKERS')
@@ -43,5 +48,14 @@ export class NotificationEventsProducer implements OnModuleInit, OnModuleDestroy
 
     await firstValueFrom(this.client.emit(USER_SUBSCRIBED_EVENT, payload));
     this.logger.log(`Emitted ${USER_SUBSCRIBED_EVENT}`);
+  }
+
+  async emitMention(payload: MentionEventPayload): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    await firstValueFrom(this.client.emit(MENTION_EVENT, payload));
+    this.logger.log(`Emitted ${MENTION_EVENT}`);
   }
 }

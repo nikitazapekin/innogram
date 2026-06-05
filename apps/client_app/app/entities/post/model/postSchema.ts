@@ -16,10 +16,13 @@ export type Post = {
   media?: MediaItem[];
   author: Author;
   likesCount: number;
+  dislikesCount: number;
   commentsCount: number;
   isLiked: boolean;
+  isDisliked: boolean;
   createdAt: string;
   updatedAt?: string;
+  authorProfileId?: number;
 };
 
 export type Comment = {

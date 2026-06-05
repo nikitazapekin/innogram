@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Notification } from '../entities/notification.entity';
-import { UserSubscribedEventPayload } from '../kafka/kafka.constants';
+import { MentionEventPayload, UserSubscribedEventPayload } from '../kafka/kafka.constants';
 import { NotificationDto } from './dto/notification.dto';
 
 const USER_SUBSCRIBED_TYPE = 'user_subscribed';
@@ -26,6 +26,21 @@ export class NotificationsService {
 
     await this.notificationsRepository.save(notification);
     this.logger.log(`Saved user_subscribed notification for profile ${payload.followingProfileId}`);
+  }
+
+  async handleMention(payload: MentionEventPayload): Promise<void> {
+    const notification = this.notificationsRepository.create({
+      recipientProfileId: payload.mentionedProfileId,
+      type: 'mention',
+      payload: {
+        sourceType: payload.sourceType,
+        sourceId: payload.sourceId,
+        authorProfileId: payload.authorProfileId,
+      },
+    });
+
+    await this.notificationsRepository.save(notification);
+    this.logger.log(`Saved mention notification for profile ${payload.mentionedProfileId}`);
   }
 
   async findByRecipient(recipientProfileId: number): Promise<NotificationDto[]> {

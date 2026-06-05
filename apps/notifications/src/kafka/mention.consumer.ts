@@ -24,8 +24,10 @@ export class MentionConsumer implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     const brokers = process.env.KAFKA_BROKERS;
+
     if (!brokers) {
       this.logger.warn('KAFKA_BROKERS not set, consumer disabled');
+
       return;
     }
 
@@ -39,6 +41,7 @@ export class MentionConsumer implements OnModuleInit {
     this.logger.log('Kafka consumer connected');
 
     const topic = process.env.MENTION_EVENTS_TOPIC ?? 'mention.events';
+
     await this.consumer.subscribe({ topic, fromBeginning: false });
 
     await this.consumer.run({

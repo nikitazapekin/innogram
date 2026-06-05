@@ -22,7 +22,7 @@ export class Comment {
   @Column({ name: 'post_id', type: 'int' })
   postId: number;
 
-  @Column({ name: 'author_profile_id', type: 'int' })
+  @Column({ name: 'author_profile_id', type: 'integer' })
   authorProfileId: number;
 
   @Column({ name: 'parent_id', type: 'integer' })

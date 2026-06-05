@@ -21,11 +21,10 @@ import {
 } from '@nestjs/swagger';
 
 import { Public, AuthenticatedRequest } from '@innogram/shared';
-import { CreateProfileDto } from './dto/create-profile.dto';
 import { FollowRequestDto } from './dto/follow-request.dto';
-import { PostDto } from '../posts/dto/post.dto';
 import { RespondFollowRequestDto } from './dto/respond-follow-request.dto';
 import { SubscribeProfileDto } from './dto/subscribe-profile.dto';
+import { PostDto } from '../posts/dto/post.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UsersService } from './users.service';

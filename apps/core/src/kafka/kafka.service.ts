@@ -1,8 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientProxyFactory, Transport, type ClientProxy } from '@nestjs/microservices';
 
-import { readRequiredEnv } from '../common/read-required-env';
-
 export type MentionEvent = {
   sourceType: 'post' | 'comment';
   sourceId: number;
@@ -18,6 +16,7 @@ export class KafkaService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     if (!process.env.KAFKA_BROKERS) {
       this.logger.warn('KAFKA_BROKERS not set, Kafka producer disabled');
+
       return;
     }
 
@@ -43,6 +42,7 @@ export class KafkaService implements OnModuleInit {
   async emitMentionEvent(event: MentionEvent): Promise<void> {
     if (!this.client) {
       this.logger.warn('Kafka client not available, skipping event');
+
       return;
     }
 

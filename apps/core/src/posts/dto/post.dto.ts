@@ -1,5 +1,24 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
+
+export class MediaDto {
+  @IsNumber()
+  id: number;
+
+  @IsString()
+  type: 'image' | 'video';
+
+  @IsString()
+  url: string;
+}
 
 export class PostDto {
   @IsNumber()
@@ -31,6 +50,11 @@ export class PostDto {
   @Type(() => Number)
   likesCount?: number;
 
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  dislikesCount?: number;
+
   @Type(() => Boolean)
   isArchived: boolean;
 
@@ -38,4 +62,10 @@ export class PostDto {
   @IsDate()
   @Type(() => Date)
   archivedAt: Date | null;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MediaDto)
+  media?: MediaDto[];
 }
