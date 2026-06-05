@@ -25,8 +25,8 @@ export class Comment {
   @Column({ name: 'author_profile_id', type: 'integer' })
   authorProfileId: number;
 
-  @Column({ name: 'parent_id', type: 'integer', nullable: true })
-  parentId: number | null;
+  @Column({ name: 'parent_id', type: 'integer' })
+  parentId: number;
 
   @Column({ type: 'text' })
   content: string;

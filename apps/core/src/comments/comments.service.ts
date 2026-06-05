@@ -24,19 +24,17 @@ export class CommentsService {
   ) {}
 
   async create(postId: number, commentDto: CreateCommentDto): Promise<CommentDto> {
-    if (commentDto.parentId != null) {
-      const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
+    const parent = await this.commentsRepository.findOneBy({ id: commentDto.parentId });
 
-      if (!parent) {
-        throw new NotFoundException('Parent comment was not found.');
-      }
+    if (!parent) {
+      throw new NotFoundException('Parent comment was not found.');
     }
 
     const comment = this.commentsRepository.create({
       postId,
       authorProfileId: commentDto.authorProfileId,
       content: commentDto.content,
-      parentId: commentDto.parentId ?? null,
+      parentId: commentDto.parentId,
     });
 
     const savedComment = await this.commentsRepository.save(comment);
@@ -90,7 +88,7 @@ export class CommentsService {
 
     for (const comment of postComments) {
       const commentDto = commentsById.get(comment.id)!;
-      const parentDto = comment.parentId != null ? commentsById.get(comment.parentId) : undefined;
+      const parentDto = commentsById.get(comment.parentId);
 
       if (parentDto) {
         if (!parentDto.replies) {
@@ -245,7 +243,7 @@ export class CommentsService {
       id: comment.id,
       postId: comment.postId,
       authorProfileId: comment.authorProfileId,
-      parentId: comment.parentId as number,
+      parentId: comment.parentId,
       content: comment.content,
       likesCount: comment.likes?.length,
       createdAt: comment.createdAt,
