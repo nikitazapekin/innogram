@@ -160,6 +160,7 @@ export class PostsService {
 
   async like(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     try {
       await this.postsRepository
         .createQueryBuilder()
@@ -167,13 +168,17 @@ export class PostsService {
         .of(postId)
         .add(profileId);
     } catch (error: unknown) {
-      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
+      if (
+        !(error instanceof QueryFailedError) ||
+        (error as unknown as { driverError?: { code?: string } }).driverError?.code !== '23505'
+      )
         throw error;
     }
   }
 
   async unlike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     await this.postsRepository
       .createQueryBuilder()
       .relation(Post, 'likes')
@@ -183,6 +188,7 @@ export class PostsService {
 
   async dislike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     try {
       await this.postsRepository
         .createQueryBuilder()
@@ -190,13 +196,17 @@ export class PostsService {
         .of(postId)
         .add(profileId);
     } catch (error: unknown) {
-      if (!(error instanceof QueryFailedError) || (error as any).driverError?.code !== '23505')
+      if (
+        !(error instanceof QueryFailedError) ||
+        (error as unknown as { driverError?: { code?: string } }).driverError?.code !== '23505'
+      )
         throw error;
     }
   }
 
   async undislike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     await this.postsRepository
       .createQueryBuilder()
       .relation(Post, 'dislikes')
