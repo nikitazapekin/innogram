@@ -1,7 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
 import { QueryFailedError, Repository } from 'typeorm';
 
 import { UserEntity } from '../entities/user.entity';
@@ -15,6 +14,7 @@ const { compare: mockCompare } = jest.requireMock<{ compare: jest.Mock }>('bcryp
 
 function mockUser(): UserEntity {
   const user = new UserEntity();
+
   user.id = 1;
   user.email = 'test@example.com';
   user.provider = 'local';
@@ -23,6 +23,7 @@ function mockUser(): UserEntity {
   user.createdAt = new Date('2024-01-01');
   user.updatedAt = new Date('2024-01-01');
   user.accounts = [];
+
   return user;
 }
 
@@ -97,6 +98,7 @@ describe('AuthService', () => {
 
     it('should create and return a user', async () => {
       const user = mockUser();
+
       usersRepository.create.mockReturnValue(user);
       usersRepository.save.mockResolvedValue(user);
 
@@ -125,6 +127,7 @@ describe('AuthService', () => {
       };
 
       const googleUser = mockUser();
+
       googleUser.email = 'google@example.com';
       googleUser.provider = 'google';
       googleUser.googleId = 'google_123';
@@ -145,6 +148,7 @@ describe('AuthService', () => {
 
     it('should throw ConflictException on unique constraint violation', async () => {
       const user = mockUser();
+
       usersRepository.create.mockReturnValue(user);
       usersRepository.save.mockRejectedValue(conflictError());
 
@@ -163,6 +167,7 @@ describe('AuthService', () => {
 
     it('should rethrow QueryFailedError with different code', async () => {
       const user = mockUser();
+
       usersRepository.create.mockReturnValue(user);
       usersRepository.save.mockRejectedValue(queryErrorWithCode('42P01'));
 
@@ -171,6 +176,7 @@ describe('AuthService', () => {
 
     it('should rethrow QueryFailedError with different constraint', async () => {
       const user = mockUser();
+
       usersRepository.create.mockReturnValue(user);
       usersRepository.save.mockRejectedValue(queryErrorWithConstraint('UQ_other'));
 
@@ -181,6 +187,7 @@ describe('AuthService', () => {
   describe('getUserByEmail', () => {
     it('should return user DTO when found', async () => {
       const user = mockUser();
+
       usersRepository.findOneBy.mockResolvedValue(user);
 
       const result = await service.getUserByEmail('test@example.com');
@@ -226,6 +233,7 @@ describe('AuthService', () => {
 
     it('should return user DTO on valid credentials', async () => {
       const user = mockUser();
+
       usersRepository.findOneBy.mockResolvedValue(user);
       mockCompare.mockResolvedValue(true);
 
@@ -251,6 +259,7 @@ describe('AuthService', () => {
 
     it('should return null when provider is not local', async () => {
       const googleUser = mockUser();
+
       googleUser.provider = 'google';
 
       usersRepository.findOneBy.mockResolvedValue(googleUser);
@@ -263,6 +272,7 @@ describe('AuthService', () => {
 
     it('should return null when user has no passwordHash', async () => {
       const noPasswordUser = mockUser();
+
       noPasswordUser.passwordHash = '';
 
       usersRepository.findOneBy.mockResolvedValue(noPasswordUser);
@@ -275,6 +285,7 @@ describe('AuthService', () => {
 
     it('should return null on incorrect password', async () => {
       const user = mockUser();
+
       usersRepository.findOneBy.mockResolvedValue(user);
       mockCompare.mockResolvedValue(false);
 

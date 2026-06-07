@@ -7,8 +7,10 @@ import { MentionsService } from './mentions.service';
 
 function mockProfile(displayName: string, id: number = 1): Profile {
   const profile = new Profile();
+
   profile.id = id;
   profile.displayName = displayName;
+
   return profile;
 }
 
@@ -62,6 +64,7 @@ describe('MentionsService', () => {
 
     it('should extract single mention and return matching profile', async () => {
       const alice = mockProfile('Alice');
+
       mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('Hello @Alice');
@@ -77,6 +80,7 @@ describe('MentionsService', () => {
     it('should extract multiple mentions and return matching profiles', async () => {
       const alice = mockProfile('Alice');
       const bob = mockProfile('Bob', 2);
+
       mockQueryBuilder.getMany.mockResolvedValueOnce([alice, bob]);
 
       const result = await service.extractMentions('Hello @Alice and @Bob');
@@ -88,6 +92,7 @@ describe('MentionsService', () => {
 
     it('should deduplicate same mention used multiple times', async () => {
       const alice = mockProfile('Alice');
+
       mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('@Alice hello @Alice');
@@ -98,6 +103,7 @@ describe('MentionsService', () => {
 
     it('should match case-insensitively', async () => {
       const alice = mockProfile('Alice');
+
       mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('@alice');
@@ -116,6 +122,7 @@ describe('MentionsService', () => {
 
     it('should not send names exceeding 120 characters to the database', async () => {
       const longName = 'a'.repeat(121);
+
       mockQueryBuilder.getMany.mockResolvedValueOnce([]);
 
       const result = await service.extractMentions(`Hello @${longName}`);
@@ -128,6 +135,7 @@ describe('MentionsService', () => {
 
     it('should pass all matched mentions to the query builder', async () => {
       const alice = mockProfile('Alice');
+
       mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('@Alice @ @Unknown @123');
