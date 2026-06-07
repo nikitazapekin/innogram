@@ -11,22 +11,56 @@ import { VerifyAuthUserCredentialsDto } from './dto/verify-auth-user-credentials
 
 jest.mock('bcrypt');
 
+const { compare: mockCompare } = jest.requireMock<{ compare: jest.Mock }>('bcrypt');
+
+function mockUser(): UserEntity {
+  const user = new UserEntity();
+  user.id = 1;
+  user.email = 'test@example.com';
+  user.provider = 'local';
+  user.googleId = '';
+  user.passwordHash = 'hashed_password';
+  user.createdAt = new Date('2024-01-01');
+  user.updatedAt = new Date('2024-01-01');
+  user.accounts = [];
+  return user;
+}
+
+function conflictError(): QueryFailedError {
+  return new QueryFailedError(
+    'INSERT INTO',
+    [],
+    Object.assign(new Error('duplicate key'), {
+      code: '23505',
+      constraint: 'UQ_auth_user_email',
+    }),
+  );
+}
+
+function queryErrorWithCode(code: string): QueryFailedError {
+  return new QueryFailedError(
+    'INSERT INTO',
+    [],
+    Object.assign(new Error('driver error'), { code }),
+  );
+}
+
+function queryErrorWithConstraint(constraint: string): QueryFailedError {
+  return new QueryFailedError(
+    'INSERT INTO',
+    [],
+    Object.assign(new Error('driver error'), {
+      code: '23505',
+      constraint,
+    }),
+  );
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let usersRepository: jest.Mocked<
     Pick<Repository<UserEntity>, 'create' | 'save' | 'findOneBy' | 'delete'>
   >;
-
-  const mockUser = {
-    id: 1,
-    email: 'test@example.com',
-    provider: 'local' as const,
-    googleId: null as string | null,
-    passwordHash: 'hashed_password',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    accounts: [],
-  } as UserEntity;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -62,16 +96,17 @@ describe('AuthService', () => {
     };
 
     it('should create and return a user', async () => {
-      usersRepository.create.mockReturnValue(mockUser);
-      usersRepository.save.mockResolvedValue(mockUser);
+      const user = mockUser();
+      usersRepository.create.mockReturnValue(user);
+      usersRepository.save.mockResolvedValue(user);
 
       const result = await service.createUser(createDto);
 
       expect(result).toEqual({
         id: 1,
         email: 'test@example.com',
-        createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       });
       expect(usersRepository.create).toHaveBeenCalledWith({
         email: 'test@example.com',
@@ -79,7 +114,7 @@ describe('AuthService', () => {
         googleId: undefined,
         passwordHash: 'hashed_password',
       });
-      expect(usersRepository.save).toHaveBeenCalledWith(mockUser);
+      expect(usersRepository.save).toHaveBeenCalledWith(user);
     });
 
     it('should handle optional googleId', async () => {
@@ -89,12 +124,11 @@ describe('AuthService', () => {
         googleId: 'google_123',
       };
 
-      const googleUser = {
-        ...mockUser,
-        email: 'google@example.com',
-        provider: 'google' as const,
-        googleId: 'google_123',
-      };
+      const googleUser = mockUser();
+      googleUser.email = 'google@example.com';
+      googleUser.provider = 'google';
+      googleUser.googleId = 'google_123';
+
       usersRepository.create.mockReturnValue(googleUser);
       usersRepository.save.mockResolvedValue(googleUser);
 
@@ -110,48 +144,35 @@ describe('AuthService', () => {
     });
 
     it('should throw ConflictException on unique constraint violation', async () => {
-      const driverError = new Error('duplicate key') as any;
-      driverError.code = '23505';
-      driverError.constraint = 'UQ_auth_user_email';
-
-      const queryError = new QueryFailedError('INSERT INTO', [], driverError);
-
-      usersRepository.create.mockReturnValue(mockUser);
-      usersRepository.save.mockRejectedValue(queryError);
+      const user = mockUser();
+      usersRepository.create.mockReturnValue(user);
+      usersRepository.save.mockRejectedValue(conflictError());
 
       await expect(service.createUser(createDto)).rejects.toThrow(ConflictException);
     });
 
     it('should rethrow non-constraint errors', async () => {
+      const user = mockUser();
       const dbError = new Error('Database connection lost');
 
-      usersRepository.create.mockReturnValue(mockUser);
+      usersRepository.create.mockReturnValue(user);
       usersRepository.save.mockRejectedValue(dbError);
 
       await expect(service.createUser(createDto)).rejects.toThrow('Database connection lost');
     });
 
     it('should rethrow QueryFailedError with different code', async () => {
-      const driverError = new Error('other error') as any;
-      driverError.code = '42P01';
-
-      const queryError = new QueryFailedError('INSERT INTO', [], driverError);
-
-      usersRepository.create.mockReturnValue(mockUser);
-      usersRepository.save.mockRejectedValue(queryError);
+      const user = mockUser();
+      usersRepository.create.mockReturnValue(user);
+      usersRepository.save.mockRejectedValue(queryErrorWithCode('42P01'));
 
       await expect(service.createUser(createDto)).rejects.toThrow(QueryFailedError);
     });
 
     it('should rethrow QueryFailedError with different constraint', async () => {
-      const driverError = new Error('other constraint') as any;
-      driverError.code = '23505';
-      driverError.constraint = 'UQ_other';
-
-      const queryError = new QueryFailedError('INSERT INTO', [], driverError);
-
-      usersRepository.create.mockReturnValue(mockUser);
-      usersRepository.save.mockRejectedValue(queryError);
+      const user = mockUser();
+      usersRepository.create.mockReturnValue(user);
+      usersRepository.save.mockRejectedValue(queryErrorWithConstraint('UQ_other'));
 
       await expect(service.createUser(createDto)).rejects.toThrow(QueryFailedError);
     });
@@ -159,15 +180,16 @@ describe('AuthService', () => {
 
   describe('getUserByEmail', () => {
     it('should return user DTO when found', async () => {
-      usersRepository.findOneBy.mockResolvedValue(mockUser);
+      const user = mockUser();
+      usersRepository.findOneBy.mockResolvedValue(user);
 
       const result = await service.getUserByEmail('test@example.com');
 
       expect(result).toEqual({
         id: 1,
         email: 'test@example.com',
-        createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       });
       expect(usersRepository.findOneBy).toHaveBeenCalledWith({ email: 'test@example.com' });
     });
@@ -203,18 +225,19 @@ describe('AuthService', () => {
     };
 
     it('should return user DTO on valid credentials', async () => {
-      usersRepository.findOneBy.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      const user = mockUser();
+      usersRepository.findOneBy.mockResolvedValue(user);
+      mockCompare.mockResolvedValue(true);
 
       const result = await service.verifyUserCredentials(creds);
 
       expect(result).toEqual({
         id: 1,
         email: 'test@example.com',
-        createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       });
-      expect(bcrypt.compare).toHaveBeenCalledWith('correct_password', 'hashed_password');
+      expect(mockCompare).toHaveBeenCalledWith('correct_password', 'hashed_password');
     });
 
     it('should return null when user not found', async () => {
@@ -223,36 +246,37 @@ describe('AuthService', () => {
       const result = await service.verifyUserCredentials(creds);
 
       expect(result).toBeNull();
-      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(mockCompare).not.toHaveBeenCalled();
     });
 
     it('should return null when provider is not local', async () => {
-      const googleUser = {
-        ...mockUser,
-        provider: 'google' as const,
-        passwordHash: null,
-      } as unknown as UserEntity;
+      const googleUser = mockUser();
+      googleUser.provider = 'google';
+
       usersRepository.findOneBy.mockResolvedValue(googleUser);
 
       const result = await service.verifyUserCredentials(creds);
 
       expect(result).toBeNull();
-      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(mockCompare).not.toHaveBeenCalled();
     });
 
     it('should return null when user has no passwordHash', async () => {
-      const noPasswordUser = { ...mockUser, passwordHash: null } as unknown as UserEntity;
+      const noPasswordUser = mockUser();
+      noPasswordUser.passwordHash = '';
+
       usersRepository.findOneBy.mockResolvedValue(noPasswordUser);
 
       const result = await service.verifyUserCredentials(creds);
 
       expect(result).toBeNull();
-      expect(bcrypt.compare).not.toHaveBeenCalled();
+      expect(mockCompare).not.toHaveBeenCalled();
     });
 
     it('should return null on incorrect password', async () => {
-      usersRepository.findOneBy.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      const user = mockUser();
+      usersRepository.findOneBy.mockResolvedValue(user);
+      mockCompare.mockResolvedValue(false);
 
       const result = await service.verifyUserCredentials(creds);
 

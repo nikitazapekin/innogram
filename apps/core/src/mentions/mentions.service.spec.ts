@@ -5,6 +5,13 @@ import { Repository } from 'typeorm';
 import { Profile } from '../entities/profile.entity';
 import { MentionsService } from './mentions.service';
 
+function mockProfile(displayName: string, id: number = 1): Profile {
+  const profile = new Profile();
+  profile.id = id;
+  profile.displayName = displayName;
+  return profile;
+}
+
 describe('MentionsService', () => {
   let service: MentionsService;
   let profilesRepository: jest.Mocked<Pick<Repository<Profile>, 'createQueryBuilder'>>;
@@ -54,7 +61,8 @@ describe('MentionsService', () => {
     });
 
     it('should extract single mention and return matching profile', async () => {
-      mockQueryBuilder.getMany.mockResolvedValueOnce([{ id: 1, displayName: 'Alice' } as Profile]);
+      const alice = mockProfile('Alice');
+      mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('Hello @Alice');
 
@@ -67,10 +75,9 @@ describe('MentionsService', () => {
     });
 
     it('should extract multiple mentions and return matching profiles', async () => {
-      mockQueryBuilder.getMany.mockResolvedValueOnce([
-        { id: 1, displayName: 'Alice' },
-        { id: 2, displayName: 'Bob' },
-      ] as Profile[]);
+      const alice = mockProfile('Alice');
+      const bob = mockProfile('Bob', 2);
+      mockQueryBuilder.getMany.mockResolvedValueOnce([alice, bob]);
 
       const result = await service.extractMentions('Hello @Alice and @Bob');
 
@@ -80,7 +87,8 @@ describe('MentionsService', () => {
     });
 
     it('should deduplicate same mention used multiple times', async () => {
-      mockQueryBuilder.getMany.mockResolvedValueOnce([{ id: 1, displayName: 'Alice' } as Profile]);
+      const alice = mockProfile('Alice');
+      mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('@Alice hello @Alice');
 
@@ -89,7 +97,8 @@ describe('MentionsService', () => {
     });
 
     it('should match case-insensitively', async () => {
-      mockQueryBuilder.getMany.mockResolvedValueOnce([{ id: 1, displayName: 'Alice' } as Profile]);
+      const alice = mockProfile('Alice');
+      mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('@alice');
 
@@ -118,7 +127,8 @@ describe('MentionsService', () => {
     });
 
     it('should pass all matched mentions to the query builder', async () => {
-      mockQueryBuilder.getMany.mockResolvedValueOnce([{ id: 1, displayName: 'Alice' } as Profile]);
+      const alice = mockProfile('Alice');
+      mockQueryBuilder.getMany.mockResolvedValueOnce([alice]);
 
       const result = await service.extractMentions('@Alice @ @Unknown @123');
 
