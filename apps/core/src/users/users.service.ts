@@ -153,6 +153,27 @@ export class UsersService {
     return savedProfileResponse;
   }
 
+  async updateProfile(email: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const user = await this.usersRepository.findOneBy({ email });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const profile = await this.profilesRepository.findOneBy({ userId: user.id });
+
+    if (!profile) {
+      throw new NotFoundException('Profile not found.');
+    }
+
+    this.updateProfileFieldsPartial(profile, updateUserDto);
+    const savedProfile = await this.profilesRepository.save(profile);
+
+    this.logger.log(`Profile updated: ${savedProfile.id}`);
+
+    return this.toUserDto(savedProfile);
+  }
+
   async remove(id: number): Promise<void> {
     await this.findProfileById(id);
     await this.profilesRepository.delete(id);
