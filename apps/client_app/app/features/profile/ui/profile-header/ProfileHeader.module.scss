@@ -27,3 +27,10 @@
   color: $color-black; background: transparent; border: 2px solid $color-black;
   &:hover { background: rgba($color-black, 0.06); }
 }
+
+.logoutButton {
+  min-height: 40px; padding: $spacing-sm $spacing-lg; border-radius: $radius-circle;
+  cursor: pointer; font-size: $font-xs; font-weight: 700;
+  color: $color-redDark; background: transparent; border: 2px solid $color-redDark;
+  &:hover { background: rgba($color-redDark, 0.06); }
+}
