@@ -28,6 +28,13 @@ export async function getProfile() {
   return authFetch(`${BASE}/users/profile`);
 }
 
+export async function updateProfile(data: ProfileDto): Promise<void> {
+  await authFetch(`${BASE}/users/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getUserPosts(profileId: number) {
   return authFetch(`${BASE}/users/${profileId}/posts`);
 }
