@@ -10,7 +10,10 @@ import { DatabaseConfigService } from '../../src/database.config';
 import { configureIntegrationApp } from './integration-app';
 import { INTEGRATION_ENTITIES } from './test-entities';
 
-const itIfDb = process.env.TEST_DB_AVAILABLE === 'true' ? it : it.skip;
+let itIfDb = it;
+if (process.env.TEST_DB_AVAILABLE !== 'true') {
+  itIfDb = it.skip;
+}
 const testEmail = (label: string): string => `integration-${label}-${Date.now()}@example.com`;
 
 describe('AuthModule (integration)', () => {
