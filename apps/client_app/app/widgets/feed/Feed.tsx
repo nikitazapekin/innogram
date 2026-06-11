@@ -47,27 +47,27 @@ export function Feed() {
     });
   }, []);
 
-  const fetchPosts = async () => {
-    try {
-      const query: Record<string, string> = {};
-      if (sort === 'newest') {
-        query.sortBy = 'createdAt';
-        query.sortOrder = 'DESC';
-      } else if (sort === 'oldest') {
-        query.sortBy = 'createdAt';
-        query.sortOrder = 'ASC';
-      } else if (sort === 'title') {
-        query.sortBy = 'title';
-        query.sortOrder = 'ASC';
-      }
-      if (search) query.search = search;
-      setPosts(await getPosts(query));
-    } catch {
-      setPosts([]);
-    }
-  };
-
   useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const query: Record<string, string> = {};
+        if (sort === 'newest') {
+          query.sortBy = 'createdAt';
+          query.sortOrder = 'DESC';
+        } else if (sort === 'oldest') {
+          query.sortBy = 'createdAt';
+          query.sortOrder = 'ASC';
+        } else if (sort === 'title') {
+          query.sortBy = 'title';
+          query.sortOrder = 'ASC';
+        }
+        if (search) query.search = search;
+        setPosts(await getPosts(query));
+      } catch {
+        setPosts([]);
+      }
+    };
+
     fetchPosts();
   }, [sort, search]);
 
