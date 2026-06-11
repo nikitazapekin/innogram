@@ -97,6 +97,21 @@ export class UsersService {
     }));
   }
 
+  async search(query: string): Promise<UserDto[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const profiles = await this.profilesRepository
+      .createQueryBuilder('profile')
+      .where('LOWER(profile.displayName) LIKE :query', { query: `%${query.toLowerCase()}%` })
+      .orderBy('profile.displayName', 'ASC')
+      .take(10)
+      .getMany();
+
+    return profiles.map((profile) => this.toUserDto(profile));
+  }
+
   async findAll(): Promise<UserDto[]> {
     const profilesFindOptions = {
       order: { createdAt: 'DESC' },
