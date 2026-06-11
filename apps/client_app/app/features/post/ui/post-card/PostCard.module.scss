@@ -54,6 +54,7 @@
 }
 
 .mediaItem {
+  position: relative;
   aspect-ratio: 1;
   overflow: hidden;
   border: 2px solid $color-black;
@@ -92,6 +93,11 @@
   outline: none;
 }
 
+
+.comments {
+  padding-top: $spacing-sm;
+  border-top: 1px solid rgba($color-black, 0.12);
+}
 
 .action {
   flex: 1;
