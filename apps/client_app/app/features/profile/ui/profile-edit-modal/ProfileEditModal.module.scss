@@ -1,0 +1,92 @@
+@use '../../../../styles' as *;
+
+.form {
+  display: grid;
+  gap: $spacing-lg;
+}
+
+.field {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.label {
+  color: $color-black;
+  font-size: $font-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: $spacing-md;
+  color: $color-black;
+  background: $color-white;
+  border: 2px solid $color-black;
+  border-radius: $radius-large;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.5;
+
+  &::placeholder {
+    color: rgba($color-black, 0.45);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($color-white, 0.55);
+  }
+}
+
+.apiError {
+  margin: 0;
+  color: $color-redDark;
+  font-size: $font-xs;
+  font-weight: 600;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+  justify-content: center;
+}
+
+.cancelButton {
+  min-height: 40px;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: $font-xs;
+  font-weight: 700;
+  color: $color-black;
+  background: transparent;
+  border: 2px solid $color-black;
+
+  &:hover {
+    background: rgba($color-black, 0.06);
+  }
+}
+
+.saveButton {
+  min-height: 40px;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: $font-xs;
+  font-weight: 700;
+  color: $color-white;
+  background: $color-black;
+  border: 2px solid $color-black;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+}

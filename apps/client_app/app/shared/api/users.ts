@@ -56,6 +56,13 @@ export async function getProfile(): Promise<ProfileDto | null> {
   return authFetch(`${BASE}/users/profile`);
 }
 
+export async function updateProfile(data: ProfileDto): Promise<void> {
+  await authFetch(`${BASE}/users/profile`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getUserPosts(profileId: number): Promise<Post[]> {
   const data = await authFetch(`${BASE}/users/${profileId}/posts`);
 
