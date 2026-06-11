@@ -4,4 +4,5 @@ export type User = {
   email?: string;
   bio?: string;
   avatarAssetId?: number | null;
+  isPrivate?: boolean;
 };

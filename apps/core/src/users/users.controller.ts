@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -54,7 +55,11 @@ export class UsersController {
     type: UserDto,
     isArray: true,
   })
-  findAll(): Promise<UserDto[]> {
+  findAll(@Query('searchTerm') searchTerm?: string): Promise<UserDto[]> {
+    if (searchTerm) {
+      return this.usersService.search(searchTerm);
+    }
+
     return this.usersService.findAll();
   }
 
