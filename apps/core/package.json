@@ -13,6 +13,10 @@
     "migration:generate": "typeorm-ts-node-commonjs -d src/data-source.ts migration:generate src/database/migrations/GeneratedMigration",
     "migration:run": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run",
     "migration:revert": "typeorm-ts-node-commonjs -d src/data-source.ts migration:revert",
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:integration": "jest --config test/jest.config.ts --runInBand",
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
@@ -38,10 +42,17 @@
     "typeorm": "^0.3.24"
   },
   "devDependencies": {
+    "@nestjs/testing": "^10.4.22",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/minio": "^7.1.0",
     "@types/multer": "^2.1.0",
+    "@types/pg": "^8.11.11",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.4.2",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3"
   }
