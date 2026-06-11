@@ -1,0 +1,70 @@
+@use '../../styles' as *;
+
+.wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 320px;
+}
+
+.input {
+  width: 100%;
+  padding: $spacing-xs $spacing-md;
+  border: 1px solid rgba($color-white, 0.3);
+  border-radius: $radius-circle;
+  background: rgba($color-white, 0.1);
+  color: $color-white;
+  font-size: $font-xs;
+  outline: none;
+  transition: border-color 200ms, 200ms;
+
+  &::placeholder {
+    color: rgba($color-white, 0.5);
+  }
+
+  &:focus {
+    border-color: rgba($color-white, 0.6);
+    background: rgba($color-white, 0.15);
+  }
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0;
+  padding: $spacing-xs 0;
+  background: $color-dark;
+  border: 1px solid rgba($color-white, 0.2);
+  border-radius: $radius-medium;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: $spacing-sm $spacing-md;
+  cursor: pointer;
+  transition: 150ms;
+
+  &:hover {
+    background: rgba($color-white, 0.1);
+  }
+}
+
+.name {
+  font-size: $font-xs;
+  color: $color-white;
+  font-weight: 600;
+}
+
+.bio {
+  font-size: 12px;
+  color: rgba($color-white, 0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

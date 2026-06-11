@@ -41,9 +41,10 @@ export function Feed() {
   const [dislikedPosts, setDislikedPosts] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    getProfile()
-      .then((profile) => setProfileId(profile.id))
-      .catch(() => {});
+    getProfile().then((profile) => {
+      const pid = profile?.id;
+      if (pid) setProfileId(pid);
+    });
   }, []);
 
   const fetchPosts = async () => {

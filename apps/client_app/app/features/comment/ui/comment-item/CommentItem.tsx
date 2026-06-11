@@ -24,7 +24,7 @@ export function CommentItem({
 }: CommentItemProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editText, setEditText] = useState(comment.content);
+  const [editText] = useState(comment.content);
 
   const isAuthor = profileId !== null && comment.author.id === String(profileId);
 

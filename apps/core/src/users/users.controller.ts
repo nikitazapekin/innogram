@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -54,7 +55,11 @@ export class UsersController {
     type: UserDto,
     isArray: true,
   })
-  findAll(): Promise<UserDto[]> {
+  findAll(@Query('searchTerm') searchTerm?: string): Promise<UserDto[]> {
+    if (searchTerm) {
+      return this.usersService.search(searchTerm);
+    }
+
     return this.usersService.findAll();
   }
 
@@ -66,6 +71,17 @@ export class UsersController {
   })
   @ApiNotFoundResponse({ description: 'Profile was not found.' })
   getProfile(@Req() request: AuthenticatedRequest): Promise<UserDto> {
+    return this.usersService.findByEmail(request.user!.email);
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Get the current user profile (alias for /profile)' })
+  @ApiOkResponse({
+    description: 'Profile has been retrieved successfully.',
+    type: UserDto,
+  })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  getMe(@Req() request: AuthenticatedRequest): Promise<UserDto> {
     return this.usersService.findByEmail(request.user!.email);
   }
 
@@ -114,6 +130,21 @@ export class UsersController {
   })
   getPostsByProfileId(@Param('id', ParseIntPipe) id: number): Promise<PostDto[]> {
     return this.usersService.getPostsByProfileId(id);
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update the current user profile' })
+  @ApiOkResponse({
+    description: 'Profile has been updated successfully.',
+    type: UserDto,
+  })
+  @ApiBadRequestResponse({ description: 'Request body validation failed.' })
+  @ApiNotFoundResponse({ description: 'Profile was not found.' })
+  updateProfile(
+    @Req() request: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserDto> {
+    return this.usersService.updateProfile(request.user!.email, updateUserDto);
   }
 
   @Patch(':id')

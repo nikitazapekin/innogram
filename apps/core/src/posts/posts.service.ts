@@ -180,6 +180,7 @@ export class PostsService {
 
   async unlike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     await this.postsRepository
       .createQueryBuilder()
       .relation(Post, 'likes')
@@ -209,6 +210,7 @@ export class PostsService {
 
   async undislike(postId: number, profileId: number): Promise<void> {
     await this.findPostById(postId);
+
     await this.postsRepository
       .createQueryBuilder()
       .relation(Post, 'dislikes')

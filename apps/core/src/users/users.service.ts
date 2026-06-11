@@ -97,6 +97,21 @@ export class UsersService {
     }));
   }
 
+  async search(query: string): Promise<UserDto[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const profiles = await this.profilesRepository
+      .createQueryBuilder('profile')
+      .where('LOWER(profile.displayName) LIKE :query', { query: `%${query.toLowerCase()}%` })
+      .orderBy('profile.displayName', 'ASC')
+      .take(10)
+      .getMany();
+
+    return profiles.map((profile) => this.toUserDto(profile));
+  }
+
   async findAll(): Promise<UserDto[]> {
     const profilesFindOptions = {
       order: { createdAt: 'DESC' },
@@ -151,6 +166,27 @@ export class UsersService {
     const savedProfileResponse = this.toUserDto(savedProfile);
 
     return savedProfileResponse;
+  }
+
+  async updateProfile(email: string, updateUserDto: UpdateUserDto): Promise<UserDto> {
+    const user = await this.usersRepository.findOneBy({ email });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const profile = await this.profilesRepository.findOneBy({ userId: user.id });
+
+    if (!profile) {
+      throw new NotFoundException('Profile not found.');
+    }
+
+    this.updateProfileFieldsPartial(profile, updateUserDto);
+    const savedProfile = await this.profilesRepository.save(profile);
+
+    this.logger.log(`Profile updated: ${savedProfile.id}`);
+
+    return this.toUserDto(savedProfile);
   }
 
   async remove(id: number): Promise<void> {

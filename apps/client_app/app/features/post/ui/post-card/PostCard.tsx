@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import type { Post, Comment } from '@/app/entities/post';
 import { CommentSection } from '@/app/features/comment/ui/comment-section/CommentSection';
 import styles from './PostCard.module.scss';
@@ -95,7 +96,13 @@ export function PostCard({
               {item.type === 'video' ? (
                 <video className={styles.media} src={item.url} />
               ) : (
-                <img alt="" className={styles.media} src={item.url} />
+                <Image
+                  fill
+                  className={styles.media}
+                  alt=""
+                  src={item.url}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
               )}
             </div>
           ))}
