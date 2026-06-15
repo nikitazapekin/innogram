@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository, Like, FindOptionsWhere, FindOptionsOrder } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
@@ -14,6 +14,11 @@ import { PostDto, MediaDto } from './dto/post.dto';
 import { PaginatedPostsDto } from './dto/paginated-posts.dto';
 import { QueryPostsDto } from './dto/query-posts.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+
+type PostWithCounts = Post & {
+  likesCount?: number;
+  dislikesCount?: number;
+};
 
 @Injectable()
 export class PostsService {
@@ -32,14 +37,11 @@ export class PostsService {
   ) {}
 
   async getPosts(): Promise<PostDto[]> {
-    const posts = await this.postsRepository.find({
-      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
-      order: { createdAt: 'DESC' },
-    });
+    const posts = await this.buildPostsListQuery({ archived: false })
+      .orderBy('post.createdAt', 'DESC')
+      .getMany();
 
-    return Promise.all(
-      posts.filter((post) => !post.archivedPost).map((post) => this.toPostDto(post)),
-    );
+    return Promise.all(posts.map((post) => this.toPostDto(post)));
   }
 
   async getPostsByQuery(query: QueryPostsDto): Promise<PaginatedPostsDto> {
@@ -47,31 +49,15 @@ export class PostsService {
     const limit = query.limit ?? 10;
     const sortBy = query.sortBy ?? 'createdAt';
     const sortOrder = query.sortOrder ?? 'DESC';
-    const search = query.search;
 
-    const where: FindOptionsWhere<Post> = {};
+    const filterQuery = this.buildPostsFilterQuery(query);
+    const total = await filterQuery.getCount();
 
-    if (search) {
-      where.title = Like(`%${search}%`);
-    }
-
-    const order: FindOptionsOrder<Post> = { [sortBy]: sortOrder };
-
-    let [posts, total] = await this.postsRepository.findAndCount({
-      where,
-      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
-      order,
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    if (query.archived === undefined || query.archived === false) {
-      posts = posts.filter((post) => !post.archivedPost);
-      total = posts.length;
-    } else {
-      posts = posts.filter((post) => post.archivedPost);
-      total = posts.length;
-    }
+    const posts = await this.buildPostsListQuery(query)
+      .orderBy(`post.${sortBy}`, sortOrder)
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
 
     const postsDto = await Promise.all(posts.map((post) => this.toPostDto(post)));
     const totalPages = Math.ceil(total / limit);
@@ -116,12 +102,9 @@ export class PostsService {
 
     await this.handleMentions(savedPost);
 
-    const postWithRelations = await this.postsRepository.findOne({
-      where: { id: savedPost.id },
-      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
-    });
+    const postWithRelations = await this.findPostById(savedPost.id);
 
-    return await this.toPostDto(postWithRelations!);
+    return await this.toPostDto(postWithRelations);
   }
 
   async updatePost(id: number, updatePostDto: UpdatePostDto): Promise<PostDto> {
@@ -159,7 +142,7 @@ export class PostsService {
   }
 
   async like(postId: number, profileId: number): Promise<void> {
-    await this.findPostById(postId);
+    await this.ensurePostExists(postId);
 
     try {
       await this.postsRepository
@@ -177,7 +160,7 @@ export class PostsService {
   }
 
   async unlike(postId: number, profileId: number): Promise<void> {
-    await this.findPostById(postId);
+    await this.ensurePostExists(postId);
 
     await this.postsRepository
       .createQueryBuilder()
@@ -187,7 +170,7 @@ export class PostsService {
   }
 
   async dislike(postId: number, profileId: number): Promise<void> {
-    await this.findPostById(postId);
+    await this.ensurePostExists(postId);
 
     try {
       await this.postsRepository
@@ -205,7 +188,7 @@ export class PostsService {
   }
 
   async undislike(postId: number, profileId: number): Promise<void> {
-    await this.findPostById(postId);
+    await this.ensurePostExists(postId);
 
     await this.postsRepository
       .createQueryBuilder()
@@ -222,6 +205,32 @@ export class PostsService {
     if (!deleteResult.affected) {
       throw new NotFoundException('Post was not found.');
     }
+  }
+
+  private buildPostsFilterQuery(query: QueryPostsDto) {
+    const qb = this.postsRepository
+      .createQueryBuilder('post')
+      .leftJoin('post.archivedPost', 'archivedPost');
+
+    if (query.archived === true) {
+      qb.where('archivedPost.id IS NOT NULL');
+    } else {
+      qb.where('archivedPost.id IS NULL');
+    }
+
+    if (query.search) {
+      qb.andWhere('post.title ILIKE :search', { search: `%${query.search}%` });
+    }
+
+    return qb;
+  }
+
+  private buildPostsListQuery(query: QueryPostsDto) {
+    return this.buildPostsFilterQuery(query)
+      .leftJoinAndSelect('post.assets', 'assets')
+      .leftJoinAndSelect('post.archivedPost', 'archivedPost')
+      .loadRelationCountAndMap('post.likesCount', 'post.likes')
+      .loadRelationCountAndMap('post.dislikesCount', 'post.dislikes');
   }
 
   private async handleMentions(post: Post): Promise<void> {
@@ -251,11 +260,23 @@ export class PostsService {
     }
   }
 
-  private async findPostById(id: number): Promise<Post> {
-    const post = await this.postsRepository.findOne({
-      where: { id },
-      relations: ['archivedPost', 'assets', 'likes', 'dislikes'],
-    });
+  private async ensurePostExists(id: number): Promise<void> {
+    const exists = await this.postsRepository.existsBy({ id });
+
+    if (!exists) {
+      throw new NotFoundException('Post was not found.');
+    }
+  }
+
+  private async findPostById(id: number): Promise<PostWithCounts> {
+    const post = await this.postsRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.assets', 'assets')
+      .leftJoinAndSelect('post.archivedPost', 'archivedPost')
+      .loadRelationCountAndMap('post.likesCount', 'post.likes')
+      .loadRelationCountAndMap('post.dislikesCount', 'post.dislikes')
+      .where('post.id = :id', { id })
+      .getOne();
 
     if (!post) {
       throw new NotFoundException('Post was not found.');
@@ -264,7 +285,7 @@ export class PostsService {
     return post;
   }
 
-  private async toPostDto(post: Post, archived?: ArchivedPost | null): Promise<PostDto> {
+  private async toPostDto(post: PostWithCounts, archived?: ArchivedPost | null): Promise<PostDto> {
     const ap = archived ?? post.archivedPost;
 
     let media: MediaDto[] | undefined;
@@ -274,7 +295,7 @@ export class PostsService {
         post.assets.map(async (asset) => ({
           id: asset.id,
           type: asset.mimeType.startsWith('video/') ? ('video' as const) : ('image' as const),
-          url: await this.assetsService.getAssetUrl(asset.id),
+          url: await this.assetsService.buildAssetUrl(asset),
         })),
       );
     }
@@ -284,8 +305,8 @@ export class PostsService {
       authorProfileId: post.authorProfileId,
       title: post.title,
       content: post.content,
-      likesCount: post.likes?.length ?? 0,
-      dislikesCount: post.dislikes?.length ?? 0,
+      likesCount: post.likesCount ?? 0,
+      dislikesCount: post.dislikesCount ?? 0,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       isArchived: !!ap,

@@ -38,6 +38,10 @@ export class AssetsService {
   async getAssetUrl(id: number): Promise<string> {
     const asset = await this.findAssetById(id);
 
+    return this.buildAssetUrl(asset);
+  }
+
+  buildAssetUrl(asset: Pick<Asset, 'fileName'>): Promise<string> {
     return this.minioClient.presignedGetObject(this.bucketName, asset.fileName);
   }
 
