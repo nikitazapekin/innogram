@@ -13,7 +13,6 @@ COPY package.json package-lock.json ./
 COPY apps/client_app/package.json ./apps/client_app/package.json
 
 RUN npm install
-RUN npm --prefix apps/client_app install
 
 COPY apps/client_app ./apps/client_app
 

@@ -1,4 +1,5 @@
 import express, { type Express } from 'express';
+import { parseAllowedOrigins } from '@innogram/shared';
 
 import type { AppConfig } from './config/app-config';
 import { createErrorHandler } from './middleware/error-handler';
@@ -20,14 +21,20 @@ type CreateAppOptions = Readonly<{
 
 export const createApp = ({ config, logger, refreshSessionService }: CreateAppOptions): Express => {
   const app = express();
+  const allowedOrigins = new Set(parseAllowedOrigins());
 
-  app.use((_request, response, next) => {
-    response.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  app.use((request, response, next) => {
+    const origin = request.header('origin');
+
+    if (origin && allowedOrigins.has(origin)) {
+      response.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    if (_request.method === 'OPTIONS') {
+    if (request.method === 'OPTIONS') {
       response.status(204).end();
 
       return;

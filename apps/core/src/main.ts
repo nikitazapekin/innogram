@@ -1,5 +1,6 @@
 import './config/load-environment';
 
+import { parseAllowedOrigins } from '@innogram/shared';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -15,7 +16,7 @@ initSentry('core-microservice');
 
 const CORE_HTTP_PORT = Number(process.env.CORE_HTTP_PORT ?? 3001);
 const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
-const CLIENT_ORIGIN = 'http://localhost:3000';
+const ALLOWED_ORIGINS = parseAllowedOrigins();
 
 type SecurityHeadersResponse = {
   setHeader: (name: string, value: string) => void;
@@ -29,7 +30,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
 
   app.enableCors({
-    origin: [CLIENT_ORIGIN, 'http://127.0.0.1:3000'],
+    origin: [...ALLOWED_ORIGINS],
     credentials: true,
   });
 

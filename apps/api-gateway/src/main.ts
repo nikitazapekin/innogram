@@ -4,6 +4,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import type { Request, Response } from 'express';
 import { Readable } from 'node:stream';
 
+import { parseAllowedOrigins } from '@innogram/shared';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
@@ -119,7 +120,7 @@ const API_GATEWAY_PORT = (() => {
 const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
 const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
 
-const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const ALLOWED_ORIGINS = parseAllowedOrigins();
 
 const corsMiddleware = (request: Request, response: Response, next: () => void): void => {
   const origin = request.header('origin');
