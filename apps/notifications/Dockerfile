@@ -9,10 +9,9 @@ COPY apps/notifications/package.json ./apps/notifications/package.json
 
 RUN npm install
 RUN npm --prefix packages/shared install
-RUN npm --prefix apps/notifications install
 
-COPY packages/shared ./packages/shared
 COPY apps/notifications ./apps/notifications
+COPY packages/shared ./packages/shared
 
 RUN npm --prefix packages/shared run build
 RUN npm --prefix apps/notifications run build

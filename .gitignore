@@ -108,3 +108,5 @@ packages/types/build/
 packages/.prettierignore
 
 
+private-pkcs8.pem
+private.pem

@@ -9,10 +9,9 @@ COPY apps/auth/package.json ./apps/auth/package.json
 
 RUN npm install
 RUN npm --prefix packages/shared install
-RUN npm --prefix apps/auth install
 
-COPY packages/shared ./packages/shared
 COPY apps/auth ./apps/auth
+COPY packages/shared ./packages/shared
 
 RUN npm --prefix packages/shared run build
 RUN npm --prefix apps/auth run build

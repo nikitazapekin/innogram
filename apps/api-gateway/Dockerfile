@@ -8,10 +8,9 @@ COPY apps/api-gateway/package.json ./apps/api-gateway/package.json
 
 RUN npm install
 RUN npm --prefix packages/shared install
-RUN npm --prefix apps/api-gateway install
 
-COPY packages/shared ./packages/shared
 COPY apps/api-gateway ./apps/api-gateway
+COPY packages/shared ./packages/shared
 
 RUN npm --prefix packages/shared run build
 RUN npm --prefix apps/api-gateway run build
