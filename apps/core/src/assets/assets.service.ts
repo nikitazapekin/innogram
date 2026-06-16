@@ -3,8 +3,11 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createReadStream } from 'node:fs';
 import { unlink } from 'node:fs/promises';
@@ -21,14 +24,14 @@ import { Asset } from '../entities/asset.entity';
 import { Profile } from '../entities/profile.entity';
 import { UserEntity } from '../entities/user.entity';
 import { MINIO_CLIENT } from './assets.constants';
-import { readRequiredEnv } from '../common/read-required-env';
+import { readOptionalMinioBucket } from './minio-client.factory';
 import { AssetDto } from './dto/asset.dto';
 
 const DEFAULT_ASSET_URL_CACHE_TTL_SECONDS = 3 * 60 * 60;
 
 @Injectable()
 export class AssetsService {
-  private readonly bucketName: string;
+  private readonly bucketName: string | null;
   private readonly assetUrlCacheTtlSeconds: number;
 
   constructor(
@@ -38,11 +41,11 @@ export class AssetsService {
     private readonly profilesRepository: Repository<Profile>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
-    @Inject(MINIO_CLIENT)
-    private readonly minioClient: Minio.Client,
+    @Optional() @Inject(MINIO_CLIENT) private readonly minioClient: Minio.Client | null,
     private readonly redisCache: RedisCacheService,
+    configService: ConfigService,
   ) {
-    this.bucketName = readRequiredEnv('MINIO_BUCKET');
+    this.bucketName = readOptionalMinioBucket(configService);
     this.assetUrlCacheTtlSeconds = this.readAssetUrlCacheTtlSeconds();
   }
 
@@ -53,6 +56,8 @@ export class AssetsService {
   }
 
   async buildAssetUrl(asset: Pick<Asset, 'id' | 'fileName'>): Promise<string> {
+    const minioClient = this.requireMinioClient();
+
     const cacheKey = buildAssetUrlCacheKey(asset.id);
     const cachedUrl = await this.redisCache.get(cacheKey);
 
@@ -60,7 +65,7 @@ export class AssetsService {
       return cachedUrl;
     }
 
-    const url = await this.minioClient.presignedGetObject(this.bucketName, asset.fileName);
+    const url = await minioClient.presignedGetObject(this.bucketName!, asset.fileName);
 
     await this.redisCache.set(cacheKey, url, this.assetUrlCacheTtlSeconds);
 
@@ -106,10 +111,21 @@ export class AssetsService {
 
   async remove(id: number): Promise<void> {
     const asset = await this.findAssetById(id);
+    const minioClient = this.requireMinioClient();
 
-    await this.minioClient.removeObject(this.bucketName, asset.fileName);
+    await minioClient.removeObject(this.bucketName!, asset.fileName);
     await this.assetsRepository.remove(asset);
     await this.redisCache.del(buildAssetUrlCacheKey(id));
+  }
+
+  private requireMinioClient(): Minio.Client {
+    if (!this.minioClient || !this.bucketName) {
+      throw new ServiceUnavailableException(
+        'Object storage is not configured. Set MINIO_* environment variables to enable uploads.',
+      );
+    }
+
+    return this.minioClient;
   }
 
   private async uploadStreamToMinio(
@@ -118,10 +134,11 @@ export class AssetsService {
     size: number,
     mimeType: string,
   ): Promise<void> {
+    const minioClient = this.requireMinioClient();
     const stream = createReadStream(filePath);
 
     try {
-      await this.minioClient.putObject(this.bucketName, objectName, stream, size, {
+      await minioClient.putObject(this.bucketName!, objectName, stream, size, {
         'Content-Type': mimeType,
       });
     } catch (error) {

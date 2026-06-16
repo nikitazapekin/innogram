@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as Minio from 'minio';
@@ -44,6 +45,12 @@ describe('AssetsService', () => {
         { provide: getRepositoryToken(UserEntity), useValue: {} },
         { provide: MINIO_CLIENT, useValue: minioClient },
         { provide: RedisCacheService, useValue: redisCache },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) => (key === 'MINIO_BUCKET' ? 'test-bucket' : undefined),
+          },
+        },
       ],
     }).compile();
 

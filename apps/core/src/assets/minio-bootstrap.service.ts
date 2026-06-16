@@ -1,19 +1,29 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import * as Minio from 'minio';
+import { Inject, Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
+import type * as Minio from 'minio';
+import { ConfigService } from '@nestjs/config';
 
-import { readRequiredEnv } from '../common/read-required-env';
 import { MINIO_CLIENT } from './assets.constants';
+import { readOptionalMinioBucket } from './minio-client.factory';
 
 @Injectable()
 export class MinioBootstrapService implements OnModuleInit {
   private readonly logger = new Logger(MinioBootstrapService.name);
-  private readonly bucketName: string;
+  private readonly bucketName: string | null;
 
-  constructor(@Inject(MINIO_CLIENT) private readonly minioClient: Minio.Client) {
-    this.bucketName = readRequiredEnv('MINIO_BUCKET');
+  constructor(
+    @Optional() @Inject(MINIO_CLIENT) private readonly minioClient: Minio.Client | null,
+    configService: ConfigService,
+  ) {
+    this.bucketName = readOptionalMinioBucket(configService);
   }
 
   async onModuleInit(): Promise<void> {
+    if (!this.minioClient || !this.bucketName) {
+      this.logger.warn('MinIO bootstrap skipped — object storage is not configured');
+
+      return;
+    }
+
     try {
       const exists = await this.minioClient.bucketExists(this.bucketName);
 
@@ -27,7 +37,7 @@ export class MinioBootstrapService implements OnModuleInit {
       this.logger.log(`MinIO bucket "${this.bucketName}" is ready`);
     } catch (error) {
       this.logger.error(
-        'MinIO is unavailable — start it with `docker compose up -d minio` before uploading assets',
+        'MinIO is unavailable — asset uploads will fail until storage is reachable',
         { message: error instanceof Error ? error.message : String(error) },
       );
     }
