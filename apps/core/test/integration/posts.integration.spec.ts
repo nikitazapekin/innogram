@@ -8,7 +8,9 @@ import * as bcrypt from 'bcrypt';
 import request from 'supertest';
 
 import { AuthModule } from '../../src/auth/auth.module';
+import { CacheModule } from '../../src/cache/cache.module';
 import { DatabaseConfigService } from '../../src/database.config';
+import { PerformanceMonitorModule } from '../../src/monitoring/performance-monitor.module';
 import { KafkaModule } from '../../src/kafka/kafka.module';
 import { PostsModule } from '../../src/posts/posts.module';
 import { createTestAccessToken } from '../test-jwt';
@@ -32,8 +34,12 @@ describe('PostsModule (integration)', () => {
           SharedAuthModule.forRoot({
             authServiceUrl: process.env.AUTH_SERVICE_URL!,
           }),
-          TypeOrmModule.forRootAsync({ useClass: DatabaseConfigService }),
+          TypeOrmModule.forRootAsync({
+            imports: [PerformanceMonitorModule],
+            useClass: DatabaseConfigService,
+          }),
           TypeOrmModule.forFeature(INTEGRATION_ENTITIES),
+          CacheModule,
           KafkaModule,
           AuthModule,
           PostsModule,
@@ -92,9 +98,9 @@ describe('PostsModule (integration)', () => {
       .expect(200)
       .expect(({ body }) => {
         expect(body.data).toEqual(expect.any(Array));
-        expect(body.total).toEqual(expect.any(Number));
-        expect(body.page).toEqual(1);
+        expect(body.hasMore).toEqual(expect.any(Boolean));
         expect(body.limit).toEqual(10);
+        expect(body.nextCursor === null || typeof body.nextCursor === 'string').toBe(true);
       });
 
     await request(app.getHttpServer()).delete(`/auth/user/${user.id}`).expect(200);

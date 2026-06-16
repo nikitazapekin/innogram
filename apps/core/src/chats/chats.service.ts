@@ -1,14 +1,16 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { In, Repository } from 'typeorm';
+import 'multer';
 
 import { Asset } from '../entities/asset.entity';
 import { Chat } from '../entities/chat.entity';
 import { Message } from '../entities/message.entity';
-
-const UPLOADS_DIR = path.resolve('uploads');
 
 @Injectable()
 export class ChatsService {
@@ -163,24 +165,19 @@ export class ChatsService {
     file: Express.Multer.File,
     ownerProfileId: number,
   ): Promise<Asset & { url: string }> {
-    if (!fs.existsSync(UPLOADS_DIR)) {
-      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    if (!file.filename) {
+      throw new BadRequestException('Uploaded file was not saved.');
     }
-
-    const safeName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const filePath = path.join(UPLOADS_DIR, safeName);
-
-    fs.writeFileSync(filePath, file.buffer);
 
     const asset = this.assetRepository.create({
       ownerProfileId,
-      fileName: safeName,
+      fileName: file.filename,
       mimeType: file.mimetype,
     });
 
     const saved = await this.assetRepository.save(asset);
 
-    return { ...saved, url: `/uploads/${safeName}` };
+    return { ...saved, url: `/uploads/${file.filename}` };
   }
 
   async attachFileToMessage(messageId: number, assetId: number): Promise<Message> {

@@ -23,6 +23,7 @@ import {
 
 import { Public, AuthenticatedRequest } from '@innogram/shared';
 import { FollowRequestDto } from './dto/follow-request.dto';
+import { RelationshipDto } from './dto/relationship.dto';
 import { RespondFollowRequestDto } from './dto/respond-follow-request.dto';
 import { SubscribeProfileDto } from './dto/subscribe-profile.dto';
 import { PostDto } from '../posts/dto/post.dto';
@@ -96,6 +97,19 @@ export class UsersController {
   @ApiNotFoundResponse({ description: 'Profile was not found.' })
   findOne(@Param('id', ParseIntPipe) id: number): Promise<UserDto> {
     return this.usersService.findOne(id);
+  }
+
+  @Get(':id/relationship')
+  @ApiOperation({ summary: 'Get relationship between current user and profile' })
+  @ApiOkResponse({
+    description: 'Relationship status has been retrieved successfully.',
+    type: RelationshipDto,
+  })
+  getRelationship(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<RelationshipDto> {
+    return this.usersService.getRelationship(request.user!.email, id);
   }
 
   @Get(':id/following')

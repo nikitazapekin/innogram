@@ -1,0 +1,106 @@
+@use '../../styles' as *;
+
+.page {
+  display: grid;
+  gap: $spacing-xl;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+}
+
+.header {
+  display: grid;
+  gap: $spacing-xs;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.subtitle {
+  margin: 0;
+  color: rgba($color-black, 0.6);
+}
+
+.section {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 18px;
+}
+
+.list {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  padding: $spacing-md $spacing-lg;
+  background: $color-white;
+  border: 1px solid rgba($color-black, 0.08);
+  border-radius: $radius-large;
+  box-shadow: 0 8px 24px rgba($color-black, 0.04);
+
+  &_read {
+    opacity: 0.72;
+  }
+}
+
+.itemBody {
+  display: grid;
+  gap: $spacing-xs;
+}
+
+.itemTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.itemText {
+  margin: 0;
+  color: rgba($color-black, 0.75);
+}
+
+.itemTime {
+  color: rgba($color-black, 0.45);
+  font-size: 12px;
+}
+
+.itemActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  align-items: flex-start;
+}
+
+.action {
+  min-height: 32px;
+  padding: $spacing-xs $spacing-md;
+  color: $color-black;
+  background: transparent;
+  border: 1px solid rgba($color-black, 0.15);
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+
+  &_primary {
+    color: $color-white;
+    background: $color-black;
+    border-color: $color-black;
+  }
+}
+
+.empty {
+  margin: 0;
+  color: rgba($color-black, 0.55);
+}

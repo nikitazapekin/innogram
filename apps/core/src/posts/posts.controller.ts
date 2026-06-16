@@ -15,7 +15,7 @@ import {
 import type { AuthenticatedRequest } from '@innogram/shared';
 
 import { CreatePostDto } from './dto/create-post.dto';
-import { PaginatedPostsDto } from './dto/paginated-posts.dto';
+import { CursorPaginatedPostsDto } from './dto/cursor-paginated-posts.dto';
 import { PostDto } from './dto/post.dto';
 import { QueryPostsDto } from './dto/query-posts.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -27,11 +27,7 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  getPosts(@Query() query: QueryPostsDto): Promise<PaginatedPostsDto | PostDto[]> {
-    if (Object.keys(query).length === 0) {
-      return this.postsService.getPosts();
-    }
-
+  getPosts(@Query() query: QueryPostsDto): Promise<CursorPaginatedPostsDto> {
     return this.postsService.getPostsByQuery(query);
   }
 

@@ -5,10 +5,8 @@ const SORTABLE_COLUMNS = ['createdAt', 'updatedAt', 'title'] as const;
 
 export class QueryPostsDto {
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  page?: number = 1;
+  @IsString()
+  cursor?: string;
 
   @IsOptional()
   @IsNumber()

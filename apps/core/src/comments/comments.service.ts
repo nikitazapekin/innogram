@@ -60,69 +60,45 @@ export class CommentsService {
   async findOne(id: number): Promise<CommentDto> {
     const comment = await this.commentsRepository.findOne({
       where: { id },
-      relations: ['likes'],
+      select: ['id', 'postId'],
     });
 
     if (!comment) {
       throw new NotFoundException('Comment was not found.');
     }
 
-    const commentDto = this.toCommentDto(comment);
+    const postComments = await this.loadPostComments(comment.postId);
+    const { byId } = this.buildCommentTree(postComments);
+    const commentDto = byId.get(id);
 
-    commentDto.replies = await this.findReplies(id);
+    if (!commentDto) {
+      throw new NotFoundException('Comment was not found.');
+    }
 
     return commentDto;
   }
 
   async findByPost(postId: number): Promise<CommentDto[]> {
-    const postComments = await this.commentsRepository.find({
-      where: { postId },
-      order: { createdAt: 'DESC' },
-      relations: ['likes'],
-    });
+    const postComments = await this.loadPostComments(postId);
+    const { roots } = this.buildCommentTree(postComments);
 
-    const commentsById = new Map<number, CommentDto>();
-    const rootComments: CommentDto[] = [];
-
-    for (const comment of postComments) {
-      commentsById.set(comment.id, this.toCommentDto(comment));
-    }
-
-    for (const comment of postComments) {
-      const commentDto = commentsById.get(comment.id)!;
-      const parentDto = comment.parentId != null ? commentsById.get(comment.parentId) : undefined;
-
-      if (parentDto) {
-        if (!parentDto.replies) {
-          parentDto.replies = [];
-        }
-
-        parentDto.replies.push(commentDto);
-      } else {
-        rootComments.push(commentDto);
-      }
-    }
-
-    return rootComments;
+    return roots.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
   }
 
   async findReplies(commentId: number): Promise<CommentDto[]> {
-    const replies = await this.commentsRepository.find({
-      where: { parentId: commentId },
-      order: { createdAt: 'ASC' },
-      relations: ['likes'],
+    const parent = await this.commentsRepository.findOne({
+      where: { id: commentId },
+      select: ['id', 'postId'],
     });
 
-    const result: CommentDto[] = [];
-
-    for (const reply of replies) {
-      const replyDto = this.toCommentDto(reply);
-
-      replyDto.replies = await this.findReplies(reply.id);
-      result.push(replyDto);
+    if (!parent) {
+      throw new NotFoundException('Comment was not found.');
     }
 
-    return result;
+    const postComments = await this.loadPostComments(parent.postId);
+    const { byId } = this.buildCommentTree(postComments);
+
+    return byId.get(commentId)?.replies ?? [];
   }
 
   async update(id: number, updateCommentDto: UpdateCommentDto): Promise<CommentDto> {
@@ -158,22 +134,6 @@ export class CommentsService {
     this.logger.log(`Comment deleted: ${id}`);
   }
 
-  private async collectDescendantIds(commentId: number): Promise<number[]> {
-    const ids: number[] = [];
-    const children = await this.commentsRepository.find({
-      where: { parentId: commentId },
-      select: ['id'],
-    });
-
-    for (const child of children) {
-      const grandchildIds = await this.collectDescendantIds(child.id);
-
-      ids.push(child.id, ...grandchildIds);
-    }
-
-    return ids;
-  }
-
   async like(commentId: number, profileId: number): Promise<void> {
     try {
       await this.commentsRepository
@@ -198,6 +158,84 @@ export class CommentsService {
       .relation(Comment, 'likes')
       .of(commentId)
       .remove(profileId);
+  }
+
+  private async loadPostComments(postId: number): Promise<Comment[]> {
+    return this.commentsRepository.find({
+      where: { postId },
+      order: { createdAt: 'ASC' },
+      relations: ['likes'],
+    });
+  }
+
+  private buildCommentTree(postComments: Comment[]): {
+    roots: CommentDto[];
+    byId: Map<number, CommentDto>;
+  } {
+    const byId = new Map<number, CommentDto>();
+    const roots: CommentDto[] = [];
+
+    for (const comment of postComments) {
+      byId.set(comment.id, this.toCommentDto(comment));
+    }
+
+    for (const comment of postComments) {
+      const commentDto = byId.get(comment.id)!;
+      const parentDto = comment.parentId != null ? byId.get(comment.parentId) : undefined;
+
+      if (parentDto) {
+        if (!parentDto.replies) {
+          parentDto.replies = [];
+        }
+
+        parentDto.replies.push(commentDto);
+      } else {
+        roots.push(commentDto);
+      }
+    }
+
+    return { roots, byId };
+  }
+
+  private async collectDescendantIds(commentId: number): Promise<number[]> {
+    const comment = await this.commentsRepository.findOne({
+      where: { id: commentId },
+      select: ['id', 'postId'],
+    });
+
+    if (!comment) {
+      return [];
+    }
+
+    const allComments = await this.commentsRepository.find({
+      where: { postId: comment.postId },
+      select: ['id', 'parentId'],
+    });
+
+    const childrenByParent = new Map<number, number[]>();
+
+    for (const item of allComments) {
+      if (item.parentId == null) {
+        continue;
+      }
+
+      const siblings = childrenByParent.get(item.parentId) ?? [];
+
+      siblings.push(item.id);
+      childrenByParent.set(item.parentId, siblings);
+    }
+
+    const ids: number[] = [];
+    const stack = [...(childrenByParent.get(commentId) ?? [])];
+
+    while (stack.length > 0) {
+      const childId = stack.pop()!;
+
+      ids.push(childId);
+      stack.push(...(childrenByParent.get(childId) ?? []));
+    }
+
+    return ids;
   }
 
   private async handleMentions(comment: Comment): Promise<void> {

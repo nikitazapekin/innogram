@@ -8,6 +8,7 @@ import { Profile } from '../entities/profile.entity';
 import { UserEntity } from '../entities/user.entity';
 import { AssetsController } from './assets.controller';
 import { AssetsService } from './assets.service';
+import { MinioBootstrapService } from './minio-bootstrap.service';
 
 export const MINIO_CLIENT = 'MINIO_CLIENT';
 
@@ -16,6 +17,7 @@ export const MINIO_CLIENT = 'MINIO_CLIENT';
   controllers: [AssetsController],
   providers: [
     AssetsService,
+    MinioBootstrapService,
     {
       provide: MINIO_CLIENT,
       inject: [ConfigService],

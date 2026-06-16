@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ProfileDto } from '@/app/shared/api/users';
+import type { FollowState, ProfileDto } from '@/app/shared/api/users';
 import {
   getUserProfile,
   getProfile,
@@ -11,6 +11,7 @@ import {
   getFollowers,
   getFollowing,
   getUserPosts,
+  getRelationship,
 } from '@/app/shared/api/users';
 import { PostList } from '@/app/features/post';
 import type { Post } from '@/app/entities/post';
@@ -23,14 +24,20 @@ type UserProfileProps = {
 export function UserProfile({ userId }: UserProfileProps) {
   const [user, setUser] = useState<ProfileDto | null>(null);
   const [currentProfileId, setCurrentProfileId] = useState<number | null>(null);
-  const [isFollowed, setIsFollowed] = useState(false);
+  const [followState, setFollowState] = useState<FollowState>('none');
   const [followers, setFollowers] = useState<ProfileDto[]>([]);
   const [following, setFollowing] = useState<ProfileDto[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const router = useRouter();
+
+  const refreshFollowers = useCallback(async () => {
+    const followersData = await getFollowers(userId);
+    setFollowers(followersData);
+  }, [userId]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -47,7 +54,13 @@ export function UserProfile({ userId }: UserProfileProps) {
       setCurrentProfileId(myProfileId);
       setFollowers(followersData);
       setFollowing(followingData);
-      setIsFollowed(followersData.some((p: ProfileDto) => p.id === myProfileId));
+
+      if (myProfileId && myProfileId !== userId) {
+        const relationship = await getRelationship(userId);
+        setFollowState(relationship.status);
+      } else {
+        setFollowState('none');
+      }
 
       try {
         const userPosts = await getUserPosts(userId);
@@ -67,17 +80,36 @@ export function UserProfile({ userId }: UserProfileProps) {
   }, [fetchData]);
 
   async function handleFollow() {
-    if (!currentProfileId || !user || !user.id) return;
+    if (!currentProfileId || !user?.id || actionLoading) return;
 
-    await followUser(currentProfileId, user.id);
-    setIsFollowed(true);
+    setActionLoading(true);
+
+    try {
+      const result = await followUser(currentProfileId, user.id);
+
+      if (result.status === 'following') {
+        setFollowState('following');
+        await refreshFollowers();
+      } else {
+        setFollowState('requested');
+      }
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   async function handleUnfollow() {
-    if (!currentProfileId || !user || !user.id) return;
+    if (!currentProfileId || !user?.id || actionLoading) return;
 
-    await unfollowUser(currentProfileId, user.id);
-    setIsFollowed(false);
+    setActionLoading(true);
+
+    try {
+      await unfollowUser(currentProfileId, user.id);
+      setFollowState('none');
+      await refreshFollowers();
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   if (loading) {
@@ -99,17 +131,32 @@ export function UserProfile({ userId }: UserProfileProps) {
         <div className={styles.info}>
           <h1 className={styles.name}>{user.displayName || 'Без имени'}</h1>
           {user.bio ? <p className={styles.bio}>{user.bio}</p> : null}
+          {user.isPrivate ? <p className={styles.bio}>Приватный профиль</p> : null}
         </div>
       </div>
 
       {currentProfileId && !isOwnProfile && (
         <div className={styles.actions}>
-          {isFollowed ? (
-            <button className={styles.unfollowBtn} onClick={handleUnfollow} type="button">
+          {followState === 'following' ? (
+            <button
+              className={styles.unfollowBtn}
+              onClick={handleUnfollow}
+              type="button"
+              disabled={actionLoading}
+            >
               Отписаться
             </button>
+          ) : followState === 'requested' ? (
+            <button className={styles.requestedBtn} type="button" disabled>
+              Запрос отправлен
+            </button>
           ) : (
-            <button className={styles.followBtn} onClick={handleFollow} type="button">
+            <button
+              className={styles.followBtn}
+              onClick={handleFollow}
+              type="button"
+              disabled={actionLoading}
+            >
               Подписаться
             </button>
           )}

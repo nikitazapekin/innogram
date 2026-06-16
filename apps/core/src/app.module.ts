@@ -1,15 +1,18 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SharedAuthGuard, SharedAuthModule } from '@innogram/shared';
 
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
+import { CacheModule } from './cache/cache.module';
 import { readRequiredEnv } from './common/read-required-env';
-import { DatabaseConfigService } from './database.config';
+import { buildTypeOrmOptions } from './database.config';
 import { ChatsModule } from './chats/chats.module';
 import { CommentsModule } from './comments/comments.module';
+import { PerformanceMonitorModule } from './monitoring/performance-monitor.module';
+import { PerformanceMonitorService } from './monitoring/performance-monitor.service';
 import { Account } from './entities/account.entity';
 import { Asset } from './entities/asset.entity';
 import { Chat } from './entities/chat.entity';
@@ -19,6 +22,7 @@ import { Message } from './entities/message.entity';
 import { Post } from './entities/post.entity';
 import { Profile } from './entities/profile.entity';
 import { UserEntity } from './entities/user.entity';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 
@@ -32,8 +36,12 @@ import { UsersModule } from './users/users.module';
     SharedAuthModule.forRoot({
       authServiceUrl: readRequiredEnv('AUTH_SERVICE_URL'),
     }),
+    PerformanceMonitorModule,
     TypeOrmModule.forRootAsync({
-      useClass: DatabaseConfigService,
+      imports: [ConfigModule, PerformanceMonitorModule],
+      inject: [ConfigService, PerformanceMonitorService],
+      useFactory: (configService: ConfigService, performanceMonitor: PerformanceMonitorService) =>
+        buildTypeOrmOptions(configService, performanceMonitor),
     }),
     TypeOrmModule.forFeature([
       Account,
@@ -46,12 +54,14 @@ import { UsersModule } from './users/users.module';
       Profile,
       UserEntity,
     ]),
+    CacheModule,
     AssetsModule,
     AuthModule,
     UsersModule,
     PostsModule,
     CommentsModule,
     ChatsModule,
+    NotificationsModule,
   ],
   providers: [
     {

@@ -13,6 +13,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { AuthenticatedRequest } from '@innogram/shared';
 
+import {
+  createTempDiskStorage,
+  DEFAULT_UPLOAD_FILE_SIZE_LIMIT,
+} from '../common/upload/upload.config';
 import { AssetDto } from './dto/asset.dto';
 import { AssetsService } from './assets.service';
 
@@ -26,7 +30,12 @@ export class AssetsController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: createTempDiskStorage(),
+      limits: { fileSize: DEFAULT_UPLOAD_FILE_SIZE_LIMIT },
+    }),
+  )
   uploadFile(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Req() request: AuthenticatedRequest,
