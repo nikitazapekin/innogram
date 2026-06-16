@@ -36,6 +36,8 @@ async function bootstrap(): Promise<void> {
 
   const kafkaConfig = buildKafkaClientConfig();
 
+  let kafkaConsumerStarted = false;
+
   if (kafkaConfig) {
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.KAFKA,
@@ -55,19 +57,26 @@ async function bootstrap(): Promise<void> {
         },
       },
     });
+
+    try {
+      await app.startAllMicroservices();
+      kafkaConsumerStarted = true;
+    } catch (error) {
+      logger.error(
+        'Failed to start Kafka consumer — HTTP API will run without event processing',
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   } else {
     logger.warn('KAFKA_BROKERS is not set — Kafka consumer is disabled');
   }
 
-  if (kafkaConfig) {
-    await app.startAllMicroservices();
-  }
   await app.listen(httpPort);
 
   logger.log(`HTTP server started on port ${httpPort}`);
   logger.log(`Swagger docs available at /${SWAGGER_PATH}`);
 
-  if (kafkaConfig) {
+  if (kafkaConsumerStarted) {
     logger.log('Kafka consumer started');
   }
 }
