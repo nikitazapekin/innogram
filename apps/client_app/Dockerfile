@@ -21,10 +21,11 @@ RUN npm --prefix apps/client_app run build
 FROM node:20-alpine
 WORKDIR /workspace
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
-COPY --from=builder /workspace/apps/client_app/public ./apps/client_app/public
 COPY --from=builder /workspace/apps/client_app/.next/standalone ./
-COPY --from=builder /workspace/apps/client_app/.next/static ./apps/client_app/.next/static
+COPY --from=builder /workspace/apps/client_app/.next/static ./.next/static
+COPY --from=builder /workspace/apps/client_app/public ./public
 
 EXPOSE 3000
-CMD ["node", "apps/client_app/server.js"]
+CMD ["node", "server.js"]
