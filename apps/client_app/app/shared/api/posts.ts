@@ -3,7 +3,7 @@ import type { Post } from '@/app/entities/post';
 
 const BASE = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
 
-interface BackendPost {
+export interface BackendPost {
   id: number;
   content: string;
   title?: string;
@@ -30,7 +30,7 @@ async function authFetch(url: string, opts?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
-function mapPost(backendPost: BackendPost): Post {
+export function mapPost(backendPost: BackendPost): Post {
   const mediaItems = backendPost.media?.map((mediaItem) => ({
     id: String(mediaItem.id),
     url: mediaItem.url,

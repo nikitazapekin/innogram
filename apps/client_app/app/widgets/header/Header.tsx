@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/app/shared/ui/logo';
+import { HeaderSearch } from './HeaderSearch';
 import styles from './Header.module.scss';
 
 const navItems = [
@@ -17,6 +18,7 @@ export function Header() {
         <Link href="/" className={styles.logoLink}>
           <Logo />
         </Link>
+        <HeaderSearch />
         <nav className={styles.nav}>
           {navItems.map(({ label, href }) => (
             <Link key={href} href={href} className={styles.link}>

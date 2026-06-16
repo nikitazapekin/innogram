@@ -1,0 +1,19 @@
+@use '../../../../styles' as *;
+
+.section {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.list {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.empty {
+  margin: 0;
+  font-size: $font-xs;
+  color: rgba($color-black, 0.45);
+  text-align: center;
+  padding: $spacing-md;
+}

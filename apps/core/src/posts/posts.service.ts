@@ -152,10 +152,12 @@ export class PostsService {
         .add(profileId);
     } catch (error: unknown) {
       if (
-        !(error instanceof QueryFailedError) ||
-        (error as unknown as { driverError?: { code?: string } }).driverError?.code !== '23505'
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
       )
-        throw error;
+        return;
+
+      throw error;
     }
   }
 
@@ -180,10 +182,12 @@ export class PostsService {
         .add(profileId);
     } catch (error: unknown) {
       if (
-        !(error instanceof QueryFailedError) ||
-        (error as unknown as { driverError?: { code?: string } }).driverError?.code !== '23505'
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
       )
-        throw error;
+        return;
+
+      throw error;
     }
   }
 

@@ -18,6 +18,7 @@
     "test:watch": "jest --watch",
     "test:e2e": "jest --config jest-e2e.config.ts --forceExit",
     "test:e2e:coverage": "jest --config jest-e2e.config.ts --forceExit --coverage",
+    "test:integration": "jest --config test/jest.config.ts --runInBand",
     "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
@@ -49,9 +50,12 @@
     "@types/jest": "^30.0.0",
     "@types/minio": "^7.1.0",
     "@types/multer": "^2.1.0",
+    "@types/pg": "^8.11.11",
     "@types/selenium-webdriver": "^4.35.6",
+    "@types/supertest": "^6.0.3",
     "jest": "^30.4.2",
     "selenium-webdriver": "^4.44.0",
+    "supertest": "^7.1.0",
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3"

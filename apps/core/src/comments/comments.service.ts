@@ -143,10 +143,12 @@ export class CommentsService {
         .add(profileId);
     } catch (error: unknown) {
       if (
-        !(error instanceof QueryFailedError) ||
-        (error as unknown as { driverError?: { code?: string } }).driverError?.code !== '23505'
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
       )
-        throw error;
+        return;
+
+      throw error;
     }
   }
 
@@ -291,7 +293,7 @@ export class CommentsService {
       id: comment.id,
       postId: comment.postId,
       authorProfileId: comment.authorProfileId,
-      parentId: comment.parentId as number,
+      parentId: comment.parentId ?? undefined,
       content: comment.content,
       likesCount: comment.likes?.length,
       createdAt: comment.createdAt,
