@@ -141,7 +141,6 @@ export class SharedJwksClientService {
         key: {
           alg: key.alg,
           e: key.e,
-          kid: key.kid,
           kty: key.kty,
           n: key.n,
           use: key.use,
