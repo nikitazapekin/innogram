@@ -24,6 +24,7 @@ async function prepareDatabase() {
       console.log('Database connection established.');
 
       try {
+        await AppDataSource.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
         await AppDataSource.query('CREATE SCHEMA IF NOT EXISTS "auth"');
         await AppDataSource.query('CREATE SCHEMA IF NOT EXISTS "main"');
         await AppDataSource.query('CREATE SCHEMA IF NOT EXISTS "notification"');
