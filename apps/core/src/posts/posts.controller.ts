@@ -27,11 +27,7 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  getPosts(@Query() query: QueryPostsDto): Promise<PaginatedPostsDto | PostDto[]> {
-    if (Object.keys(query).length === 0) {
-      return this.postsService.getPosts();
-    }
-
+  getPosts(@Query() query: QueryPostsDto): Promise<PaginatedPostsDto> {
     return this.postsService.getPostsByQuery(query);
   }
 

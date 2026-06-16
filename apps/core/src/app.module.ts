@@ -6,6 +6,7 @@ import { SharedAuthGuard, SharedAuthModule } from '@innogram/shared';
 
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
+import { CacheModule } from './cache/cache.module';
 import { readRequiredEnv } from './common/read-required-env';
 import { buildTypeOrmOptions } from './database.config';
 import { ChatsModule } from './chats/chats.module';
@@ -48,6 +49,7 @@ import { UsersModule } from './users/users.module';
       Profile,
       UserEntity,
     ]),
+    CacheModule,
     AssetsModule,
     AuthModule,
     UsersModule,

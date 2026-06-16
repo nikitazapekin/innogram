@@ -1,8 +1,11 @@
 import { Body, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import { Public } from '@innogram/shared';
 
+import {
+  createChatDiskStorage,
+  DEFAULT_UPLOAD_FILE_SIZE_LIMIT,
+} from '../common/upload/upload.config';
 import { ChatsService } from './chats.service';
 
 @Public()
@@ -13,8 +16,8 @@ export class ChatsController {
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 },
+      storage: createChatDiskStorage(),
+      limits: { fileSize: DEFAULT_UPLOAD_FILE_SIZE_LIMIT },
     }),
   )
   async uploadFile(

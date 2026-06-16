@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './global.scss';
+import { QueryProvider } from './providers/QueryProvider';
 import { AppErrorBoundary } from './widgets/app-error-boundary';
 import { Header } from './widgets/header';
 import { Footer } from './widgets/footer';
@@ -17,11 +18,13 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className="layout">
-        <AppErrorBoundary>
-          <Header />
-          <main className="layout__main">{children}</main>
-          <Footer />
-        </AppErrorBoundary>
+        <QueryProvider>
+          <AppErrorBoundary>
+            <Header />
+            <main className="layout__main">{children}</main>
+            <Footer />
+          </AppErrorBoundary>
+        </QueryProvider>
       </body>
     </html>
   );

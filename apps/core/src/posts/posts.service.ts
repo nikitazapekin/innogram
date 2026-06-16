@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 
+import { buildPostsFeedCacheKey, POSTS_FEED_VERSION_KEY } from '../cache/cache-keys';
+import { RedisCacheService } from '../cache/redis-cache.service';
 import { Post } from '../entities/post.entity';
 import { UserEntity } from '../entities/user.entity';
 import { ArchivedPost } from '../entities/archived-post.entity';
@@ -20,8 +22,12 @@ type PostWithCounts = Post & {
   dislikesCount?: number;
 };
 
+const DEFAULT_POSTS_FEED_CACHE_TTL_SECONDS = 30;
+
 @Injectable()
 export class PostsService {
+  private readonly postsFeedCacheTtlSeconds: number;
+
   constructor(
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
@@ -34,17 +40,20 @@ export class PostsService {
     private readonly notificationRepository: Repository<Notification>,
     private readonly mentionsService: MentionsService,
     private readonly notificationEventsProducer: NotificationEventsProducer,
-  ) {}
-
-  async getPosts(): Promise<PostDto[]> {
-    const posts = await this.buildPostsListQuery({ archived: false })
-      .orderBy('post.createdAt', 'DESC')
-      .getMany();
-
-    return Promise.all(posts.map((post) => this.toPostDto(post)));
+    private readonly redisCache: RedisCacheService,
+  ) {
+    this.postsFeedCacheTtlSeconds = this.readPostsFeedCacheTtlSeconds();
   }
 
   async getPostsByQuery(query: QueryPostsDto): Promise<PaginatedPostsDto> {
+    const cacheVersion = await this.getFeedCacheVersion();
+    const cacheKey = buildPostsFeedCacheKey(cacheVersion, query);
+    const cachedFeed = await this.redisCache.getJson<PaginatedPostsDto>(cacheKey);
+
+    if (cachedFeed) {
+      return cachedFeed;
+    }
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const sortBy = query.sortBy ?? 'createdAt';
@@ -62,13 +71,17 @@ export class PostsService {
     const postsDto = await Promise.all(posts.map((post) => this.toPostDto(post)));
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    const result: PaginatedPostsDto = {
       data: postsDto,
       total,
       page,
       limit,
       totalPages,
     };
+
+    await this.redisCache.setJson(cacheKey, result, this.postsFeedCacheTtlSeconds);
+
+    return result;
   }
 
   async getPost(id: number): Promise<PostDto> {
@@ -104,6 +117,8 @@ export class PostsService {
 
     const postWithRelations = await this.findPostById(savedPost.id);
 
+    await this.invalidatePostsFeedCache();
+
     return await this.toPostDto(postWithRelations);
   }
 
@@ -114,6 +129,8 @@ export class PostsService {
     post.content = updatePostDto.content ?? post.content;
 
     const savedPost = await this.postsRepository.save(post);
+
+    await this.invalidatePostsFeedCache();
 
     return await this.toPostDto(savedPost);
   }
@@ -128,6 +145,8 @@ export class PostsService {
       await this.archivedPostRepository.save(archived);
     }
 
+    await this.invalidatePostsFeedCache();
+
     return await this.toPostDto(post, archived);
   }
 
@@ -137,6 +156,8 @@ export class PostsService {
     if (post.archivedPost) {
       await this.archivedPostRepository.delete({ postId: id });
     }
+
+    await this.invalidatePostsFeedCache();
 
     return await this.toPostDto(post);
   }
@@ -159,6 +180,8 @@ export class PostsService {
 
       throw error;
     }
+
+    await this.invalidatePostsFeedCache();
   }
 
   async unlike(postId: number, profileId: number): Promise<void> {
@@ -169,6 +192,8 @@ export class PostsService {
       .relation(Post, 'likes')
       .of(postId)
       .remove(profileId);
+
+    await this.invalidatePostsFeedCache();
   }
 
   async dislike(postId: number, profileId: number): Promise<void> {
@@ -189,6 +214,8 @@ export class PostsService {
 
       throw error;
     }
+
+    await this.invalidatePostsFeedCache();
   }
 
   async undislike(postId: number, profileId: number): Promise<void> {
@@ -199,6 +226,8 @@ export class PostsService {
       .relation(Post, 'dislikes')
       .of(postId)
       .remove(profileId);
+
+    await this.invalidatePostsFeedCache();
   }
 
   async deletePost(id: number): Promise<void> {
@@ -209,12 +238,18 @@ export class PostsService {
     if (!deleteResult.affected) {
       throw new NotFoundException('Post was not found.');
     }
+
+    await this.invalidatePostsFeedCache();
   }
 
-  private buildPostsFilterQuery(query: QueryPostsDto) {
-    const qb = this.postsRepository
-      .createQueryBuilder('post')
-      .leftJoin('post.archivedPost', 'archivedPost');
+  private buildPostsFilterQuery(query: QueryPostsDto, options?: { selectArchivedPost?: boolean }) {
+    const qb = this.postsRepository.createQueryBuilder('post');
+
+    if (options?.selectArchivedPost) {
+      qb.leftJoinAndSelect('post.archivedPost', 'archivedPost');
+    } else {
+      qb.leftJoin('post.archivedPost', 'archivedPost');
+    }
 
     if (query.archived === true) {
       qb.where('archivedPost.id IS NOT NULL');
@@ -230,9 +265,8 @@ export class PostsService {
   }
 
   private buildPostsListQuery(query: QueryPostsDto) {
-    return this.buildPostsFilterQuery(query)
+    return this.buildPostsFilterQuery(query, { selectArchivedPost: true })
       .leftJoinAndSelect('post.assets', 'assets')
-      .leftJoinAndSelect('post.archivedPost', 'archivedPost')
       .loadRelationCountAndMap('post.likesCount', 'post.likes')
       .loadRelationCountAndMap('post.dislikesCount', 'post.dislikes');
   }
@@ -317,5 +351,31 @@ export class PostsService {
       archivedAt: ap?.archivedAt ?? null,
       media,
     };
+  }
+
+  private async getFeedCacheVersion(): Promise<number> {
+    const version = await this.redisCache.get(POSTS_FEED_VERSION_KEY);
+
+    return version ? Number(version) : 0;
+  }
+
+  private async invalidatePostsFeedCache(): Promise<void> {
+    await this.redisCache.incr(POSTS_FEED_VERSION_KEY);
+  }
+
+  private readPostsFeedCacheTtlSeconds(): number {
+    const rawTtl = process.env.POSTS_FEED_CACHE_TTL_SECONDS;
+
+    if (!rawTtl) {
+      return DEFAULT_POSTS_FEED_CACHE_TTL_SECONDS;
+    }
+
+    const ttlSeconds = Number(rawTtl);
+
+    if (!Number.isInteger(ttlSeconds) || ttlSeconds <= 0) {
+      throw new Error('POSTS_FEED_CACHE_TTL_SECONDS must be a positive integer.');
+    }
+
+    return ttlSeconds;
   }
 }

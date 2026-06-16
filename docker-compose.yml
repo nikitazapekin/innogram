@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+
   minio:
     image: minio/minio:latest
     restart: always
@@ -36,12 +44,18 @@ services:
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:?POSTGRES_DATABASE is required}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
       SWAGGER_PATH: ${SWAGGER_PATH:-api/docs}
+      CORE_REDIS_URL: redis://redis:6379
+      CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-innogram:core}
+      ASSET_URL_CACHE_TTL_SECONDS: ${ASSET_URL_CACHE_TTL_SECONDS:-10800}
+      POSTS_FEED_CACHE_TTL_SECONDS: ${POSTS_FEED_CACHE_TTL_SECONDS:-30}
     ports:
       - '${CORE_HTTP_PORT:-3001}:${CORE_HTTP_PORT:-3001}'
     depends_on:
       - postgres
+      - redis
 
 volumes:
   minio-data:
     driver: local
   postgres_data:
+  redis_data:

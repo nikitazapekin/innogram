@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import request from 'supertest';
 
 import { AuthModule } from '../../src/auth/auth.module';
+import { CacheModule } from '../../src/cache/cache.module';
 import { DatabaseConfigService } from '../../src/database.config';
 import { KafkaModule } from '../../src/kafka/kafka.module';
 import { PostsModule } from '../../src/posts/posts.module';
@@ -34,6 +35,7 @@ describe('PostsModule (integration)', () => {
           }),
           TypeOrmModule.forRootAsync({ useClass: DatabaseConfigService }),
           TypeOrmModule.forFeature(INTEGRATION_ENTITIES),
+          CacheModule,
           KafkaModule,
           AuthModule,
           PostsModule,

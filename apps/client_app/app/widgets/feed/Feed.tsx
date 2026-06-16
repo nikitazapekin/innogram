@@ -1,10 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import styles from './Feed.module.scss';
 import { PostSearch } from '@/app/features/post/ui/post-search/PostSearch';
 import { PostCreate } from '@/app/features/post/ui/post-create/PostCreate';
 import { PostList } from '@/app/features/post/ui/post-list/PostList';
+import {
+  buildPostsQuery,
+  postsQueryKey,
+  type SortMode,
+} from '@/app/features/post/lib/buildPostsQuery';
 import {
   getPosts,
   createPost,
@@ -26,54 +32,42 @@ import {
 import { getProfile } from '@/app/shared/api/users';
 import type { Post, Comment } from '@/app/entities/post';
 
-type SortMode = 'newest' | 'oldest' | 'title';
 type FilterMode = 'all' | 'mine';
 
+const POSTS_STALE_TIME_MS = 60_000;
+
 export function Feed() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const queryClient = useQueryClient();
   const [sort, setSort] = useState<SortMode>('newest');
   const [filter, setFilter] = useState<FilterMode>('all');
   const [search, setSearch] = useState('');
-  const [profileId, setProfileId] = useState<number | null>(null);
   const [commentsByPost, setCommentsByPost] = useState<Record<string, Comment[]>>({});
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [dislikedPosts, setDislikedPosts] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    getProfile().then((profile) => {
-      const pid = profile?.id;
-      if (pid) setProfileId(pid);
-    });
-  }, []);
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: getProfile,
+    staleTime: 5 * 60_000,
+  });
+  const profileId = profile?.id ?? null;
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const query: Record<string, string> = {};
-        if (sort === 'newest') {
-          query.sortBy = 'createdAt';
-          query.sortOrder = 'DESC';
-        } else if (sort === 'oldest') {
-          query.sortBy = 'createdAt';
-          query.sortOrder = 'ASC';
-        } else if (sort === 'title') {
-          query.sortBy = 'title';
-          query.sortOrder = 'ASC';
-        }
-        if (search) query.search = search;
-        setPosts(await getPosts(query));
-      } catch {
-        setPosts([]);
-      }
-    };
+  const { data: posts = [] } = useQuery({
+    queryKey: postsQueryKey(sort, search),
+    queryFn: () => getPosts(buildPostsQuery(sort, search)),
+    staleTime: POSTS_STALE_TIME_MS,
+  });
 
-    fetchPosts();
-  }, [sort, search]);
+  const updatePostsCache = (updater: (current: Post[]) => Post[]) => {
+    queryClient.setQueryData<Post[]>(postsQueryKey(sort, search), (current) =>
+      updater(current ?? []),
+    );
+  };
 
   const handleCreate = async (content: string, file?: File) => {
     const created = await createPost(content, file);
-    setPosts((prev) => [created, ...prev]);
+    updatePostsCache((current) => [created, ...current]);
   };
 
   const handleLike = async (id: string) => {
@@ -86,8 +80,8 @@ export function Feed() {
       await unlikePost(Number(id), profileId);
 
       setLikedPosts((prev) => ({ ...prev, [id]: false }));
-      setPosts((prev) =>
-        prev.map((post) => {
+      updatePostsCache((current) =>
+        current.map((post) => {
           if (post.id !== id) return post;
           return { ...post, isLiked: false, likesCount: post.likesCount - 1 };
         }),
@@ -97,8 +91,8 @@ export function Feed() {
 
       setLikedPosts((prev) => ({ ...prev, [id]: true }));
       if (isDisliked) setDislikedPosts((prev) => ({ ...prev, [id]: false }));
-      setPosts((prev) =>
-        prev.map((post) => {
+      updatePostsCache((current) =>
+        current.map((post) => {
           if (post.id !== id) return post;
 
           const updated = {
@@ -129,8 +123,8 @@ export function Feed() {
       await undislikePost(Number(id), profileId);
 
       setDislikedPosts((prev) => ({ ...prev, [id]: false }));
-      setPosts((prev) =>
-        prev.map((post) => {
+      updatePostsCache((current) =>
+        current.map((post) => {
           if (post.id !== id) return post;
           return { ...post, isDisliked: false, dislikesCount: post.dislikesCount - 1 };
         }),
@@ -140,8 +134,8 @@ export function Feed() {
 
       setDislikedPosts((prev) => ({ ...prev, [id]: true }));
       if (isLiked) setLikedPosts((prev) => ({ ...prev, [id]: false }));
-      setPosts((prev) =>
-        prev.map((post) => {
+      updatePostsCache((current) =>
+        current.map((post) => {
           if (post.id !== id) return post;
 
           const updated = {
@@ -212,8 +206,8 @@ export function Feed() {
       ...prev,
       [postId]: [...(prev[postId] ?? []), created],
     }));
-    setPosts((prev) =>
-      prev.map((post) =>
+    updatePostsCache((current) =>
+      current.map((post) =>
         post.id === postId ? { ...post, commentsCount: post.commentsCount + 1 } : post,
       ),
     );
@@ -296,8 +290,8 @@ export function Feed() {
         onDislike={handleDislike}
         onEdit={async (id, content) => {
           await updatePost(Number(id), content);
-          setPosts((prev) =>
-            prev.map((post) => {
+          updatePostsCache((current) =>
+            current.map((post) => {
               if (post.id !== id) return post;
               return { ...post, content };
             }),
@@ -305,7 +299,7 @@ export function Feed() {
         }}
         onDelete={async (id) => {
           await deletePost(Number(id));
-          setPosts((prev) => prev.filter((post) => post.id !== id));
+          updatePostsCache((current) => current.filter((post) => post.id !== id));
         }}
         commentsByPost={commentsByPost}
         profileId={profileId}
