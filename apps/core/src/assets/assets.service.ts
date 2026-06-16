@@ -126,6 +126,7 @@ export class AssetsService {
       });
     } catch (error) {
       stream.destroy();
+
       throw error;
     }
   }

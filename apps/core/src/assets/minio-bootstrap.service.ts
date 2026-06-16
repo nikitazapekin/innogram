@@ -20,6 +20,7 @@ export class MinioBootstrapService implements OnModuleInit {
       if (!exists) {
         await this.minioClient.makeBucket(this.bucketName);
         this.logger.log(`MinIO bucket "${this.bucketName}" created`);
+
         return;
       }
 

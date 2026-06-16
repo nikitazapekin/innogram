@@ -23,6 +23,7 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     if (!this.redisUrl) {
       this.logger.warn('CORE_REDIS_URL is not set — Redis caching is disabled');
+
       return;
     }
 
