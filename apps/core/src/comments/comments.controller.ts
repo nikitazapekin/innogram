@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -25,6 +26,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
 @ApiTags('comments')
+@ApiBearerAuth('access-token')
 @Controller()
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}

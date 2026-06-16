@@ -62,6 +62,9 @@ export function useChatSocket({
     const socket = io(`${CORE_API_URL}/chats`, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     });
 
     socketRef.current = socket;
@@ -77,8 +80,16 @@ export function useChatSocket({
       setConnected(false);
     };
 
+    const handleConnectError = (error: Error) => {
+      setConnected(false);
+      const message = error.message || 'Не удалось подключиться к серверу чатов';
+      setSocketError(message);
+      errorHandlerRef.current(message);
+    };
+
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
     socket.on('chats', (chats: BackendChat[]) => chatsHandlerRef.current(chats));
     socket.on('messages', (messages: BackendMessage[]) => {
       const chatId = messages[0]?.chatId ?? pendingMessagesChatIdRef.current;
@@ -106,6 +117,7 @@ export function useChatSocket({
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
       socket.disconnect();
       socketRef.current = null;
       setConnected(false);

@@ -1,41 +1,82 @@
 services:
   redis:
     image: redis:7-alpine
-    restart: always
+    restart: unless-stopped
     ports:
       - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio:latest
-    restart: always
-    command: server /data --console-address ":${MINIO_CONSOLE_PORT}"
+    restart: unless-stopped
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
     ports:
-      - ${MINIO_PORT}:${MINIO_PORT}
-      - ${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}
+      - '${MINIO_PORT:-9000}:${MINIO_PORT:-9000}'
+      - '${MINIO_CONSOLE_PORT:-9001}:${MINIO_CONSOLE_PORT:-9001}'
     environment:
-      MINIO_ROOT_USER: ${MINIO_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
     volumes:
-      - minio-data:/data
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:${MINIO_PORT:-9000}/minio/health/live']
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DATABASE:-innogram}
     ports:
-      - '5433:5432'
+      - '${POSTGRES_PORT:-5433}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  app:
+  kafka:
+    image: bitnami/kafka:3.7
+    restart: unless-stopped
+    ports:
+      - '${KAFKA_PORT:-9092}:9092'
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test: ['CMD-SHELL', 'kafka-topics.sh --bootstrap-server localhost:9092 --list']
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  core:
     build:
       context: .
       dockerfile: apps/core/Dockerfile
+    restart: unless-stopped
+    env_file: .env
     environment:
+      NODE_ENV: production
       CORE_HTTP_PORT: ${CORE_HTTP_PORT:-3001}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -46,16 +87,101 @@ services:
       SWAGGER_PATH: ${SWAGGER_PATH:-api/docs}
       CORE_REDIS_URL: redis://redis:6379
       CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-innogram:core}
-      ASSET_URL_CACHE_TTL_SECONDS: ${ASSET_URL_CACHE_TTL_SECONDS:-10800}
-      POSTS_FEED_CACHE_TTL_SECONDS: ${POSTS_FEED_CACHE_TTL_SECONDS:-30}
+      KAFKA_BROKERS: kafka:9092
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      AUTH_SERVICE_URL: http://auth:${AUTH_HTTP_PORT:-3002}
     ports:
       - '${CORE_HTTP_PORT:-3001}:${CORE_HTTP_PORT:-3001}'
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+
+  auth:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      AUTH_HTTP_PORT: ${AUTH_HTTP_PORT:-3002}
+      AUTH_REDIS_URL: redis://redis:6379
+      AUTH_CORE_HTTP_URL: http://core:${CORE_HTTP_PORT:-3001}
+      API_GATEWAY_URL: http://gateway:${API_GATEWAY_PORT:-3004}
+      KAFKA_BROKERS: kafka:9092
+    ports:
+      - '${AUTH_HTTP_PORT:-3002}:${AUTH_HTTP_PORT:-3002}'
+    depends_on:
+      redis:
+        condition: service_healthy
+      core:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+
+  notifications:
+    build:
+      context: .
+      dockerfile: apps/notifications/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      NOTIFICATIONS_HTTP_PORT: ${NOTIFICATIONS_HTTP_PORT:-3005}
+      NOTIFICATIONS_POSTGRES_HOST: postgres
+      NOTIFICATIONS_POSTGRES_PORT: 5432
+      NOTIFICATIONS_POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      NOTIFICATIONS_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      NOTIFICATIONS_POSTGRES_DATABASE: ${POSTGRES_DATABASE:-innogram}
+      KAFKA_BROKERS: kafka:9092
+    ports:
+      - '${NOTIFICATIONS_HTTP_PORT:-3005}:${NOTIFICATIONS_HTTP_PORT:-3005}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      API_GATEWAY_PORT: ${API_GATEWAY_PORT:-3004}
+      AUTH_SERVICE_URL: http://auth:${AUTH_HTTP_PORT:-3002}
+      CORE_URL: http://core:${CORE_HTTP_PORT:-3001}
+    ports:
+      - '${API_GATEWAY_PORT:-3004}:${API_GATEWAY_PORT:-3004}'
+    depends_on:
+      - auth
+      - core
+
+  client:
+    build:
+      context: .
+      dockerfile: apps/client_app/Dockerfile
+      args:
+        NEXT_PUBLIC_API_GATEWAY_URL: http://localhost:${API_GATEWAY_PORT:-3004}
+        NEXT_PUBLIC_CORE_URL: http://localhost:${CORE_HTTP_PORT:-3001}
+        NEXT_PUBLIC_IMAGE_REMOTE_HOSTS: localhost:${MINIO_PORT:-9000}
+    restart: unless-stopped
+    ports:
+      - '${CLIENT_PORT:-3000}:3000'
+    depends_on:
+      - gateway
 
 volumes:
-  minio-data:
-    driver: local
+  minio_data:
   postgres_data:
   redis_data:
+  kafka_data:

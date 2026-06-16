@@ -3,10 +3,12 @@ import { createServer, type Server } from 'node:http';
 import { createApp } from './app';
 import { loadConfig } from './config/app-config';
 import { loadEnvironment } from './config/load-environment';
+import { initSentry } from './observability/init-sentry';
 import { createRefreshSessionService } from './services/refresh-session-service';
 import { createLogger, serializeError } from './shared/logger';
 
 loadEnvironment();
+initSentry('auth-microservice');
 
 const readRequiredString = (value: string | undefined, envName: string): string => {
   const parsedValue = value;
@@ -74,6 +76,7 @@ const bootstrap = async (): Promise<void> => {
 
   logger.info('HTTP server started', {
     port: config.port,
+    swaggerPath: `/${process.env.AUTH_SWAGGER_PATH ?? 'api/docs'}`,
   });
 };
 

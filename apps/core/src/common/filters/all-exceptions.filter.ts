@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 
 import { RequestLike, ResponseLike, ExceptionResponseBody, NormalizedException } from '../types';
 
@@ -26,6 +27,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const requestId = this.findRequestId(request);
 
     this.log(normalized, request.method, path, requestId);
+
+    if (normalized.status >= HttpStatus.INTERNAL_SERVER_ERROR && exception instanceof Error) {
+      Sentry.captureException(exception);
+    }
+
     this.sendResponse(response, normalized, path, requestId);
   }
 

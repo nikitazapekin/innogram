@@ -1,10 +1,10 @@
-import { CORE_API_URL } from '@/app/shared/config/api';
+import { API_GATEWAY_URL } from '@/app/shared/config/api';
 import { getAccessToken } from '@/lib/auth';
 import type { Post } from '@/app/entities/post';
 import { mapPost } from '@/app/shared/api/posts';
 import type { BackendPost } from '@/app/shared/api/posts';
 
-const BASE = process.env.NEXT_PUBLIC_API_GATEWAY_URL;
+const BASE = API_GATEWAY_URL;
 
 export type ProfileDto = {
   id?: number;
@@ -78,7 +78,7 @@ export async function getUserPosts(profileId: number): Promise<Post[]> {
 }
 
 export async function fetchProfiles(): Promise<ProfileDto[]> {
-  const response = await fetch(`${CORE_API_URL}/users`);
+  const response = await fetch(`${BASE}/users`);
 
   if (!response.ok) {
     throw new Error('Не удалось загрузить профили');
@@ -88,21 +88,7 @@ export async function fetchProfiles(): Promise<ProfileDto[]> {
 }
 
 export async function fetchCurrentProfile(): Promise<ProfileDto | null> {
-  const token = getAccessToken();
-
-  if (!token) {
-    return null;
-  }
-
-  const response = await fetch(`${CORE_API_URL}/users/profile`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  return response.json();
+  return getProfile();
 }
 
 export async function searchUsers(query: string): Promise<ProfileDto[]> {

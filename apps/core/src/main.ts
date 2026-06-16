@@ -9,6 +9,9 @@ import * as path from 'node:path';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { initSentry } from './observability/init-sentry';
+
+initSentry('core-microservice');
 
 const CORE_HTTP_PORT = Number(process.env.CORE_HTTP_PORT ?? 3001);
 const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
@@ -44,17 +47,35 @@ async function bootstrap() {
   });
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Innogram Core Microservice')
+    .setTitle('Innogram Core API')
     .setDescription(
-      'Core HTTP API for working with Innogram entities and routing requests to platform services.',
+      'Core HTTP API for profiles, posts, comments, assets, chats, and notifications. ' +
+        'Protected endpoints require a Bearer access token issued by the auth service.',
     )
-    .setVersion('1.0.0')
-    .addBearerAuth()
+    .setVersion(process.env.APP_VERSION ?? '1.0.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
+      'access-token',
+    )
+    .addTag('posts', 'Post feed and interactions')
+    .addTag('users', 'Profiles and social graph')
+    .addTag('comments', 'Comment threads')
+    .addTag('assets', 'Media uploads and URLs')
+    .addTag('chats', 'Chat attachments')
+    .addTag('notifications', 'In-app notifications')
+    .addTag('monitoring', 'Performance and Prometheus metrics')
+    .addTag('auth (internal)', 'Internal auth user management (service-to-service)')
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
-  SwaggerModule.setup(SWAGGER_PATH, app, swaggerDocument);
+  SwaggerModule.setup(SWAGGER_PATH, app, swaggerDocument, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  });
 
   await app.listen(CORE_HTTP_PORT);
   logger.log(`HTTP server started on port ${CORE_HTTP_PORT}`);

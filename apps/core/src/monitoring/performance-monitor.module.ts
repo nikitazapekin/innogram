@@ -4,18 +4,20 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { PerformanceMonitorController } from './performance-monitor.controller';
 import { PerformanceMonitorInterceptor } from './performance-monitor.interceptor';
 import { PerformanceMonitorService } from './performance-monitor.service';
+import { PrometheusService } from './prometheus.service';
 
 @Global()
 @Module({
   controllers: [PerformanceMonitorController],
   providers: [
     PerformanceMonitorService,
+    PrometheusService,
     PerformanceMonitorInterceptor,
     {
       provide: APP_INTERCEPTOR,
       useClass: PerformanceMonitorInterceptor,
     },
   ],
-  exports: [PerformanceMonitorService],
+  exports: [PerformanceMonitorService, PrometheusService],
 })
 export class PerformanceMonitorModule {}

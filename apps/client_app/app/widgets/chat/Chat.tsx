@@ -62,10 +62,15 @@ export function Chat() {
         if (cancelled) return;
 
         setProfiles(allProfiles);
+        setStatusError(null);
 
-        if (!profileId) {
-          const resolvedId = current?.id ?? resolveDevProfileId() ?? 1;
+        const devProfileId = resolveDevProfileId();
+        const resolvedId = current?.id ?? devProfileId;
+
+        if (resolvedId) {
           setProfileId(resolvedId);
+        } else {
+          setStatusError('Войдите в аккаунт, чтобы использовать чаты');
         }
       } catch (error) {
         if (!cancelled) {
@@ -76,9 +81,6 @@ export function Chat() {
             message = 'Ошибка загрузки профиля';
           }
           setStatusError(message);
-          if (!profileId) {
-            setProfileId(resolveDevProfileId() ?? 1);
-          }
         }
       }
     }
@@ -88,7 +90,7 @@ export function Chat() {
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, []);
 
   const upsertChat = useCallback(
     (backendChat: BackendChat, lastMessage?: MessageType) => {
@@ -361,7 +363,9 @@ export function Chat() {
 
   return (
     <div className={styles.chat}>
-      {statusError && <p className={styles.error}>{statusError}</p>}
+      {(statusError || chatSocket.socketError) && (
+        <p className={styles.error}>{statusError ?? chatSocket.socketError}</p>
+      )}
       {createModal && profileId && (
         <CreateChatModal
           currentProfileId={profileId}
@@ -377,6 +381,7 @@ export function Chat() {
           activeChatId={activeChatId}
           chats={chats}
           connected={chatSocket.connected}
+          connecting={profileId !== null && !chatSocket.connected}
           onCreateGroup={() => setCreateModal('group')}
           onCreatePrivate={() => setCreateModal('private')}
           onSelect={handleSelectChat}

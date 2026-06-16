@@ -8,6 +8,7 @@ import { createAuthRouter } from './routes/auth';
 import { createSystemRouter } from './routes/system';
 import type { RefreshSessionService } from './services/refresh-session-service';
 import type { Logger } from './shared/logger';
+import { registerSwagger } from './swagger';
 
 const JSON_BODY_LIMIT = '16kb';
 
@@ -37,6 +38,7 @@ export const createApp = ({ config, logger, refreshSessionService }: CreateAppOp
 
   app.use(createRequestLogger(logger));
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
+  registerSwagger(app);
   app.use(createSystemRouter());
   app.use(createAuthRouter({ config, refreshSessionService }));
   app.use(notFoundHandler);

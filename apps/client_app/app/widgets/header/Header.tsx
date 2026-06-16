@@ -7,9 +7,7 @@ const navItems = [
   { label: 'Профиль', href: '/profile' },
   { label: 'Уведомления', href: '/notifications' },
   { label: 'Посты', href: '/posts' },
-  { label: 'Подписки', href: '/subscriptions' },
   { label: 'Чат', href: '/chat' },
-  { label: 'Мониторинг', href: '/monitoring' },
 ];
 
 export function Header() {

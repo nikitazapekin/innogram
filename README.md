@@ -1,85 +1,75 @@
-# Innogram Microservices
+# Innogram
 
-Monorepo skeleton for `core_microservice`, `auth_microservice`, and `posts_microservice` with NATS-based communication.
+Social platform monorepo with microservices, API gateway, and Next.js client.
 
 ## Architecture
 
-- `core_microservice` is the API Gateway.
-- `auth_microservice` and `posts_microservice` are standalone services with their own HTTP ports and NATS `@MessagePattern(...)` handlers.
-- `core_microservice` authenticates incoming requests through `auth_microservice` before routing post-related calls to `posts_microservice`.
-- Swagger is enabled in `core_microservice`.
+| Service              | Stack                        | Default port | Description                                       |
+| -------------------- | ---------------------------- | ------------ | ------------------------------------------------- |
+| `apps/client_app`    | Next.js 15                   | 3000         | Web UI                                            |
+| `apps/api-gateway`   | NestJS proxy                 | 3004         | Routes `/auth/*` to auth, everything else to core |
+| `apps/core`          | NestJS + TypeORM + Socket.IO | 3001         | Posts, users, comments, assets, chats             |
+| `apps/auth`          | Express + Redis + Kafka      | 3002         | Registration, login, OAuth, JWT                   |
+| `apps/notifications` | NestJS + Kafka + TypeORM     | 3005         | Mention notifications consumer                    |
+| `packages/shared`    | NestJS module                | —            | Shared auth guard and env loader                  |
 
-## Install
+Infrastructure: PostgreSQL, Redis, MinIO, Kafka.
 
-Recommended installation from the repository root:
+## Quick start (local)
 
 ```bash
+cp .env.example .env
+# Fill in required values — see docs/ENVIRONMENT.md
+
 npm install
+npm run build:shared
+
+# Start infrastructure
+docker compose up -d postgres redis minio kafka
+
+# Start all backend services
+npm run start:all
+
+# In another terminal — client
+npm --prefix apps/client_app run dev
 ```
 
-If you want to install dependencies service-by-service, this also works:
+## API documentation (Swagger)
+
+| Service           | URL                            |
+| ----------------- | ------------------------------ |
+| Core API          | http://localhost:3001/api/docs |
+| Auth API          | http://localhost:3002/api/docs |
+| Notifications API | http://localhost:3005/api/docs |
+
+## Docker (full stack)
 
 ```bash
-cd apps/auth_microservice && npm install
-cd ../posts_microservice && npm install
-cd ../core_microservice && npm install
-```
+cp .env.example .env
+# Configure secrets — see DEPLOY.md
 
-## Start Services
-
-From the repository root:
-
-```bash
-npm run start:auth
-npm run start:posts
-npm run start:core
-```
-
-Or from each service directory:
-
-```bash
-cd apps/auth_microservice && npm run start:dev
-cd apps/posts_microservice && npm run start:dev
-cd apps/core_microservice && npm run start:dev
-```
-
-If you specifically want file watching, use:
-
-```bash
-cd apps/core_microservice && npm run start:watch
-```
-
-Ports:
-
-- `core_microservice`: `http://localhost:3001`
-- `auth_microservice`: `http://localhost:3002/health`
-- `posts_microservice`: `http://localhost:3003/health`
-- Swagger: `http://localhost:3001/api/docs`
-- NATS: `nats://localhost:4222`
-- NATS monitoring: `http://localhost:8222`
-
-## Smoke Test Endpoints
-
-After starting NATS and the three services:
-
-```bash
-curl http://localhost:3001/api/health
-curl -X POST http://localhost:3001/api/auth/validate -H 'Content-Type: application/json' -d '{"accessToken":"demo-access-token"}'
-curl http://localhost:3001/api/posts -H 'Authorization: Bearer demo-access-token'
-curl -X POST http://localhost:3001/api/posts -H 'Content-Type: application/json' -H 'Authorization: Bearer demo-access-token' -d '{"title":"Stub post","content":"Checking NATS flow"}'
-```
-
-Each service logs NATS ingress/egress steps so you can verify broker routing without any business logic or database wiring yet.
-
-## Docker
-
-```bash
 docker compose up --build
 ```
 
-## CI / Utility Commands
+## Monitoring
+
+- Performance snapshot: `GET http://localhost:3001/monitoring/metrics`
+- Prometheus metrics: `GET http://localhost:3001/monitoring/prometheus`
+- UI dashboard: http://localhost:3000/monitoring
+
+Optional error tracking: set `SENTRY_DSN` in `.env` (see docs/ENVIRONMENT.md).
+
+## Documentation
+
+- [Environment variables](docs/ENVIRONMENT.md)
+- [Deployment guide](DEPLOY.md)
+- Per-service READMEs in `apps/*/README.md`
+
+## Scripts
 
 ```bash
-npm run lint
-npm run build
+npm run build          # Build all workspaces (Turbo)
+npm run lint           # Lint all workspaces
+npm run start:all      # Dev: gateway + auth + core
+npm run start:all:prod # Prod: all services + client
 ```

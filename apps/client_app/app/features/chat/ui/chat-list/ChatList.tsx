@@ -8,6 +8,7 @@ type ChatListProps = {
   chats: Chat[];
   activeChatId: number | null;
   connected?: boolean;
+  connecting?: boolean;
   onSelect: (chat: Chat) => void;
   onCreatePrivate?: () => void;
   onCreateGroup?: () => void;
@@ -62,6 +63,7 @@ export function ChatList({
   chats = [],
   activeChatId = null,
   connected = false,
+  connecting = false,
   onSelect = () => {},
   onCreatePrivate,
   onCreateGroup,
@@ -97,7 +99,7 @@ export function ChatList({
           )}
         </div>
       </div>
-      {!connected && <p className={styles.status}>Подключение…</p>}
+      {connecting && <p className={styles.status}>Подключение…</p>}
       <div className={styles.search}>
         <input
           className={styles.searchInput}

@@ -4,6 +4,7 @@ import { catchError, tap } from 'rxjs/operators';
 
 import { RequestLike, ResponseLike } from '../common/types';
 import { PerformanceMonitorService } from './performance-monitor.service';
+import { PrometheusService } from './prometheus.service';
 
 const REQUEST_ID_HEADERS = ['x-request-id', 'x-correlation-id'] as const;
 
@@ -14,7 +15,10 @@ const isNonEmptyString = (value: unknown): value is string =>
 export class PerformanceMonitorInterceptor implements NestInterceptor {
   private readonly logger = new Logger(PerformanceMonitorInterceptor.name);
 
-  constructor(private readonly performanceMonitor: PerformanceMonitorService) {}
+  constructor(
+    private readonly performanceMonitor: PerformanceMonitorService,
+    private readonly prometheus: PrometheusService,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler) {
     const startedAt = performance.now();
@@ -23,20 +27,20 @@ export class PerformanceMonitorInterceptor implements NestInterceptor {
     const { method, url } = request;
     const requestId = this.findRequestId(request);
 
+    const record = (status: number) => {
+      const duration = performance.now() - startedAt;
+
+      this.performanceMonitor.recordRequest(status, duration);
+      this.prometheus.recordRequest(method, url, status, duration);
+      this.log(status, method, url, requestId, duration);
+    };
+
     return next.handle().pipe(
       tap(() => {
-        const status = response.statusCode ?? 200;
-        const duration = performance.now() - startedAt;
-
-        this.performanceMonitor.recordRequest(status, duration);
-        this.log(status, method, url, requestId, duration);
+        record(response.statusCode ?? 200);
       }),
       catchError((err) => {
-        const status = response.statusCode ?? 500;
-        const duration = performance.now() - startedAt;
-
-        this.performanceMonitor.recordRequest(status, duration);
-        this.log(status, method, url, requestId, duration);
+        record(response.statusCode ?? 500);
 
         return throwError(() => err);
       }),

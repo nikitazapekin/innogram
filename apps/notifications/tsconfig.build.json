@@ -3,7 +3,16 @@
   "compilerOptions": {
     "noEmit": false,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "classValidatorShim": true,
+          "dtoFileNameSuffix": [".dto.ts"]
+        }
+      }
+    ]
   },
   "include": ["src/**/*.ts"]
 }

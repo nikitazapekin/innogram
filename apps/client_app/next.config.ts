@@ -1,4 +1,8 @@
 import type { NextConfig } from 'next';
+import { config as loadDotenv } from 'dotenv';
+import { resolve } from 'node:path';
+
+loadDotenv({ path: resolve(__dirname, '../../.env') });
 
 const parseImageRemoteHosts = (): Array<{ hostname: string; port: string }> => {
   const defaults = ['localhost:9000', '127.0.0.1:9000'];
@@ -15,6 +19,7 @@ const parseImageRemoteHosts = (): Array<{ hostname: string; port: string }> => {
 };
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: parseImageRemoteHosts().map(({ hostname, port }) => ({
       protocol: 'http',
