@@ -1,0 +1,150 @@
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  '' close;
+}
+
+upstream innogram_client {
+  server ${NGINX_CLIENT_UPSTREAM};
+}
+
+upstream innogram_gateway {
+  server ${NGINX_GATEWAY_UPSTREAM};
+}
+
+upstream innogram_core {
+  server ${NGINX_CORE_UPSTREAM};
+}
+
+upstream innogram_auth {
+  server ${NGINX_AUTH_UPSTREAM};
+}
+
+upstream innogram_minio {
+  server ${NGINX_MINIO_UPSTREAM};
+}
+
+server {
+  listen 80;
+  server_name ${NGINX_SERVER_NAME};
+
+  client_max_body_size 25m;
+
+  # --- Next.js static (immutable, CDN-friendly) ---
+  location /_next/static/ {
+    proxy_pass http://innogram_client;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_cache static_cache;
+    proxy_cache_valid 200 30d;
+    proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+    proxy_cache_lock on;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    add_header CDN-Cache-Control "public, max-age=31536000, immutable" always;
+    add_header X-Cache-Status $upstream_cache_status always;
+  }
+
+  # --- Public media from MinIO / S3-compatible storage ---
+  location /media/ {
+    proxy_pass http://innogram_minio/${MINIO_BUCKET}/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_cache static_cache;
+    proxy_cache_valid 200 7d;
+    proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+    add_header Cache-Control "public, max-age=604800" always;
+    add_header CDN-Cache-Control "public, max-age=604800" always;
+    add_header X-Cache-Status $upstream_cache_status always;
+  }
+
+  # --- Short-lived cache for public read-only API (feed, profiles) ---
+  location ~ ^/api/(posts|users)(/|$) {
+    rewrite ^/api/?(.*)$ /$1 break;
+    proxy_pass http://innogram_gateway;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_cache innogram_cache;
+    proxy_cache_methods GET HEAD;
+    proxy_cache_valid 200 30s;
+    proxy_cache_key "$scheme$request_method$host$request_uri";
+    proxy_no_cache $bypass_cache;
+    proxy_cache_bypass $bypass_cache;
+    add_header Cache-Control "public, max-age=30, stale-while-revalidate=60" always;
+    add_header CDN-Cache-Control "public, max-age=30, stale-while-revalidate=60" always;
+    add_header X-Cache-Status $upstream_cache_status always;
+  }
+
+  # --- API gateway (auth + core routes, no cache) ---
+  location /api/ {
+    rewrite ^/api/?(.*)$ /$1 break;
+    proxy_pass http://innogram_gateway;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Connection "";
+
+    proxy_no_cache 1;
+    proxy_cache_bypass 1;
+    add_header Cache-Control "private, no-store" always;
+    add_header CDN-Cache-Control "no-store" always;
+  }
+
+  # --- Core service (assets, chats, WebSocket) ---
+  location /core/ {
+    rewrite ^/core/?(.*)$ /$1 break;
+    proxy_pass http://innogram_core;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+
+    add_header Cache-Control "private, no-store" always;
+    add_header CDN-Cache-Control "no-store" always;
+  }
+
+  location /health {
+    proxy_pass http://innogram_auth/health;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    add_header Cache-Control "no-store" always;
+  }
+
+  # --- Next.js app (HTML — short CDN cache) ---
+  location / {
+    proxy_pass http://innogram_client;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+
+    proxy_cache innogram_cache;
+    proxy_cache_methods GET HEAD;
+    proxy_cache_valid 200 5m;
+    proxy_no_cache $bypass_cache;
+    proxy_cache_bypass $bypass_cache;
+    add_header Cache-Control "public, max-age=300, stale-while-revalidate=600" always;
+    add_header CDN-Cache-Control "public, max-age=300, stale-while-revalidate=600" always;
+    add_header X-Cache-Status $upstream_cache_status always;
+  }
+}

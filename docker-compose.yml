@@ -171,17 +171,44 @@ services:
       context: .
       dockerfile: apps/client_app/Dockerfile
       args:
-        NEXT_PUBLIC_API_GATEWAY_URL: http://localhost:${API_GATEWAY_PORT:-3004}
-        NEXT_PUBLIC_CORE_URL: http://localhost:${CORE_HTTP_PORT:-3001}
-        NEXT_PUBLIC_IMAGE_REMOTE_HOSTS: localhost:${MINIO_PORT:-9000}
+        NEXT_PUBLIC_API_GATEWAY_URL: ${NEXT_PUBLIC_API_GATEWAY_URL:-http://localhost:3004}
+        NEXT_PUBLIC_CORE_URL: ${NEXT_PUBLIC_CORE_URL:-http://localhost:3001}
+        NEXT_PUBLIC_IMAGE_REMOTE_HOSTS: ${NEXT_PUBLIC_IMAGE_REMOTE_HOSTS:-localhost:9000}
     restart: unless-stopped
     ports:
       - '${CLIENT_PORT:-3000}:3000'
     depends_on:
       - gateway
 
+  nginx:
+    build:
+      context: ./deploy/nginx
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${NGINX_PORT:-80}:80'
+    environment:
+      NGINX_CLIENT_UPSTREAM: client:3000
+      NGINX_GATEWAY_UPSTREAM: gateway:${API_GATEWAY_PORT:-3004}
+      NGINX_CORE_UPSTREAM: core:${CORE_HTTP_PORT:-3001}
+      NGINX_AUTH_UPSTREAM: auth:${AUTH_HTTP_PORT:-3002}
+      NGINX_MINIO_UPSTREAM: minio:${MINIO_PORT:-9000}
+      NGINX_SERVER_NAME: ${NGINX_SERVER_NAME:-localhost}
+      MINIO_BUCKET: ${MINIO_BUCKET:-main}
+    volumes:
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - client
+      - gateway
+      - core
+      - auth
+      - minio
+    profiles:
+      - proxy
+
 volumes:
   minio_data:
   postgres_data:
   redis_data:
   kafka_data:
+  nginx_cache:
