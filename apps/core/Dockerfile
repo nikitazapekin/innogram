@@ -11,21 +11,24 @@ COPY apps/core/package.json ./apps/core/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 
 RUN npm install
-RUN npm --prefix apps/core install
+RUN npm --prefix packages/shared install
 
 COPY apps/core ./apps/core
 COPY packages/shared ./packages/shared
 
+RUN npm --prefix packages/shared run build
 RUN npm --prefix apps/core run build
 
 FROM node:20-alpine
 WORKDIR /workspace
 ENV NODE_ENV=production
 
-COPY --from=builder /root/.npm /root/.npm
 COPY --from=builder /workspace/apps/core/package.json ./apps/core/package.json
-RUN npm --prefix apps/core install --omit=dev && npm cache clean --force
 COPY --from=builder /workspace/apps/core/dist ./apps/core/dist
+COPY --from=builder /workspace/node_modules ./node_modules
+COPY --from=builder /workspace/apps/core/node_modules ./apps/core/node_modules
+COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/package.json
 
 EXPOSE 3001
 CMD ["node", "apps/core/dist/docker-start.js"]
