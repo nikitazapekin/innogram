@@ -1,8 +1,15 @@
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 
-export function buildTypeOrmOptions(configService: ConfigService): TypeOrmModuleOptions {
-  const isDev = configService.get('NODE_ENV') !== 'production';
+import { PerformanceMonitorService } from './monitoring/performance-monitor.service';
+import { TypeOrmPerformanceLogger } from './monitoring/typeorm-performance.logger';
+
+export function buildTypeOrmOptions(
+  configService: ConfigService,
+  performanceMonitor?: PerformanceMonitorService,
+): TypeOrmModuleOptions {
+  const slowQueryThresholdMs = Number(configService.get('SLOW_QUERY_THRESHOLD_MS') ?? 100);
 
   return {
     type: 'postgres',
@@ -13,7 +20,20 @@ export function buildTypeOrmOptions(configService: ConfigService): TypeOrmModule
     database: configService.getOrThrow('POSTGRES_DATABASE'),
     autoLoadEntities: true,
     synchronize: false,
-    logging: isDev ? ['query', 'error', 'warn'] : ['error'],
-    maxQueryExecutionTime: isDev ? 100 : undefined,
+    logging: performanceMonitor ? ['error', 'warn'] : ['error'],
+    maxQueryExecutionTime: slowQueryThresholdMs,
+    logger: performanceMonitor ? new TypeOrmPerformanceLogger(performanceMonitor) : undefined,
   };
+}
+
+@Injectable()
+export class DatabaseConfigService implements TypeOrmOptionsFactory {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly performanceMonitor?: PerformanceMonitorService,
+  ) {}
+
+  createTypeOrmOptions(): TypeOrmModuleOptions {
+    return buildTypeOrmOptions(this.configService, this.performanceMonitor);
+  }
 }

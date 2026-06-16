@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from '@tanstack/react-query';
 import { useState } from 'react';
 import styles from './Feed.module.scss';
 import { PostSearch } from '@/app/features/post/ui/post-search/PostSearch';
@@ -12,7 +17,7 @@ import {
   type SortMode,
 } from '@/app/features/post/lib/buildPostsQuery';
 import {
-  getPosts,
+  getPostsPage,
   createPost,
   updatePost,
   deletePost,
@@ -20,6 +25,7 @@ import {
   unlikePost,
   dislikePost,
   undislikePost,
+  type PostsPage,
 } from '@/app/shared/api/posts';
 import {
   getComments,
@@ -53,16 +59,30 @@ export function Feed() {
   });
   const profileId = profile?.id ?? null;
 
-  const { data: posts = [] } = useQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: postsQueryKey(sort, search),
-    queryFn: () => getPosts(buildPostsQuery(sort, search)),
+    queryFn: ({ pageParam }) =>
+      getPostsPage(buildPostsQuery(sort, search, pageParam as string | undefined)),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: POSTS_STALE_TIME_MS,
   });
 
+  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
+
   const updatePostsCache = (updater: (current: Post[]) => Post[]) => {
-    queryClient.setQueryData<Post[]>(postsQueryKey(sort, search), (current) =>
-      updater(current ?? []),
-    );
+    queryClient.setQueryData<InfiniteData<PostsPage>>(postsQueryKey(sort, search), (current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        pages: current.pages.map((page, index) =>
+          index === 0 ? { ...page, posts: updater(page.posts) } : page,
+        ),
+      };
+    });
   };
 
   const handleCreate = async (content: string, file?: File) => {
@@ -284,6 +304,7 @@ export function Feed() {
         ))}
       </div>
       <PostCreate onSubmit={handleCreate} />
+      {isLoading ? <p className={styles.status}>Загрузка постов...</p> : null}
       <PostList
         posts={posts}
         onLike={handleLike}
@@ -310,6 +331,16 @@ export function Feed() {
         onDeleteComment={handleDeleteComment}
         onReplyComment={handleReplyComment}
       />
+      {hasNextPage ? (
+        <button
+          className={styles.loadMore}
+          type="button"
+          onClick={() => fetchNextPage()}
+          disabled={isFetchingNextPage}
+        >
+          {isFetchingNextPage ? 'Загрузка...' : 'Загрузить ещё'}
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,13 @@
 export type SortMode = 'newest' | 'oldest' | 'title';
 
-export function buildPostsQuery(sort: SortMode, search: string): Record<string, string> {
-  const query: Record<string, string> = {};
+export function buildPostsQuery(
+  sort: SortMode,
+  search: string,
+  cursor?: string,
+): Record<string, string> {
+  const query: Record<string, string> = {
+    limit: '10',
+  };
 
   if (sort === 'newest') {
     query.sortBy = 'createdAt';
@@ -16,6 +22,10 @@ export function buildPostsQuery(sort: SortMode, search: string): Record<string, 
 
   if (search) {
     query.search = search;
+  }
+
+  if (cursor) {
+    query.cursor = cursor;
   }
 
   return query;

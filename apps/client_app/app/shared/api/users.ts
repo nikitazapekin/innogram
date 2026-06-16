@@ -117,8 +117,24 @@ export async function getUserProfile(id: number): Promise<ProfileDto> {
   return authFetch(`${BASE}/users/${id}`);
 }
 
-export async function followUser(followerId: number, targetId: number): Promise<void> {
-  await authFetch(`${BASE}/users/${followerId}/following/${targetId}`, { method: 'POST' });
+export type FollowState = 'none' | 'following' | 'requested';
+
+export type FollowResult = { status: 'following' } | { status: 'requested'; requestId: number };
+
+export async function getRelationship(targetProfileId: number): Promise<{ status: FollowState }> {
+  return authFetch(`${BASE}/users/${targetProfileId}/relationship`);
+}
+
+export async function followUser(followerId: number, targetId: number): Promise<FollowResult> {
+  const result = await authFetch(`${BASE}/users/${followerId}/following/${targetId}`, {
+    method: 'POST',
+  });
+
+  if (result && typeof result.id === 'number') {
+    return { status: 'requested', requestId: result.id };
+  }
+
+  return { status: 'following' };
 }
 
 export async function unfollowUser(followerId: number, targetId: number): Promise<void> {
@@ -136,4 +152,27 @@ export async function getFollowing(id: number): Promise<ProfileDto[]> {
 export async function isFollowing(followerId: number, targetId: number): Promise<boolean> {
   const following = await getFollowing(followerId);
   return following.some((profile) => profile.id === targetId);
+}
+
+export type FollowRequestDto = {
+  id: number;
+  followerProfileId: number;
+  followingProfileId: number;
+  status: string;
+  createdAt?: string;
+};
+
+export async function getPendingFollowRequests(profileId: number): Promise<FollowRequestDto[]> {
+  return authFetch(`${BASE}/users/${profileId}/follow-requests/pending`);
+}
+
+export async function respondToFollowRequest(
+  profileId: number,
+  requestId: number,
+  status: 'approved' | 'rejected',
+): Promise<void> {
+  await authFetch(`${BASE}/users/${profileId}/follow-requests/${requestId}/respond`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  });
 }

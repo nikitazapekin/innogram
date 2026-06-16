@@ -1,0 +1,116 @@
+@use '../../styles' as *;
+
+.page {
+  display: grid;
+  gap: $spacing-xl;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: $spacing-xl $spacing-lg $spacing-xxl;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  align-items: flex-start;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.subtitle {
+  margin: $spacing-xs 0 0;
+  color: rgba($color-black, 0.55);
+}
+
+.refresh {
+  min-height: 36px;
+  padding: $spacing-xs $spacing-lg;
+  color: $color-white;
+  background: $color-black;
+  border: none;
+  border-radius: $radius-circle;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: $spacing-md;
+}
+
+.card {
+  display: grid;
+  gap: $spacing-xs;
+  padding: $spacing-lg;
+  background: $color-white;
+  border: 1px solid rgba($color-black, 0.08);
+  border-radius: $radius-large;
+  box-shadow: 0 8px 24px rgba($color-black, 0.04);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 14px;
+  color: rgba($color-black, 0.55);
+}
+
+.metricValue {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.metricHint {
+  margin: 0;
+  color: rgba($color-black, 0.55);
+  font-size: 13px;
+}
+
+.section {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 18px;
+}
+
+.queryList {
+  display: grid;
+  gap: $spacing-md;
+}
+
+.queryItem {
+  display: grid;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: $color-white;
+  border: 1px solid rgba($color-black, 0.08);
+  border-radius: $radius-large;
+}
+
+.queryMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  color: rgba($color-black, 0.55);
+  font-size: 12px;
+}
+
+.queryText {
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+}
+
+.empty {
+  margin: 0;
+  color: rgba($color-black, 0.55);
+}

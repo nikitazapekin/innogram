@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { QueryFailedError, Repository, SelectQueryBuilder } from 'typeorm';
 
 import { buildPostsFeedCacheKey, POSTS_FEED_VERSION_KEY } from '../cache/cache-keys';
 import { RedisCacheService } from '../cache/redis-cache.service';
@@ -12,10 +17,11 @@ import { AssetsService } from '../assets/assets.service';
 import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { MentionsService } from '../mentions/mentions.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { CursorPaginatedPostsDto } from './dto/cursor-paginated-posts.dto';
 import { PostDto, MediaDto } from './dto/post.dto';
-import { PaginatedPostsDto } from './dto/paginated-posts.dto';
 import { QueryPostsDto } from './dto/query-posts.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { decodePostsCursor, encodePostsCursor, type PostsCursorPayload } from './posts-cursor.util';
 
 type PostWithCounts = Post & {
   likesCount?: number;
@@ -45,38 +51,48 @@ export class PostsService {
     this.postsFeedCacheTtlSeconds = this.readPostsFeedCacheTtlSeconds();
   }
 
-  async getPostsByQuery(query: QueryPostsDto): Promise<PaginatedPostsDto> {
+  async getPostsByQuery(query: QueryPostsDto): Promise<CursorPaginatedPostsDto> {
     const cacheVersion = await this.getFeedCacheVersion();
     const cacheKey = buildPostsFeedCacheKey(cacheVersion, query);
-    const cachedFeed = await this.redisCache.getJson<PaginatedPostsDto>(cacheKey);
+    const cachedFeed = await this.redisCache.getJson<CursorPaginatedPostsDto>(cacheKey);
 
     if (cachedFeed) {
       return cachedFeed;
     }
 
-    const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const sortBy = query.sortBy ?? 'createdAt';
     const sortOrder = query.sortOrder ?? 'DESC';
+    const cursor = query.cursor ? decodePostsCursor(query.cursor) : null;
 
-    const filterQuery = this.buildPostsFilterQuery(query);
-    const total = await filterQuery.getCount();
+    if (cursor && (cursor.sortBy !== sortBy || cursor.sortOrder !== sortOrder)) {
+      throw new BadRequestException('Cursor does not match the current sort parameters.');
+    }
 
-    const posts = await this.buildPostsListQuery(query)
+    const listQuery = this.buildPostsListQuery(query);
+
+    this.applyCursor(listQuery, sortBy, sortOrder, cursor);
+    listQuery
       .orderBy(`post.${sortBy}`, sortOrder)
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
+      .addOrderBy('post.id', sortOrder)
+      .take(limit + 1);
 
-    const postsDto = await Promise.all(posts.map((post) => this.toPostDto(post)));
-    const totalPages = Math.ceil(total / limit);
+    const posts = await listQuery.getMany();
+    const hasMore = posts.length > limit;
+    const pagePosts = hasMore ? posts.slice(0, limit) : posts;
+    const postsDto = await Promise.all(pagePosts.map((post) => this.toPostDto(post)));
 
-    const result: PaginatedPostsDto = {
+    const lastPost = pagePosts.at(-1);
+    const nextCursor =
+      hasMore && lastPost
+        ? encodePostsCursor(this.buildCursorPayload(lastPost, sortBy, sortOrder))
+        : null;
+
+    const result: CursorPaginatedPostsDto = {
       data: postsDto,
-      total,
-      page,
+      nextCursor,
+      hasMore,
       limit,
-      totalPages,
     };
 
     await this.redisCache.setJson(cacheKey, result, this.postsFeedCacheTtlSeconds);
@@ -269,6 +285,66 @@ export class PostsService {
       .leftJoinAndSelect('post.assets', 'assets')
       .loadRelationCountAndMap('post.likesCount', 'post.likes')
       .loadRelationCountAndMap('post.dislikesCount', 'post.dislikes');
+  }
+
+  private applyCursor(
+    queryBuilder: SelectQueryBuilder<Post>,
+    sortBy: string,
+    sortOrder: 'ASC' | 'DESC',
+    cursor: PostsCursorPayload | null,
+  ): void {
+    if (!cursor) {
+      return;
+    }
+
+    const isAscending = sortOrder === 'ASC';
+    const comparison = isAscending ? '>' : '<';
+    const idComparison = isAscending ? '>' : '<';
+
+    if (sortBy === 'title') {
+      queryBuilder.andWhere(
+        `(post.title ${comparison} :cursorTitle OR (post.title = :cursorTitle AND post.id ${idComparison} :cursorId))`,
+        {
+          cursorTitle: cursor.title,
+          cursorId: cursor.id,
+        },
+      );
+
+      return;
+    }
+
+    const dateField = sortBy === 'updatedAt' ? 'updatedAt' : 'createdAt';
+    const cursorDate = sortBy === 'updatedAt' ? cursor.updatedAt : cursor.createdAt;
+
+    queryBuilder.andWhere(
+      `(post.${dateField} ${comparison} :cursorDate OR (post.${dateField} = :cursorDate AND post.id ${idComparison} :cursorId))`,
+      {
+        cursorDate,
+        cursorId: cursor.id,
+      },
+    );
+  }
+
+  private buildCursorPayload(
+    post: Post,
+    sortBy: string,
+    sortOrder: 'ASC' | 'DESC',
+  ): PostsCursorPayload {
+    const payload: PostsCursorPayload = {
+      sortBy,
+      sortOrder,
+      id: post.id,
+    };
+
+    if (sortBy === 'title') {
+      payload.title = post.title;
+    } else if (sortBy === 'updatedAt') {
+      payload.updatedAt = post.updatedAt.toISOString();
+    } else {
+      payload.createdAt = post.createdAt.toISOString();
+    }
+
+    return payload;
   }
 
   private async handleMentions(post: Post): Promise<void> {

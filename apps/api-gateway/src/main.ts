@@ -96,15 +96,10 @@ const buildUpstreamUrl = (baseUrl: string, path: string | undefined): string => 
 };
 
 const AUTH_ROUTE_PREFIX = '/auth';
-const NOTIFICATIONS_ROUTE_PREFIX = '/notifications';
 
 const resolveUpstreamUrl = (originalUrl: string | undefined): string => {
   if (originalUrl?.startsWith(AUTH_ROUTE_PREFIX)) {
     return buildUpstreamUrl(AUTH_SERVICE_URL, originalUrl);
-  }
-
-  if (originalUrl?.startsWith(NOTIFICATIONS_ROUTE_PREFIX)) {
-    return buildUpstreamUrl(NOTIFICATIONS_SERVICE_URL, originalUrl);
   }
 
   return buildUpstreamUrl(CORE_URL, originalUrl);
@@ -123,10 +118,6 @@ const API_GATEWAY_PORT = (() => {
 
 const AUTH_SERVICE_URL = readRequiredString(process.env.AUTH_SERVICE_URL, 'AUTH_SERVICE_URL');
 const CORE_URL = readRequiredString(process.env.CORE_URL, 'CORE_URL');
-const NOTIFICATIONS_SERVICE_URL = readRequiredString(
-  process.env.NOTIFICATIONS_SERVICE_URL,
-  'NOTIFICATIONS_SERVICE_URL',
-);
 
 const ALLOWED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
 

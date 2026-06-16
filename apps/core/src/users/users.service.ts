@@ -9,11 +9,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { FollowRequest, FollowRequestStatus } from '../entities/follow-request.entity';
+import { Notification } from '../entities/notification.entity';
 import { Post } from '../entities/post.entity';
 import { Profile } from '../entities/profile.entity';
 import { UserEntity } from '../entities/user.entity';
 import { NotificationEventsProducer } from '../kafka/notification-events.producer';
 import { FollowRequestDto } from './dto/follow-request.dto';
+import { RelationshipDto, RelationshipStatus } from './dto/relationship.dto';
 import { PostDto } from '../posts/dto/post.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
@@ -31,6 +33,8 @@ export class UsersService {
     private readonly usersRepository: Repository<UserEntity>,
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
     private readonly notificationEventsProducer: NotificationEventsProducer,
   ) {}
 
@@ -207,6 +211,14 @@ export class UsersService {
     return savedProfileResponse;
   }
 
+  async getRelationship(viewerEmail: string, targetProfileId: number): Promise<RelationshipDto> {
+    const viewerProfile = await this.findProfileByEmail(viewerEmail);
+
+    return {
+      status: await this.resolveRelationshipStatus(viewerProfile.id, targetProfileId),
+    };
+  }
+
   async followProfile(followerId: number, followingId: number): Promise<FollowRequestDto | void> {
     this.ensureDifferentProfileIds(followerId, followingId);
 
@@ -231,6 +243,11 @@ export class UsersService {
 
       const saved = await this.followRequestRepository.save(request);
 
+      await this.createNotification(followingId, 'follow_request', {
+        followerProfileId: followerId,
+        followRequestId: saved.id,
+      });
+
       return this.toFollowRequestDto(saved);
     }
 
@@ -240,7 +257,7 @@ export class UsersService {
       .of(followerId)
       .add(followingId);
 
-    await this.notificationEventsProducer.emitUserSubscribed({
+    await this.emitUserSubscribedNotification({
       followerProfileId: followerId,
       followingProfileId: followingId,
     });
@@ -304,7 +321,7 @@ export class UsersService {
         .of(request.followerProfileId)
         .add(request.followingProfileId);
 
-      await this.notificationEventsProducer.emitUserSubscribed({
+      await this.emitUserSubscribedNotification({
         followerProfileId: request.followerProfileId,
         followingProfileId: request.followingProfileId,
       });
@@ -321,6 +338,84 @@ export class UsersService {
     }
 
     return profile;
+  }
+
+  private async findProfileByEmail(email: string): Promise<Profile> {
+    const user = await this.usersRepository.findOneBy({ email });
+
+    if (!user) {
+      throw new NotFoundException('User was not found.');
+    }
+
+    const profile = await this.profilesRepository.findOneBy({ userId: user.id });
+
+    if (!profile) {
+      throw new NotFoundException('Profile was not found.');
+    }
+
+    return profile;
+  }
+
+  private async resolveRelationshipStatus(
+    followerProfileId: number,
+    followingProfileId: number,
+  ): Promise<RelationshipStatus> {
+    if (followerProfileId === followingProfileId) {
+      return 'none';
+    }
+
+    const followingProfiles = await this.profilesRepository
+      .createQueryBuilder('profile')
+      .relation(Profile, 'followingProfiles')
+      .of(followerProfileId)
+      .loadMany<Profile>();
+
+    if (followingProfiles.some((profile) => profile.id === followingProfileId)) {
+      return 'following';
+    }
+
+    const pendingRequest = await this.followRequestRepository.findOneBy({
+      followerProfileId,
+      followingProfileId,
+      status: FollowRequestStatus.PENDING,
+    });
+
+    if (pendingRequest) {
+      return 'requested';
+    }
+
+    return 'none';
+  }
+
+  private async createNotification(
+    recipientProfileId: number,
+    type: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    const notification = this.notificationRepository.create({
+      recipientProfileId,
+      type,
+      payload,
+    });
+
+    await this.notificationRepository.save(notification);
+  }
+
+  private async emitUserSubscribedNotification(payload: {
+    followerProfileId: number;
+    followingProfileId: number;
+  }): Promise<void> {
+    await this.createNotification(payload.followingProfileId, 'user_subscribed', {
+      followerProfileId: payload.followerProfileId,
+    });
+
+    try {
+      await this.notificationEventsProducer.emitUserSubscribed(payload);
+    } catch (error) {
+      this.logger.warn('Kafka user_subscribed emit failed', {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private ensureDifferentProfileIds(followerId: number, followingId: number): void {

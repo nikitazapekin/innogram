@@ -89,6 +89,18 @@
   &:hover { background: rgba($color-black, 0.06); }
 }
 
+.requestedBtn {
+  min-height: 40px;
+  padding: $spacing-sm $spacing-lg;
+  color: rgba($color-black, 0.55);
+  background: rgba($color-black, 0.06);
+  border: 2px solid rgba($color-black, 0.15);
+  border-radius: $radius-circle;
+  cursor: default;
+  font-size: $font-xs;
+  font-weight: 700;
+}
+
 .stats {
   display: flex;
   gap: $spacing-lg;

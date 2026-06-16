@@ -3,7 +3,7 @@ export const buildAssetUrlCacheKey = (assetId: number): string => `asset:url:${a
 export const POSTS_FEED_VERSION_KEY = 'posts:feed:version';
 
 type PostsFeedQuery = {
-  page?: number;
+  cursor?: string;
   limit?: number;
   sortBy?: string;
   sortOrder?: string;
@@ -13,7 +13,7 @@ type PostsFeedQuery = {
 
 export const buildPostsFeedCacheKey = (version: number, query: PostsFeedQuery): string => {
   const normalized = {
-    page: query.page ?? 1,
+    cursor: query.cursor ?? '',
     limit: query.limit ?? 10,
     sortBy: query.sortBy ?? 'createdAt',
     sortOrder: query.sortOrder ?? 'DESC',

@@ -9,7 +9,6 @@ import * as path from 'node:path';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 const CORE_HTTP_PORT = Number(process.env.CORE_HTTP_PORT ?? 3001);
 const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
@@ -36,7 +35,6 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
 
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor());
   app.use((_req: unknown, res: SecurityHeadersResponse, next: () => void) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');

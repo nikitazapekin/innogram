@@ -69,6 +69,17 @@ async function uploadAsset(file: File): Promise<number> {
 }
 
 export async function getPosts(query?: Record<string, string>): Promise<Post[]> {
+  const page = await getPostsPage(query);
+  return page.posts;
+}
+
+export type PostsPage = {
+  posts: Post[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
+export async function getPostsPage(query?: Record<string, string>): Promise<PostsPage> {
   let url = `${BASE}/posts`;
 
   if (query) {
@@ -79,14 +90,22 @@ export async function getPosts(query?: Record<string, string>): Promise<Post[]> 
   const data = await authFetch(url);
 
   let posts: BackendPost[];
+  let nextCursor: string | null = null;
+  let hasMore = false;
 
   if (Array.isArray(data)) {
     posts = data;
   } else {
     posts = data.data ?? [];
+    nextCursor = data.nextCursor ?? null;
+    hasMore = Boolean(data.hasMore);
   }
 
-  return posts.map(mapPost);
+  return {
+    posts: posts.map(mapPost),
+    nextCursor,
+    hasMore,
+  };
 }
 
 export async function createPost(content: string, file?: File): Promise<Post> {
