@@ -3,13 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { RequestLoader } from '@/app/features/system-feedback';
 import { InputField } from '@/app/shared/ui/input';
 import styles from './AuthForm.module.scss';
 import { authSchema, type AuthFormValues } from '../../model/authSchema';
 import { loginUser, registerUser } from '@/app/shared/api/auth';
-import { setAccessToken } from '@/lib/auth';
+import { persistAccessToken } from '@/lib/auth';
 
 type AuthFormProps = {
   description: string;
@@ -31,7 +31,6 @@ export function AuthForm({
   switchHref,
   withProvider = false,
 }: AuthFormProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const isLogin = pathname === '/login';
 
@@ -73,8 +72,10 @@ export function AuthForm({
         response = await registerUser(values.email, values.password);
       }
 
-      setAccessToken(response.accessToken);
-      router.push('/profile');
+      await persistAccessToken(response.accessToken);
+
+      const redirectTo = new URLSearchParams(window.location.search).get('redirect') ?? '/profile';
+      window.location.assign(redirectTo);
     } catch (error) {
       if (error instanceof Error) {
         setApiError(error.message);

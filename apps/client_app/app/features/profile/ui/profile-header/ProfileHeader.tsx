@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { User } from '@/app/entities/user';
-import { removeAccessToken } from '@/lib/auth';
+import { clearAccessToken } from '@/lib/auth';
 import { ProfileEditModal } from '@/app/features/profile/ui/profile-edit-modal';
 import styles from './ProfileHeader.module.scss';
 
@@ -13,12 +12,12 @@ type ProfileHeaderProps = {
 };
 
 export function ProfileHeader({ user, onProfileUpdate }: ProfileHeaderProps) {
-  const router = useRouter();
   const [showEditModal, setShowEditModal] = useState(false);
 
   const handleLogout = () => {
-    removeAccessToken();
-    router.push('/login');
+    void clearAccessToken().finally(() => {
+      window.location.assign('/login');
+    });
   };
 
   return (
