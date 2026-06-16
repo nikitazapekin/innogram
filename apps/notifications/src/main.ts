@@ -7,9 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
 import { readRequiredEnv } from './common/read-required-env';
-
-const readKafkaBrokers = (): string[] =>
-  readRequiredEnv('KAFKA_BROKERS').split(',').filter(Boolean);
+import { buildKafkaClientConfig } from '@innogram/shared';
 
 const SWAGGER_PATH = process.env.SWAGGER_PATH ?? 'api/docs';
 
@@ -36,25 +34,42 @@ async function bootstrap(): Promise<void> {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup(SWAGGER_PATH, app, swaggerDocument);
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: readKafkaBrokers(),
-        clientId: 'notifications-microservice',
-      },
-      consumer: {
-        groupId: 'notifications-consumer',
-      },
-    },
-  });
+  const kafkaConfig = buildKafkaClientConfig();
 
-  await app.startAllMicroservices();
+  if (kafkaConfig) {
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.KAFKA,
+      options: {
+        client: {
+          brokers: kafkaConfig.brokers,
+          clientId: 'notifications-microservice',
+          ...(kafkaConfig.sasl
+            ? {
+                ssl: kafkaConfig.ssl ?? true,
+                sasl: kafkaConfig.sasl as never,
+              }
+            : {}),
+        },
+        consumer: {
+          groupId: 'notifications-consumer',
+        },
+      },
+    });
+  } else {
+    logger.warn('KAFKA_BROKERS is not set — Kafka consumer is disabled');
+  }
+
+  if (kafkaConfig) {
+    await app.startAllMicroservices();
+  }
   await app.listen(httpPort);
 
   logger.log(`HTTP server started on port ${httpPort}`);
   logger.log(`Swagger docs available at /${SWAGGER_PATH}`);
-  logger.log('Kafka consumer started');
+
+  if (kafkaConfig) {
+    logger.log('Kafka consumer started');
+  }
 }
 
 void bootstrap();

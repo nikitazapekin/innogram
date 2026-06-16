@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { buildKafkaClientConfig } from '@innogram/shared';
 import { Repository } from 'typeorm';
 import { Consumer, EachMessagePayload, Kafka } from 'kafkajs';
 
@@ -23,9 +24,9 @@ export class MentionConsumer implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const brokers = process.env.KAFKA_BROKERS;
+    const kafkaConfig = buildKafkaClientConfig();
 
-    if (!brokers) {
+    if (!kafkaConfig) {
       this.logger.warn('KAFKA_BROKERS not set, consumer disabled');
 
       return;
@@ -33,7 +34,13 @@ export class MentionConsumer implements OnModuleInit {
 
     const kafka = new Kafka({
       clientId: 'notifications-microservice',
-      brokers: brokers.split(',').map((b) => b.trim()),
+      brokers: kafkaConfig.brokers,
+      ...(kafkaConfig.sasl
+        ? {
+            ssl: kafkaConfig.ssl ?? true,
+            sasl: kafkaConfig.sasl as never,
+          }
+        : {}),
     });
 
     this.consumer = kafka.consumer({ groupId: 'notifications-group' });

@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ClientProxyFactory, Transport, type ClientProxy } from '@nestjs/microservices';
+import { buildKafkaClientConfig } from '@innogram/shared';
 
 export type MentionEvent = {
   sourceType: 'post' | 'comment';
@@ -14,7 +15,9 @@ export class KafkaService implements OnModuleInit {
   private client: ClientProxy;
 
   async onModuleInit(): Promise<void> {
-    if (!process.env.KAFKA_BROKERS) {
+    const kafkaConfig = buildKafkaClientConfig();
+
+    if (!kafkaConfig) {
       this.logger.warn('KAFKA_BROKERS not set, Kafka producer disabled');
 
       return;
@@ -25,8 +28,14 @@ export class KafkaService implements OnModuleInit {
         transport: Transport.KAFKA,
         options: {
           client: {
-            brokers: process.env.KAFKA_BROKERS.split(',').map((b) => b.trim()),
+            brokers: kafkaConfig.brokers,
             clientId: 'core-microservice',
+            ...(kafkaConfig.sasl
+              ? {
+                  ssl: kafkaConfig.ssl ?? true,
+                  sasl: kafkaConfig.sasl as never,
+                }
+              : {}),
           },
           producerOnlyMode: true,
         },
