@@ -23,6 +23,7 @@ ENV NODE_ENV=production
 COPY --from=builder /workspace/apps/notifications/package.json ./apps/notifications/package.json
 COPY --from=builder /workspace/apps/notifications/dist ./apps/notifications/dist
 COPY --from=builder /workspace/node_modules ./node_modules
+COPY --from=builder /workspace/apps/notifications/node_modules ./apps/notifications/node_modules
 COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/package.json
 

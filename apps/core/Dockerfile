@@ -26,6 +26,7 @@ ENV NODE_ENV=production
 COPY --from=builder /workspace/apps/core/package.json ./apps/core/package.json
 COPY --from=builder /workspace/apps/core/dist ./apps/core/dist
 COPY --from=builder /workspace/node_modules ./node_modules
+COPY --from=builder /workspace/apps/core/node_modules ./apps/core/node_modules
 COPY --from=builder /workspace/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /workspace/packages/shared/package.json ./packages/shared/package.json
 
