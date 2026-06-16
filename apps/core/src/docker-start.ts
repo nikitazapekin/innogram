@@ -10,6 +10,25 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function hasMigrationHistory(): Promise<boolean> {
+  const tableCheck = await AppDataSource.query<{ exists: boolean }[]>(
+    `SELECT EXISTS (
+      SELECT FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'migrations'
+    ) AS exists`,
+  );
+
+  if (!tableCheck[0]?.exists) {
+    return false;
+  }
+
+  const countResult = await AppDataSource.query<{ count: number }[]>(
+    `SELECT COUNT(*)::int AS count FROM public.migrations`,
+  );
+
+  return (countResult[0]?.count ?? 0) > 0;
+}
+
 async function prepareDatabase() {
   if (!SHOULD_RUN_MIGRATIONS) {
     return;
@@ -28,8 +47,15 @@ async function prepareDatabase() {
         await AppDataSource.query('CREATE SCHEMA IF NOT EXISTS "auth"');
         await AppDataSource.query('CREATE SCHEMA IF NOT EXISTS "main"');
         await AppDataSource.query('CREATE SCHEMA IF NOT EXISTS "notification"');
-        await AppDataSource.runMigrations();
-        console.log('Migrations completed.');
+
+        if (await hasMigrationHistory()) {
+          await AppDataSource.runMigrations();
+          console.log('Migrations completed.');
+        } else {
+          console.log('No migration history found — synchronizing schema from entities.');
+          await AppDataSource.synchronize();
+          console.log('Schema synchronization completed.');
+        }
       } finally {
         await AppDataSource.destroy();
       }
