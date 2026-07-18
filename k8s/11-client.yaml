@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: innogram
+  labels:
+    app.kubernetes.io/name: client
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: innogram
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: client
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: client
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/part-of: innogram
+    spec:
+      containers:
+        - name: client
+          image: innogram/client:latest
+          imagePullPolicy: Never
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: HOSTNAME
+              value: '0.0.0.0'
+            - name: NEXT_TELEMETRY_DISABLED
+              value: '1'
+            - name: NEXT_PUBLIC_API_GATEWAY_URL
+              valueFrom:
+                { configMapKeyRef: { name: innogram-config, key: NEXT_PUBLIC_API_GATEWAY_URL } }
+            - name: NEXT_PUBLIC_CORE_URL
+              valueFrom: { configMapKeyRef: { name: innogram-config, key: NEXT_PUBLIC_CORE_URL } }
+            - name: NEXT_PUBLIC_IMAGE_REMOTE_HOSTS
+              valueFrom:
+                { configMapKeyRef: { name: innogram-config, key: NEXT_PUBLIC_IMAGE_REMOTE_HOSTS } }
+          readinessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: innogram
+  labels:
+    app.kubernetes.io/name: client
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: innogram
+spec:
+  selector: { app.kubernetes.io/name: client }
+  ports: [{ port: 3000, targetPort: 3000 }]
