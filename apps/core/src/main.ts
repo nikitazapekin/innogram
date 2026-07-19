@@ -1,3 +1,6 @@
+import { initTracing } from '@innogram/shared';
+initTracing({ serviceName: 'innogram-core' });
+
 import './config/load-environment';
 
 import { parseAllowedOrigins } from '@innogram/shared';

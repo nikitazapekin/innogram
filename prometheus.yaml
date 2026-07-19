@@ -5,8 +5,12 @@ scrape_configs:
   - job_name: 'innogram-core'
     metrics_path: /monitoring/prometheus
     static_configs:
-      - targets: ['core:3001']
+      - targets: ['host.docker.internal:3001']
 
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']

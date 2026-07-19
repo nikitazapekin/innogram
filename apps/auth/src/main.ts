@@ -1,3 +1,6 @@
+import { initTracing } from '@innogram/shared';
+initTracing({ serviceName: 'innogram-auth' });
+
 import { createServer, type Server } from 'node:http';
 
 import { createApp } from './app';

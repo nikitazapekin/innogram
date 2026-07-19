@@ -1,3 +1,6 @@
+import { initTracing } from '@innogram/shared';
+initTracing({ serviceName: 'innogram-notifications' });
+
 import './config/load-environment';
 
 import { Logger, ValidationPipe } from '@nestjs/common';

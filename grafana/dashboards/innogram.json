@@ -27,14 +27,14 @@
               { "color": "red", "value": 1 }
             ]
           },
-          "unit": "reqps"
+          "unit": "short"
         }
       },
       "gridPos": { "h": 4, "w": 5, "x": 0, "y": 1 },
       "id": 10,
       "options": {
         "colorMode": "value",
-        "graphMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
@@ -364,12 +364,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "innogram_process_heap_used_bytes{job=\"innogram-core\"}",
+          "expr": "innogram_nodejs_heap_size_used_bytes{job=\"innogram-core\"}",
           "legendFormat": "Heap Used",
           "refId": "A"
         },
         {
-          "expr": "innogram_process_heap_total_bytes{job=\"innogram-core\"}",
+          "expr": "innogram_nodejs_heap_size_total_bytes{job=\"innogram-core\"}",
           "legendFormat": "Heap Total",
           "refId": "B"
         }
@@ -399,12 +399,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "innogram_eventloop_lag_seconds{job=\"innogram-core\"}",
+          "expr": "innogram_nodejs_eventloop_lag_seconds{job=\"innogram-core\"}",
           "legendFormat": "Lag",
           "refId": "A"
         },
         {
-          "expr": "innogram_eventloop_lag_max_seconds{job=\"innogram-core\"}",
+          "expr": "innogram_nodejs_eventloop_lag_max_seconds{job=\"innogram-core\"}",
           "legendFormat": "Lag Max",
           "refId": "B"
         }
@@ -434,12 +434,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "innogram_active_handles{job=\"innogram-core\"}",
+          "expr": "innogram_nodejs_active_handles_total{job=\"innogram-core\"}",
           "legendFormat": "Active Handles",
           "refId": "A"
         },
         {
-          "expr": "innogram_active_requests{job=\"innogram-core\"}",
+          "expr": "innogram_nodejs_active_requests_total{job=\"innogram-core\"}",
           "legendFormat": "Active Requests",
           "refId": "B"
         }
@@ -470,12 +470,12 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(innogram_gc_duration_seconds_sum{job=\"innogram-core\"}[5m])",
+          "expr": "rate(innogram_nodejs_gc_duration_seconds_sum{job=\"innogram-core\"}[5m])",
           "legendFormat": "GC Duration Rate",
           "refId": "A"
         },
         {
-          "expr": "rate(innogram_gc_duration_seconds_count{job=\"innogram-core\"}[5m])",
+          "expr": "rate(innogram_nodejs_gc_duration_seconds_count{job=\"innogram-core\"}[5m])",
           "legendFormat": "GC Count Rate",
           "refId": "B"
         }
@@ -562,8 +562,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum by (container_name) (count_over_time({container_name=~\"$container\"} [1m]))",
-          "legendFormat": "{{container_name}}",
+          "expr": "sum by (container) (count_over_time({container=~\"$container\"} [1m]))",
+          "legendFormat": "{{container}}",
           "refId": "A"
         }
       ]
@@ -586,7 +586,7 @@
       "type": "logs",
       "targets": [
         {
-          "expr": "{container_name=~\"$container\"} |~ \"$search\"",
+          "expr": "{container=~\"$container\"} |~ \"$search\"",
           "refId": "A"
         }
       ]
@@ -600,8 +600,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum by (container_name) (count_over_time({container_name=~\"$container\"} |~ \"(?i)(error|exception|fail)\" [1m]))",
-          "legendFormat": "{{container_name}}",
+          "expr": "sum by (container) (count_over_time({container=~\"$container\"} |~ \"(?i)(error|exception|fail)\" [1m]))",
+          "legendFormat": "{{container}}",
           "refId": "A"
         }
       ]
@@ -615,8 +615,8 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum by (container_name) (count_over_time({container_name=~\"$container\"} |~ \"(?i)(warn|warning)\" [1m]))",
-          "legendFormat": "{{container_name}}",
+          "expr": "sum by (container) (count_over_time({container=~\"$container\"} |~ \"(?i)(warn|warning)\" [1m]))",
+          "legendFormat": "{{container}}",
           "refId": "A"
         }
       ]
@@ -652,7 +652,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(promtail_entries_sent_total[5m]))",
+          "expr": "sum(rate(promtail_sent_entries_total[5m]))",
           "legendFormat": "entries/s",
           "refId": "A"
         }
@@ -682,7 +682,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(promtail_bytes_sent_total[5m]))",
+          "expr": "sum(rate(promtail_sent_bytes_total[5m]))",
           "legendFormat": "bytes/s",
           "refId": "A"
         }
@@ -712,7 +712,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(promtail_entries_dropped_total[5m]))",
+          "expr": "sum(rate(promtail_dropped_entries_total[5m]))",
           "legendFormat": "dropped/s",
           "refId": "A"
         }
@@ -742,9 +742,140 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "promtail_stream_entries_total - promtail_stream_entries_dropped_total",
+          "expr": "promtail_targets_active_total",
           "legendFormat": "active streams",
           "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 75 },
+      "id": 110,
+      "title": "Traces (OpenTelemetry)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "${DS_TEMPO}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "filterable": true } },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 76 },
+      "id": 30,
+      "options": { "showHeader": true },
+      "title": "All Traces",
+      "type": "table",
+      "targets": [
+        {
+          "queryType": "traceqlSearch",
+          "query": "{}",
+          "limit": 20,
+          "filters": [],
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "nested": true },
+            "renameByName": {
+              "traceID": "Trace ID",
+              "startTime": "Start Time",
+              "traceService": "Service",
+              "traceName": "Operation",
+              "traceDuration": "Duration (ms)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "${DS_TEMPO}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 86 },
+      "id": 31,
+      "options": {},
+      "title": "Service Graph",
+      "type": "nodeGraph",
+      "targets": [
+        {
+          "queryType": "serviceMap",
+          "datasourceUid": "${DS_PROMETHEUS}",
+          "filters": [],
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "${DS_TEMPO}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "filterable": true } },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 94 },
+      "id": 32,
+      "options": { "showHeader": true },
+      "title": "Traces — Core",
+      "type": "table",
+      "targets": [
+        {
+          "queryType": "traceqlSearch",
+          "query": "{resource.service.name = \"innogram-core\"}",
+          "limit": 10,
+          "filters": [],
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "nested": true },
+            "renameByName": {
+              "traceID": "Trace ID",
+              "startTime": "Start Time",
+              "traceService": "Service",
+              "traceName": "Operation",
+              "traceDuration": "Duration (ms)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "tempo", "uid": "${DS_TEMPO}" },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "filterable": true } },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 94 },
+      "id": 33,
+      "options": { "showHeader": true },
+      "title": "Traces — Gateway",
+      "type": "table",
+      "targets": [
+        {
+          "queryType": "traceqlSearch",
+          "query": "{resource.service.name = \"innogram-gateway\"}",
+          "limit": 10,
+          "filters": [],
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "nested": true },
+            "renameByName": {
+              "traceID": "Trace ID",
+              "startTime": "Start Time",
+              "traceService": "Service",
+              "traceName": "Operation",
+              "traceDuration": "Duration (ms)"
+            }
+          }
         }
       ]
     }
@@ -752,7 +883,7 @@
   "refresh": "10s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["innogram", "nestjs", "prometheus", "loki"],
+  "tags": ["innogram", "nestjs", "prometheus", "loki", "tempo"],
   "templating": {
     "list": [
       {
@@ -784,7 +915,21 @@
         "type": "datasource"
       },
       {
-        "allValue": ".*",
+        "current": { "selected": false, "text": "Tempo", "value": "Tempo" },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "DS_TEMPO",
+        "options": [],
+        "query": "tempo",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".+",
         "current": { "selected": true, "text": "All", "value": "$__all" },
         "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
         "definition": "",
@@ -794,9 +939,9 @@
         "name": "container",
         "options": [],
         "query": {
-          "label": "container_name",
+          "label": "container",
           "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{job=\"docker\"}",
+          "stream": "{job=~\"docker-logs|local-app\"}",
           "type": 1
         },
         "refresh": 2,
