@@ -1,4 +1,5 @@
 import { initTracing } from '@innogram/shared';
+
 initTracing({ serviceName: 'innogram-gateway' });
 
 import 'reflect-metadata';
