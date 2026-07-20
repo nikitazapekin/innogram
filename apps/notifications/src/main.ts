@@ -1,4 +1,5 @@
 import { initTracing } from '@innogram/shared';
+
 initTracing({ serviceName: 'innogram-notifications' });
 
 import './config/load-environment';
@@ -35,6 +36,7 @@ async function bootstrap(): Promise<void> {
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+
   SwaggerModule.setup(SWAGGER_PATH, app, swaggerDocument);
 
   const kafkaConfig = buildKafkaClientConfig();
