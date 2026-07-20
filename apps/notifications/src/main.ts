@@ -32,6 +32,7 @@ async function bootstrap(): Promise<void> {
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+
   SwaggerModule.setup(SWAGGER_PATH, app, swaggerDocument);
 
   const kafkaConfig = buildKafkaClientConfig();
