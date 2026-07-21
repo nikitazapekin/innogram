@@ -1,0 +1,17 @@
+folder_id = "b1gxxxxxxxxxxxxxxxxxxxx"
+zone      = "ru-central1-d"
+ 
+reuse_network         = true
+existing_network_name = "innogram-dev-net"
+existing_subnet_name  = "innogram-dev-subnet"
+
+ 
+create_vm        = true
+vm_name          = "innogram-app"
+vm_preemptible   = true
+vm_core_fraction = 20
+vm_cores         = 2
+vm_memory_gb     = 4
+vm_disk_gb       = 30
+
+ 
