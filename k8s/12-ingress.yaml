@@ -1,0 +1,63 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: innogram-ingress
+  namespace: innogram
+  labels:
+    app.kubernetes.io/part-of: innogram
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: '25m'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '3600'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '3600'
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 3000
+
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 3004
+
+    - http:
+        paths:
+          - path: /core
+            pathType: Prefix
+            backend:
+              service:
+                name: core
+                port:
+                  number: 3001
+
+    - http:
+        paths:
+          - path: /media
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9000
+
+    - http:
+        paths:
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: auth
+                port:
+                  number: 3002
