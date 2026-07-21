@@ -1,3 +1,7 @@
+import { initTracing } from '@innogram/shared';
+
+initTracing({ serviceName: 'innogram-gateway' });
+
 import 'reflect-metadata';
 
 import type { IncomingHttpHeaders } from 'node:http';
